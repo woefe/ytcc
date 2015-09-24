@@ -148,6 +148,16 @@ class Ytcc:
 
         self.db.mark_some_watched(vIDs)
 
+    def mark_watched(self, vID):
+        """Mark the video identified by vID as watched.
+
+        Args:
+            vID (int): The video's ID.
+        """
+
+        self.db.video_watched(vID)
+
+
     def mark_all_watched(self):
         """Marks all unwatched videos as watched without playing them."""
 
