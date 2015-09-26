@@ -22,12 +22,14 @@ import argparse
 
 ytcc = core.Ytcc()
 interactive = True
+descriptionEnabled = True
 
 def update_all():
     print("Updating channels...")
     ytcc.update_all()
 
 def watch_all():
+    global interactive
     unwatchedVideos = ytcc.list_unwatched_videos()
     if not unwatchedVideos:
         print("You have already watched all videos.")
@@ -43,12 +45,14 @@ def watch_all():
                 break
 
 def print_description(description):
-    columns = shutil.get_terminal_size().columns
-    delimiter = "=" * columns
-    print("\nVideo description:")
-    print(delimiter)
-    print(description)
-    print(delimiter, end="\n\n")
+    global descriptionEnabled
+    if descriptionEnabled:
+        columns = shutil.get_terminal_size().columns
+        delimiter = "=" * columns
+        print("\nVideo description:")
+        print(delimiter)
+        print(description)
+        print(delimiter, end="\n\n")
 
 def watch_some(vIDs):
     for vID in vIDs:
@@ -134,6 +138,10 @@ def main():
             nargs='*',
             metavar="ID")
 
+    parser.add_argument("-d", "--no-description",
+            help="do not print the video description before playing the video",
+            action="store_true")
+
     parser.add_argument("-m", "--mark-watched",
             help="mark videos identified by ID as watched. Leaving out the ID "
                  "will mark all videos as watched",
@@ -166,12 +174,17 @@ def main():
         print()
         print("Copyright (C) 2015  "  + ytcc.__author__)
         print("This program comes with ABSOLUTELY NO WARRANTY; This is free software, and you")
-        print("are welcome to redistribute it under certain conditions.  See the GNU")
-        print("General Public Licence for details.")
+        print("are welcome to redistribute it under certain conditions.  See the GNU General ")
+        print("Public Licence for details.")
         return
 
     if args.yes:
-        interactive=False
+        global interactive
+        interactive = False
+
+    if args.no_description:
+        global descriptionEnabled
+        descriptionEnabled = False
 
     if args.add_channel:
         add_channel(*args.add_channel)
