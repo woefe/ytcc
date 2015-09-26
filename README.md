@@ -12,6 +12,14 @@ cd ytcc
 sudo ./setup.py install
 ```
 
+### openSUSE (Tumbleweed)
+```
+sudo zypper in python3-lxml python3-feedparser python3-setuptools mpv youtube-dl
+git clone https://github.com/popeye123/ytcc.git
+cd ytcc
+sudo python3 setup.py install
+```
+
 ### Arch Linux
 ```
 yaourt -S ytcc
