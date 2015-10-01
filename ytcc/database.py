@@ -138,20 +138,33 @@ class Database:
             """
         return self._execute_query_with_result(sqlstatement)
 
-    def list_recent_videos(self):
+    def list_recent_videos(self, channelFilter=None):
         """Returns a list of videos that were added within the last week.
 
         Returns (list):
             A list of tuples of the form (vID, title, description, publish_date, channel)
         """
 
-        sqlstatement = """
-            select v.id, v.title, v.description, v.publish_date, c.displayname
-            from video v, channel c
-            where v.publish_date > strftime("%s") - 604800 and v.publisher = c.yt_channelid
-            order by c.id, v.publish_date asc;
-            """
-        return self._execute_query_with_result(sqlstatement)
+        if channelFilter:
+            sqlstatement_with_filter = """
+                select v.id, v.title, v.description, v.publish_date, c.displayname
+                from video v, channel c
+                where v.publish_date > strftime("%s") - 604800
+                    and v.publisher = c.yt_channelid
+                    and c.yt_channelid in (select yt_channelid from channel where id in (""" + ("?," * (len(channelFilter) - 1)) + """?))
+                order by c.id, v.publish_date asc;
+                """
+            return self._execute_query_with_result(sqlstatement_with_filter, tuple(channelFilter))
+        else:
+            sqlstatement = """
+                select v.id, v.title, v.description, v.publish_date, c.displayname
+                from video v, channel c
+                where v.publish_date > strftime("%s") - 604800
+                    and v.publisher = c.yt_channelid
+                order by c.id, v.publish_date asc;
+                """
+            return self._execute_query_with_result(sqlstatement)
+
 
     def mark_all_watched(self):
         """Marks all unwatched videos as watched without playing them."""

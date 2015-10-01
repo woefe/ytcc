@@ -19,10 +19,12 @@
 from ytcc import core
 import shutil
 import argparse
+import os
 
 ytcc = core.Ytcc()
 interactive = True
 descriptionEnabled = True
+channelFilter = None
 
 def update_all():
     print("Updating channels...")
@@ -78,7 +80,7 @@ def print_unwatched_videos():
             print(vID, " " + channel + ": " + title)
 
 def print_recent_videos():
-    recentVideos = ytcc.list_recent_videos()
+    recentVideos = ytcc.list_recent_videos(channelFilter)
     if not recentVideos:
         print("No videos were added recently.")
     else:
@@ -92,6 +94,11 @@ def print_channels():
     else:
         for cID, name in channels:
             print(cID, " " + name)
+
+def download(vIDs, path):
+    download_dir = path[0] if path else os.path.expanduser("~") + "/Downloads"
+    for vID in vIDs:
+        ytcc.download_video(vID, download_dir)
 
 def add_channel(name, channelURL):
     try:
@@ -134,11 +141,27 @@ def main():
 
     parser.add_argument("-w", "--watch",
             help="play the videos identified by 'ID'. Leaving out the ID will "
-                 "play all videos",
+                 "play all unwatched videos",
             nargs='*',
             metavar="ID")
 
-    parser.add_argument("-d", "--no-description",
+    parser.add_argument("-f", "--channel_filter",
+            help="defines a filter on which channels to watch",
+            nargs='+',
+            metavar="ID")
+
+    parser.add_argument("-d", "--download",
+            help="download the videos identified by 'ID'. The videos are saved "
+                 "in $HOME/Downloads by default",
+            nargs="+",
+            metavar="ID")
+
+    parser.add_argument("-p", "--path",
+            help="set the download path to PATH.",
+            nargs=1,
+            metavar="PATH")
+
+    parser.add_argument("-g", "--no-description",
             help="do not print the video description before playing the video",
             action="store_true")
 
@@ -166,6 +189,8 @@ def main():
 
     args = parser.parse_args()
 
+    print(args)
+
     optionExecuted = False
 
     if args.version:
@@ -186,6 +211,10 @@ def main():
         global descriptionEnabled
         descriptionEnabled = False
 
+    if args.channel_filter:
+        global channelFilter
+        channelFilter = args.channel_filter
+
     if args.add_channel:
         add_channel(*args.add_channel)
         optionExecuted = True
@@ -196,6 +225,10 @@ def main():
 
     if args.delete_channel:
         ytcc.delete_channel(args.delete_channel)
+        optionExecuted = True
+
+    if args.download:
+        download(args.download, args.path)
         optionExecuted = True
 
     if args.update:

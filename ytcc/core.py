@@ -90,6 +90,20 @@ class Ytcc:
             os.system("mpv --really-quiet https://www.youtube.com/watch?v=" + ytVideoId + " 2> /dev/null")
             self.db.video_watched(vID)
 
+    def download_video(self, vID, path):
+        """Downloads the video identified by vID with youtube-dl and marks the
+        video watched.
+
+        Args:
+            vID (int): The (local) video id.
+            path (str): The directory where the download is saved.
+        """
+
+        ytVideoId = self.db.get_yt_video_id(vID)
+        if os.path.isdir(path) and ytVideoId:
+            os.system("youtube-dl -o '" + path + "/%(title)s' https://www.youtube.com/watch?v=" + ytVideoId)
+            self.db.video_watched(vID)
+
     def add_channel(self, diplayname, channelURL):
         """Subscribes to a channel.
 
@@ -163,14 +177,14 @@ class Ytcc:
 
         self.db.mark_all_watched()
 
-    def list_recent_videos(self):
+    def list_recent_videos(self, channelFilter=None):
         """Returns a list of videos that were added within the last week.
 
         Returns (list):
             A list of tuples of the form (vID, title, description, publish_date, channel)
         """
 
-        return self.db.list_recent_videos()
+        return self.db.list_recent_videos(channelFilter)
 
     def delete_channel(self, channelID):
         """Delete (or unsubscribe) a channel.
