@@ -143,14 +143,17 @@ class Ytcc:
         else:
             raise BadURLException("'" + channelURL + "' is not a valid URL")
 
-    def list_unwatched_videos(self):
+    def list_unwatched_videos(self, channelFilter=None):
         """Returns a list of unwatched videos.
 
         Returns (list):
             A list of tuples of the form (vID, title, description, publish_date, channel).
         """
 
-        return self.db.list_unwatched_videos()
+        if channelFilter:
+            return self.db.list_unwatched_videos_with_filter(channelFilter)
+        else:
+            return self.db.list_unwatched_videos()
 
     def mark_some_watched(self, vIDs):
         """Marks the videos identified by vIDs as watched without playing them.
@@ -171,7 +174,6 @@ class Ytcc:
 
         self.db.video_watched(vID)
 
-
     def mark_all_watched(self):
         """Marks all unwatched videos as watched without playing them."""
 
@@ -184,7 +186,10 @@ class Ytcc:
             A list of tuples of the form (vID, title, description, publish_date, channel)
         """
 
-        return self.db.list_recent_videos(channelFilter)
+        if channelFilter:
+            return self.db.list_recent_videos_with_filter(channelFilter)
+        else:
+            return self.db.list_recent_videos()
 
     def delete_channel(self, channelID):
         """Delete (or unsubscribe) a channel.

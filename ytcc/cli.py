@@ -72,7 +72,7 @@ def watch(vIDs):
         watch_some(vIDs)
 
 def print_unwatched_videos():
-    unwatchedVideos = ytcc.list_unwatched_videos()
+    unwatchedVideos = ytcc.list_unwatched_videos(channelFilter)
     if not unwatchedVideos:
         print("You have already watched all videos.")
     else:

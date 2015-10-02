@@ -80,6 +80,9 @@ class Database:
         self.dbconn.commit()
         c.close()
 
+    def _make_place_holder(self, size):
+        return "(" + ("?," * (size - 1)) + "?)"
+
     def add_channel(self, name, yt_channelid):
         """Adds a new channel to the database.
 
@@ -123,6 +126,27 @@ class Database:
         queryResult = self._execute_query_with_result(sqlstatement, (videoId,))
         return queryResult[0][0]
 
+    def list_unwatched_videos_with_filter(self, channelFilter):
+        """Returns a list of unwatched videos. The videos are published by the
+        channels in channelFilter.
+
+        Args:
+            channelFilter (list): the list of channelIds
+
+        Returns (list):
+            A list of tuples of the form (vID, title, description, publish_date, channel)
+        """
+
+        sqlstatement = """
+            select v.id, v.title, v.description, v.publish_date, c.displayname
+            from video v, channel c
+            where v.watched = 0
+                and v.publisher = c.yt_channelid
+                and c.id in """ + self._make_place_holder(len(channelFilter)) + """
+            order by c.id, v.publish_date asc;
+            """
+        return self._execute_query_with_result(sqlstatement, tuple(channelFilter))
+
     def list_unwatched_videos(self):
         """Returns a list of unwatched videos.
 
@@ -138,33 +162,42 @@ class Database:
             """
         return self._execute_query_with_result(sqlstatement)
 
-    def list_recent_videos(self, channelFilter=None):
+    def list_recent_videos_with_filter(self, channelFilter):
+        """Returns a list of videos that were added within the last week. The
+        videos are published by the channels in channelFilter.
+
+        Args:
+            channelFilter (list): the list of channelIds
+
+        Returns (list):
+            A list of tuples of the form (vID, title, description, publish_date, channel)
+        """
+
+        sqlstatement_with_filter = """
+            select v.id, v.title, v.description, v.publish_date, c.displayname
+            from video v, channel c
+            where v.publish_date > strftime("%s") - 604800
+                and v.publisher = c.yt_channelid
+                and c.id in """ + self._make_place_holder(len(channelFilter)) + """
+            order by c.id, v.publish_date asc;
+            """
+        return self._execute_query_with_result(sqlstatement_with_filter, tuple(channelFilter))
+
+    def list_recent_videos(self):
         """Returns a list of videos that were added within the last week.
 
         Returns (list):
             A list of tuples of the form (vID, title, description, publish_date, channel)
         """
 
-        if channelFilter:
-            sqlstatement_with_filter = """
-                select v.id, v.title, v.description, v.publish_date, c.displayname
-                from video v, channel c
-                where v.publish_date > strftime("%s") - 604800
-                    and v.publisher = c.yt_channelid
-                    and c.yt_channelid in (select yt_channelid from channel where id in (""" + ("?," * (len(channelFilter) - 1)) + """?))
-                order by c.id, v.publish_date asc;
-                """
-            return self._execute_query_with_result(sqlstatement_with_filter, tuple(channelFilter))
-        else:
-            sqlstatement = """
-                select v.id, v.title, v.description, v.publish_date, c.displayname
-                from video v, channel c
-                where v.publish_date > strftime("%s") - 604800
-                    and v.publisher = c.yt_channelid
-                order by c.id, v.publish_date asc;
-                """
-            return self._execute_query_with_result(sqlstatement)
-
+        sqlstatement = """
+            select v.id, v.title, v.description, v.publish_date, c.displayname
+            from video v, channel c
+            where v.publish_date > strftime("%s") - 604800
+                and v.publisher = c.yt_channelid
+            order by c.id, v.publish_date asc;
+            """
+        return self._execute_query_with_result(sqlstatement)
 
     def mark_all_watched(self):
         """Marks all unwatched videos as watched without playing them."""
@@ -181,7 +214,6 @@ class Database:
 
         sqlstatement = "update video set watched = 1 where id = ?"
         self._execute_query_many(sqlstatement, [(id,) for id in vIDs])
-
 
     def video_watched(self, vID):
         """Mark a video as watched.
