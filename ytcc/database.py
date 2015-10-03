@@ -199,6 +199,19 @@ class Database:
             """
         return self._execute_query_with_result(sqlstatement)
 
+    def mark_watched(self, channelFilter):
+        sqlstatement = """
+            update video
+            set watched = 1
+            where watched = 0
+                and publisher in (
+                    select yt_channelid
+                    from channel
+                    where id in """ + self._make_place_holder(len(channelFilter)) + """)
+            """
+        self._execute_query(sqlstatement, tuple(channelFilter))
+
+
     def mark_all_watched(self):
         """Marks all unwatched videos as watched without playing them."""
 

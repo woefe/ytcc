@@ -32,7 +32,7 @@ def update_all():
 
 def watch_all():
     global interactive
-    unwatchedVideos = ytcc.list_unwatched_videos()
+    unwatchedVideos = ytcc.list_unwatched_videos(channelFilter)
     if not unwatchedVideos:
         print("You have already watched all videos.")
     else:
@@ -42,7 +42,7 @@ def watch_all():
                 print_description(description)
                 ytcc.play_video(vID)
             if choice in ( "m", "M"):
-                ytcc.mark_watched(vID)
+                ytcc.mark_some_watched([vID])
             elif choice in ("a", "A"):
                 break
 
@@ -96,9 +96,10 @@ def print_channels():
             print(cID, " " + name)
 
 def download(vIDs, path):
-    download_dir = path[0] if path else os.path.expanduser("~") + "/Downloads"
-    for vID in vIDs:
-        ytcc.download_video(vID, download_dir)
+    downloadDir = path if path else os.path.expanduser("~") + "/Downloads"
+    videoIDs = vIDs if vIDs else map(lambda x: x[0], ytcc.list_unwatched_videos(channelFilter))
+    for vID in videoIDs:
+        ytcc.download_video(vID, downloadDir)
 
 def add_channel(name, channelURL):
     try:
@@ -112,7 +113,7 @@ def add_channel(name, channelURL):
 
 def mark_watched(vIDs):
     if not vIDs or vIDs[0] == "all":
-        ytcc.mark_all_watched()
+        ytcc.mark_watched(channelFilter)
     else:
         ytcc.mark_some_watched(vIDs)
 
@@ -140,35 +141,41 @@ def main():
             action="store_true")
 
     parser.add_argument("-w", "--watch",
-            help="play the videos identified by 'ID'. Leaving out the ID will "
+            help="play the videos identified by 'ID'. Omitting the ID will "
                  "play all unwatched videos",
             nargs='*',
+            type=int,
             metavar="ID")
 
-    parser.add_argument("-f", "--channel_filter",
-            help="defines a filter on which channels to watch",
+    parser.add_argument("-f", "--channel-filter",
+            help="plays, marks, downloads only videos from channels defined in "
+                 "the filter",
             nargs='+',
+            type=int,
             metavar="ID")
 
     parser.add_argument("-d", "--download",
             help="download the videos identified by 'ID'. The videos are saved "
-                 "in $HOME/Downloads by default",
-            nargs="+",
+                 "in $HOME/Downloads by default. Omitting the ID will download "
+                 "all unwatched videos",
+            nargs="*",
+            type=int,
             metavar="ID")
 
     parser.add_argument("-p", "--path",
-            help="set the download path to PATH.",
-            nargs=1,
-            metavar="PATH")
+            help="set the download path to PATH",
+            metavar="PATH",
+            type=str)
 
     parser.add_argument("-g", "--no-description",
             help="do not print the video description before playing the video",
             action="store_true")
 
     parser.add_argument("-m", "--mark-watched",
-            help="mark videos identified by ID as watched. Leaving out the ID "
+            help="mark videos identified by ID as watched. Omitting the ID "
                  "will mark all videos as watched",
             nargs='*',
+            type=int,
             metavar="ID")
 
     parser.add_argument("-l", "--list-unwatched",
@@ -188,8 +195,6 @@ def main():
             action="store_true")
 
     args = parser.parse_args()
-
-    print(args)
 
     optionExecuted = False
 
@@ -227,7 +232,7 @@ def main():
         ytcc.delete_channel(args.delete_channel)
         optionExecuted = True
 
-    if args.download:
+    if args.download is not None:
         download(args.download, args.path)
         optionExecuted = True
 

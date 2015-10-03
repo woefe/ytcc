@@ -165,19 +165,19 @@ class Ytcc:
 
         self.db.mark_some_watched(vIDs)
 
-    def mark_watched(self, vID):
-        """Mark the video identified by vID as watched.
+    def mark_watched(self, channelFilter=None):
+        """Marks the videos of channels specified in the filter as watched
+        witout playing them. If channelFilter is None all unwatched videos are
+        marked as watched.
 
         Args:
-            vID (int): The video's ID.
+            channelFilter ([int]): the channel filter.
         """
 
-        self.db.video_watched(vID)
-
-    def mark_all_watched(self):
-        """Marks all unwatched videos as watched without playing them."""
-
-        self.db.mark_all_watched()
+        if channelFilter:
+            self.db.mark_watched(channelFilter)
+        else:
+            self.db.mark_all_watched()
 
     def list_recent_videos(self, channelFilter=None):
         """Returns a list of videos that were added within the last week.

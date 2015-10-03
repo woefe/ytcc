@@ -46,3 +46,13 @@ Check for new videos, print a list of new videos and play them.
 ```
 ytcc -ulw
 ```
+
+Download all unwatched videos from a channel.
+```
+ytcc -f 1 -d
+```
+
+Mark all videos of a channel as watched.
+```
+ytcc -f 1 -m
+```
