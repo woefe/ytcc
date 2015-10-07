@@ -34,10 +34,15 @@ def watch_all():
     global interactive
     unwatchedVideos = ytcc.list_unwatched_videos(channelFilter)
     if not unwatchedVideos:
-        print("You have already watched all videos.")
+        print("No unwatched videos to play.")
     else:
         for vID, title, description, publish_date, channel in unwatchedVideos:
-            choice = input("Play video \"" + title + "\" by \"" + channel + "\"? [Y/n/m/a]: ") if interactive else "y"
+            if interactive:
+                choice = input('Play video "' + title + '" by "' + channel + '"? [Y/n/m/a]: ')
+            else:
+                print('Playing "' + title + '" by "' + channel + '"...')
+                choice = "y"
+
             if choice in ( "y", "Y", ""):
                 print_description(description)
                 ytcc.play_video(vID)
@@ -74,7 +79,7 @@ def watch(vIDs):
 def print_unwatched_videos():
     unwatchedVideos = ytcc.list_unwatched_videos(channelFilter)
     if not unwatchedVideos:
-        print("You have already watched all videos.")
+        print("No unwatched videos.")
     else:
         for vID, title, description, publish_date, channel in unwatchedVideos:
             print(vID, " " + channel + ": " + title)
