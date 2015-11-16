@@ -1,0 +1,66 @@
+#compdef ytcc
+
+_ytcc_channels () {
+    local _channel_list
+    _channel_list=( "${(@f)$(ytcc -c | sed "s/  /:/")}" )
+    _describe -t values 'channel id' _channel_list || compadd "$@"
+}
+
+_ytcc_videos () {
+    local _video_list
+    _video_list=( "${(@f)$(ytcc -l | sed "s/  /:/")}" )
+
+    if [[ ${_video_list[1]} == "No unwatched videos." ]]; then
+        _video_list=( "${(@f)$(ytcc -n | sed "s/  /:/")}" )
+        _describe -t values 'recent videos' _video_list || compadd "$@"
+    else
+        _describe -t values 'unwatched videos' _video_list || compadd "$@"
+    fi
+}
+
+_ytcc_mark() {
+    local _video_list
+    _video_list=( "${(@f)$(ytcc -l | sed "s/  /:/")}" )
+    if [[ ${_video_list[1]} == "No unwatched videos." ]]; then
+        _video_list=( )
+    fi
+    _describe -t values 'unwatched videos' _video_list || compadd "$@"
+
+}
+
+_ytcc () {
+    local context state line
+    local -A opt_args
+
+    _arguments \
+        '(-h --help)'{-h,--help}'[show help message and exit]' \
+        '(-a --add-channel)'{-a,--add-channel}'[add a new channel]:2::' \
+        '(-c --list-channels)'{-c,--list-channels}'[print a list of all subscribed channels]' \
+        '(-r --delete-channel)'{-r,--delete-channel}'[unsubscribe from a channel]:: :->channels' \
+        '(-u --update)'{-u,--update}'[update the videolist]' \
+        '(-w --watch)'{-w,--watch}'[play videos]:*: :->videos' \
+        '(-f --channel-filter)'{-f,--channel-filter}'[apply a filter]:*: :->channels' \
+        '(-d --download)'{-d,--download}'[download the videos]:*: :->videos' \
+        '(-p --path)'{-p,--path}'[set the download path]::download path:_path_files -/' \
+        '(-g --no-description)'{-g,--no-description}'[do not print the video description]' \
+        '(-m --mark-watched)'{-m,--mark-watched}'[mark videos as watched]:*: :->mark' \
+        '(-l --list-unwatched)'{-l,--list-unwatched}'[print a list of unwatched videos]' \
+        '(-n --list-recent)'{-n,--list-recent}'[print a list of videos that were recently added]' \
+        '(-y --yes)'{-y,--yes}'[automatically answer all questions with yes]' \
+        '(-v --version)'{-v,--version}'[output version information and exit]' \
+
+    case $state in
+        (channels)
+            _ytcc_channels
+            ;;
+        (videos)
+            _ytcc_videos
+            ;;
+        (mark)
+            _ytcc_mark
+            ;;
+    esac
+
+}
+
+_ytcc "$@"
