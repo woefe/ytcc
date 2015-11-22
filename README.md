@@ -6,7 +6,7 @@ Command Line tool to keep track of your favourite YouTube channels without signi
 
 <!--
 ### Ubuntu
-```shell
+```
 sudo apt-get install python3-lxml python3-feedparser python3-setuptools mpv youtube-dl
 git clone https://github.com/popeye123/ytcc.git
 cd ytcc
@@ -16,7 +16,7 @@ sudo install -Dm644 zsh/_ytcc /usr/local/share/zsh/site-functions/_ytcc
 -->
 
 ### openSUSE (Tumbleweed)
-```shell
+```
 sudo zypper in python3-lxml python3-feedparser python3-setuptools mpv youtube-dl
 git clone https://github.com/popeye123/ytcc.git
 cd ytcc
