@@ -20,8 +20,10 @@ from urllib.request import urlopen
 from urllib.error import URLError
 from lxml import etree
 from io import StringIO
+from pathlib import Path
 from multiprocessing import Pool
 from ytcc import database
+import configparser
 import feedparser
 import sqlite3
 import time
@@ -55,8 +57,41 @@ class InvalidIDException(Exception):
 class Ytcc:
 
     def __init__(self):
-        self.dbPath = os.getenv("HOME") + "/.ytcc.db"
+        self.dbPath = Path(self._get_db_path())
         self.db = database.Database(self.dbPath)
+
+    def _get_db_path(self):
+        confFile = self._get_conf_file()
+        config = configparser.ConfigParser()
+        config.read(str(confFile))
+        return config['YTCC']["DBPath"]
+
+
+    def _get_conf_file(self):
+        xdgConfHome = os.getenv("XDG_CONFIG_HOME")
+        if xdgConfHome is not None:
+            confFile = Path(xdgConfHome + "/ytcc/ytcc.conf")
+            if confFile.is_file():
+                return confFile
+
+        default = Path(os.path.expanduser("~/.config/ytcc/ytcc.conf"))
+        if default.is_file():
+            return default
+
+        confFile = Path(os.path.expanduser("~/.ytcc.conf"))
+        if confFile.is_file():
+            return confFile
+
+        # Create config if it does not exist.
+        config = configparser.ConfigParser()
+        config['YTCC'] = {"dbpath" : "~/.local/share/ytcc/ytcc.db"}
+        default.parent.mkdir(parents=True, exist_ok=True)
+        default.touch()
+        with default.open("w") as defaultFile:
+            config.write(defaultFile)
+
+        return Path(default)
+
 
     def _update_channel(self, ytChannelId, isInitialUpdate=False):
         feed = feedparser.parse("https://www.youtube.com/feeds/videos.xml?channel_id=" + ytChannelId)

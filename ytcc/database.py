@@ -17,15 +17,23 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import sqlite3
-import os.path
 import time
 
 class Database:
     """Database interface for ytcc"""
 
     def __init__(self, path):
-        isNewDB = not os.path.exists(path)
-        self.dbconn = sqlite3.connect(path)
+        """Connects to the given sqlite3 database file or creates a new file,
+        if it does not yet exist.
+
+        Args:
+            path (pathlib.Path): the path to the sqlite database file
+        """
+
+        path = path.expanduser()
+        isNewDB = not path.is_file()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self.dbconn = sqlite3.connect(str(path))
         if isNewDB:
             self._init_db()
 
