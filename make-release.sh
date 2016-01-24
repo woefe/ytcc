@@ -8,5 +8,9 @@ fi
 tagname=$1
 sed -i -e "s/^__version__ = .*$/__version__ = \"$tagname\"/" ytcc/__init__.py
 
+git add ytcc/__init__.py
+git commit -m "released version $tagname"
+git push origin master
+
 git tag -a v$tagname -m "Version $tagname"
-git push origin $tagname
+git push origin v$tagname
