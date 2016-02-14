@@ -50,7 +50,7 @@ class Database:
         c.executescript('''
             create table channel (
                 id integer not null primary key,
-                displayname varchar,
+                displayname varchar unique,
                 yt_channelid varchar unique
             );
             create table video (
@@ -105,12 +105,13 @@ class Database:
     def list_channels(self):
         """Returns a list of all subscribed channels.
 
-        Returns ([(int, str)]):
+        Returns ([str]):
             A list of tuples of the form (id, name).
         """
 
-        sqlstatement = "select id, displayname from channel;"
-        return self._execute_query_with_result(sqlstatement)
+        sqlstatement = "select displayname from channel;"
+        queryResult = self._execute_query_with_result(sqlstatement)
+        return [x[0] for x in queryResult]
 
     def list_channel_yt_ids(self):
         """Returns a list of the id on youtube of every channel.
@@ -150,7 +151,7 @@ class Database:
             from video v, channel c
             where v.watched = 0
                 and v.publisher = c.yt_channelid
-                and c.id in """ + self._make_place_holder(len(channelFilter)) + """
+                and c.displayname in """ + self._make_place_holder(len(channelFilter)) + """
             order by c.id, v.publish_date asc;
             """
         return self._execute_query_with_result(sqlstatement, tuple(channelFilter))
@@ -186,7 +187,7 @@ class Database:
             from video v, channel c
             where v.publish_date > strftime("%s") - 604800
                 and v.publisher = c.yt_channelid
-                and c.id in """ + self._make_place_holder(len(channelFilter)) + """
+                and c.displayname in """ + self._make_place_holder(len(channelFilter)) + """
             order by c.id, v.publish_date asc;
             """
         return self._execute_query_with_result(sqlstatement_with_filter, tuple(channelFilter))
@@ -215,7 +216,7 @@ class Database:
                 and publisher in (
                     select yt_channelid
                     from channel
-                    where id in """ + self._make_place_holder(len(channelFilter)) + """)
+                    where displayname in """ + self._make_place_holder(len(channelFilter)) + """)
             """
         self._execute_query(sqlstatement, tuple(channelFilter))
 
@@ -246,15 +247,15 @@ class Database:
         sqlstatement = "update video set watched = 1 where id = ?"
         self._execute_query(sqlstatement, (vID,))
 
-    def delete_channel(self, cID):
+    def delete_channel(self, displayname):
         """Delete (or unsubscribe) a channel.
 
         Args:
-            cID (int): The channel's ID.
+            cID (str): The channel's displayname.
         """
 
-        sqlstatement = "delete from channel where id = ?"
-        self._execute_query(sqlstatement, (cID,))
+        sqlstatement = "delete from channel where displayname = ?"
+        self._execute_query(sqlstatement, (displayname,))
 
     def add_videos(self, videos):
         """Adds new videos to the database.

@@ -97,8 +97,8 @@ def print_channels():
     if not channels:
         print("No channels added, yet.")
     else:
-        for cID, name in channels:
-            print(cID, " " + name)
+        for name in channels:
+            print(name)
 
 def download(vIDs, path):
     downloadDir = path if path else os.path.expanduser("~") + "/Downloads"
@@ -156,7 +156,7 @@ def main():
             help="plays, marks, downloads only videos from channels defined in "
                  "the filter",
             nargs='+',
-            type=int,
+            type=str,
             metavar="ID")
 
     parser.add_argument("-d", "--download",

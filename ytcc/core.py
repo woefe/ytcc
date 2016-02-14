@@ -226,20 +226,20 @@ class Ytcc:
         else:
             return self.db.list_recent_videos()
 
-    def delete_channel(self, channelID):
+    def delete_channel(self, displayname):
         """Delete (or unsubscribe) a channel.
 
         Args:
-            cID (int): The channel's ID.
+            cID (str): The channel's displayname.
         """
 
-        self.db.delete_channel(channelID)
+        self.db.delete_channel(displayname)
 
     def list_channels(self):
         """Returns a list of all subscribed channels.
 
-        Returns ([(int, str)]):
-            A list of tuples of the form (id, name).
+        Returns ([str]):
+            A list of channel names.
         """
 
         return self.db.list_channels()
