@@ -2,8 +2,8 @@
 
 _ytcc_channels () {
     local _channel_list
-    _channel_list=( "${(@f)$(ytcc -c | sed "s/  /:/")}" )
-    _describe -t values 'channel id' _channel_list || compadd "$@"
+    _channel_list=( "${(@f)$(ytcc -c)}" )
+    _describe -t values 'channel' _channel_list || compadd "$@"
 }
 
 _ytcc_videos () {
