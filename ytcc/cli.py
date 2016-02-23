@@ -20,6 +20,7 @@ from ytcc import core
 import shutil
 import argparse
 import os
+import textwrap as wrap
 
 ytcc = core.Ytcc()
 interactive = True
@@ -56,9 +57,14 @@ def print_description(description):
     if descriptionEnabled:
         columns = shutil.get_terminal_size().columns
         delimiter = "=" * columns
+        lines = description.splitlines()
+
         print("\nVideo description:")
         print(delimiter)
-        print(description)
+
+        for line in lines:
+            print(wrap.fill(line, width=columns))
+
         print(delimiter, end="\n\n")
 
 def watch_some(vIDs):
