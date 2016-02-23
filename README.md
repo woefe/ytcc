@@ -53,12 +53,12 @@ ytcc -ulw
 
 Download all unwatched videos from a channel.
 ```shell
-ytcc -f 1 -d
+ytcc -f "Jupiter Broadcasting" -d
 ```
 
 Mark all videos of a channel as watched.
 ```shell
-ytcc -f 1 -m
+ytcc -f "Jupiter Broadcasting" -m
 ```
 
 ## Video quality settings

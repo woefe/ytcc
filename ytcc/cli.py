@@ -157,7 +157,7 @@ def main():
                  "the filter",
             nargs='+',
             type=str,
-            metavar="ID")
+            metavar="NAME")
 
     parser.add_argument("-d", "--download",
             help="download the videos identified by 'ID'. The videos are saved "
