@@ -39,17 +39,17 @@ def watch_all():
     else:
         for vID, title, description, publish_date, channel in unwatchedVideos:
             if interactive:
-                choice = input('Play video "' + title + '" by "' + channel + '"? [Y/n/m/a]: ')
+                choice = input('Play video "' + title + '" by "' + channel + '"?\n[y(es)/n(o)/m(ark)/q(uit)] (Default: y): ')
             else:
                 print('Playing "' + title + '" by "' + channel + '"...')
                 choice = "y"
 
-            if choice in ( "y", "Y", ""):
+            if choice in ( "y", "Y", "", "yes"):
                 print_description(description)
                 ytcc.play_video(vID)
-            if choice in ( "m", "M"):
+            elif choice in ( "m", "M", "mark"):
                 ytcc.mark_some_watched([vID])
-            elif choice in ("a", "A"):
+            elif choice in ("q", "Q", "quit"):
                 break
 
 def print_description(description):
