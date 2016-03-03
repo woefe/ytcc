@@ -17,7 +17,6 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import sqlite3
-import time
 
 class Database:
     """Database interface for ytcc"""
@@ -88,8 +87,11 @@ class Database:
         self.dbconn.commit()
         c.close()
 
-    def _make_place_holder(self, size):
-        return "(" + ("?," * (size - 1)) + "?)"
+    def _make_place_holder(self, list):
+        if list:
+            return "(" + ("?," * (len(list) - 1)) + "?)"
+        else:
+            return "()"
 
     def add_channel(self, name, yt_channelid):
         """Adds a new channel to the database.
@@ -135,65 +137,15 @@ class Database:
         queryResult = self._execute_query_with_result(sqlstatement, (videoId,))
         return queryResult[0][0]
 
-    def list_unwatched_videos_with_filter(self, channelFilter):
-        """Returns a list of unwatched videos. The videos are published by the
-        channels in channelFilter.
 
-        Args:
-            channelFilter (list): the list of channelIds
-
-        Returns (list):
-            A list of tuples of the form (vID, title, description, publish_date, channel)
-        """
-
-        sqlstatement = """
-            select v.id, v.title, v.description, v.publish_date, c.displayname
-            from video v, channel c
-            where v.watched = 0
-                and v.publisher = c.yt_channelid
-                and c.displayname in """ + self._make_place_holder(len(channelFilter)) + """
-            order by c.id, v.publish_date asc;
-            """
-        return self._execute_query_with_result(sqlstatement, tuple(channelFilter))
-
-    def list_unwatched_videos(self):
-        """Returns a list of unwatched videos.
-
-        Returns (list):
-            A list of tuples of the form (vID, title, description, publish_date, channel).
-        """
-
-        sqlstatement = """
-            select v.id, v.title, v.description, v.publish_date, c.displayname
-            from video v, channel c
-            where v.watched = 0 and v.publisher = c.yt_channelid
-            order by c.id, v.publish_date asc;
-            """
-        return self._execute_query_with_result(sqlstatement)
-
-    def list_recent_videos_with_filter(self, channelFilter):
-        """Returns a list of videos that were added within the last week. The
+    def list_videos(self, channelFilter=None, timestamp=0, includeWatched=True):
+        """Returns a list of videos that were published after the given timestamp. The
         videos are published by the channels in channelFilter.
 
         Args:
-            channelFilter (list): the list of channelIds
-
-        Returns (list):
-            A list of tuples of the form (vID, title, description, publish_date, channel)
-        """
-
-        sqlstatement_with_filter = """
-            select v.id, v.title, v.description, v.publish_date, c.displayname
-            from video v, channel c
-            where v.publish_date > strftime("%s") - 604800
-                and v.publisher = c.yt_channelid
-                and c.displayname in """ + self._make_place_holder(len(channelFilter)) + """
-            order by c.id, v.publish_date asc;
-            """
-        return self._execute_query_with_result(sqlstatement_with_filter, tuple(channelFilter))
-
-    def list_recent_videos(self):
-        """Returns a list of videos that were added within the last week.
+            channelFilter (list): the list of channel names
+            timestamp (int): timestamp in seconds
+            includeWatched (bool): true, if watched videos should be included in the result
 
         Returns (list):
             A list of tuples of the form (vID, title, description, publish_date, channel)
@@ -202,11 +154,18 @@ class Database:
         sqlstatement = """
             select v.id, v.title, v.description, v.publish_date, c.displayname
             from video v, channel c
-            where v.publish_date > strftime("%s") - 604800
-                and v.publisher = c.yt_channelid
+            where v.publisher = c.yt_channelid
+                and v.publish_date > @timestamp
+                and (@include_watched or v.watched = 0)
+                and (@all_channels or c.displayname in """ + self._make_place_holder(channelFilter) + """)
             order by c.id, v.publish_date asc;
             """
-        return self._execute_query_with_result(sqlstatement)
+
+        sqlargs = channelFilter.copy() if channelFilter is not None else []
+        sqlargs.insert(0, timestamp)
+        sqlargs.insert(1, includeWatched)
+        sqlargs.insert(2, channelFilter is None)
+        return self._execute_query_with_result(sqlstatement, tuple(sqlargs))
 
     def mark_watched(self, channelFilter):
         sqlstatement = """

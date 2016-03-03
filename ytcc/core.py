@@ -185,10 +185,7 @@ class Ytcc:
             A list of tuples of the form (vID, title, description, publish_date, channel).
         """
 
-        if channelFilter:
-            return self.db.list_unwatched_videos_with_filter(channelFilter)
-        else:
-            return self.db.list_unwatched_videos()
+        return self.db.list_videos(channelFilter, includeWatched=False)
 
     def mark_some_watched(self, vIDs):
         """Marks the videos identified by vIDs as watched without playing them.
@@ -221,10 +218,7 @@ class Ytcc:
             A list of tuples of the form (vID, title, description, publish_date, channel)
         """
 
-        if channelFilter:
-            return self.db.list_recent_videos_with_filter(channelFilter)
-        else:
-            return self.db.list_recent_videos()
+        return self.db.list_videos(channelFilter, time.mktime(time.gmtime()) - 604800)
 
     def delete_channel(self, displayname):
         """Delete (or unsubscribe) a channel.

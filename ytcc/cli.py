@@ -107,7 +107,7 @@ def print_channels():
             print(name)
 
 def download(vIDs, path):
-    downloadDir = path if path else os.path.expanduser("~") + "/Downloads"
+    downloadDir = path if path else os.path.expanduser("~/Downloads")
     videoIDs = vIDs if vIDs else map(lambda x: x[0], ytcc.list_unwatched_videos(channelFilter))
     for vID in videoIDs:
         ytcc.download_video(vID, downloadDir)
