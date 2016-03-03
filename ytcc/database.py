@@ -175,7 +175,7 @@ class Database:
                 and publisher in (
                     select yt_channelid
                     from channel
-                    where displayname in """ + self._make_place_holder(len(channelFilter)) + """)
+                    where displayname in """ + self._make_place_holder(channelFilter) + """)
             """
         self._execute_query(sqlstatement, tuple(channelFilter))
 
