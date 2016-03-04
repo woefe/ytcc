@@ -18,6 +18,7 @@
 
 import sqlite3
 
+
 class Database:
     """Database interface for ytcc"""
 
@@ -137,7 +138,6 @@ class Database:
         queryResult = self._execute_query_with_result(sqlstatement, (videoId,))
         return queryResult[0][0]
 
-
     def list_videos(self, channelFilter=None, timestamp=0, includeWatched=True):
         """Returns a list of videos that were published after the given timestamp. The
         videos are published by the channels in channelFilter.
@@ -167,18 +167,29 @@ class Database:
         sqlargs.insert(2, channelFilter is None)
         return self._execute_query_with_result(sqlstatement, tuple(sqlargs))
 
-    def mark_watched(self, channelFilter):
+    def mark_watched(self, channelFilter, timestamp=0):
+        """Marks all videos that are older than the given timestamp and are published by
+        channels in the given filter as watched.
+
+        Args:
+            channelFilter (list): the list of channel names
+            timestamp (int): timestamp in seconds
+        """
+
         sqlstatement = """
             update video
             set watched = 1
             where watched = 0
+                publish_date < @timestamp
                 and publisher in (
                     select yt_channelid
                     from channel
                     where displayname in """ + self._make_place_holder(channelFilter) + """)
             """
-        self._execute_query(sqlstatement, tuple(channelFilter))
 
+        sqlargs = channelFilter.copy() if channelFilter is not None else []
+        sqlargs.insert(0, timestamp)
+        self._execute_query(sqlstatement, tuple(sqlargs))
 
     def mark_all_watched(self):
         """Marks all unwatched videos as watched without playing them."""
@@ -195,16 +206,6 @@ class Database:
 
         sqlstatement = "update video set watched = 1 where id = ?"
         self._execute_query_many(sqlstatement, [(id,) for id in vIDs])
-
-    def video_watched(self, vID):
-        """Mark a video as watched.
-
-        Args:
-            vID (int): The video's ID.
-        """
-
-        sqlstatement = "update video set watched = 1 where id = ?"
-        self._execute_query(sqlstatement, (vID,))
 
     def delete_channel(self, displayname):
         """Delete (or unsubscribe) a channel.
@@ -247,5 +248,3 @@ class Database:
             return queryResult[0]
         else:
             return None
-
-

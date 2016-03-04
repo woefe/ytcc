@@ -123,7 +123,7 @@ class Ytcc:
         ytVideoId = self.db.get_yt_video_id(vID)
         if ytVideoId:
             os.system("mpv --really-quiet https://www.youtube.com/watch?v=" + ytVideoId + " 2> /dev/null")
-            self.db.video_watched(vID)
+            self.db.mark_some_watched([vID])
 
     def download_video(self, vID, path):
         """Downloads the video identified by vID with youtube-dl and marks the
@@ -137,7 +137,7 @@ class Ytcc:
         ytVideoId = self.db.get_yt_video_id(vID)
         if os.path.isdir(path) and ytVideoId:
             os.system("youtube-dl -o '" + path + "/%(title)s' https://www.youtube.com/watch?v=" + ytVideoId)
-            self.db.video_watched(vID)
+            self.db.mark_some_watched([vID])
 
     def add_channel(self, diplayname, channelURL):
         """Subscribes to a channel.
