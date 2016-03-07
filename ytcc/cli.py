@@ -214,7 +214,6 @@ def main():
                         action="store_true")
 
     args = parser.parse_args()
-    print(args)
 
     optionExecuted = False
 
