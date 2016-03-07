@@ -62,7 +62,7 @@ def play_videos(videos, interactive):
             print_description(video.description)
             ytcc.play_video(video.id)
         elif choice in ("m", "M", "mark"):
-            ytcc.mark_some_watched([vID])
+            ytcc.mark_some_watched([video.id])
         elif choice in ("q", "Q", "quit"):
             break
 
