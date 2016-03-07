@@ -67,7 +67,7 @@ def play_videos(videos, interactive):
             break
 
 
-def watch(vIDs):
+def watch(vIDs=[]):
     if not vIDs:
         unwatchedVideos = ytcc.list_unwatched_videos(channelFilter)
         if not unwatchedVideos:
@@ -129,6 +129,12 @@ def mark_watched(vIDs):
     else:
         ytcc.mark_some_watched(vIDs)
 
+def is_directory(string):
+    if not os.path.isdir(string):
+        msg = "%r is not a directory" % string
+        raise argparse.ArgumentTypeError(msg)
+
+    return string
 
 def main():
 
@@ -178,7 +184,7 @@ def main():
     parser.add_argument("-p", "--path",
                         help="set the download path to PATH",
                         metavar="PATH",
-                        type=str)
+                        type=is_directory)
 
     parser.add_argument("-g", "--no-description",
                         help="do not print the video description before playing the video",
@@ -281,4 +287,4 @@ def main():
     if not optionExecuted:
         update_all()
         print()
-        watch_all()
+        watch()
