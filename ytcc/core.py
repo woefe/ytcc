@@ -30,11 +30,13 @@ import time
 import re
 import os
 
+
 class BadURLException(Exception):
     """Raised when a given URL does not refer to a YouTube channel."""
 
     def __init__(self, message):
         self.message = message
+
 
 class DuplicateChannelException(Exception):
     """Raised when trying to subscribe to a channel the second (or more) time."""
@@ -42,17 +44,20 @@ class DuplicateChannelException(Exception):
     def __init__(self, message):
         self.message = message
 
+
 class ChannelDoesNotExistException(Exception):
     """Raised when the url of a given channel does not exist."""
 
     def __init__(self, message):
         self.message = message
 
+
 class InvalidIDException(Exception):
     """Raised when a given video id or channel id does not exist."""
 
     def __init__(self, message):
         self.message = message
+
 
 class Ytcc:
 
@@ -65,7 +70,6 @@ class Ytcc:
         config = configparser.ConfigParser()
         config.read(str(confFile))
         return config['YTCC']["DBPath"]
-
 
     def _get_conf_file(self):
         xdgConfHome = os.getenv("XDG_CONFIG_HOME")
@@ -84,7 +88,7 @@ class Ytcc:
 
         # Create config if it does not exist.
         config = configparser.ConfigParser()
-        config['YTCC'] = {"dbpath" : "~/.local/share/ytcc/ytcc.db"}
+        config['YTCC'] = {"dbpath": "~/.local/share/ytcc/ytcc.db"}
         default.parent.mkdir(parents=True, exist_ok=True)
         default.touch()
         with default.open("w") as defaultFile:
@@ -92,16 +96,15 @@ class Ytcc:
 
         return Path(default)
 
-
     def _update_channel(self, ytChannelId, isInitialUpdate=False):
         feed = feedparser.parse("https://www.youtube.com/feeds/videos.xml?channel_id=" + ytChannelId)
         videos = [(entry.yt_videoid,
-                    entry.title,
-                    entry.description,
-                    ytChannelId,
-                    time.mktime(entry.published_parsed),
-                    0)
-                    for entry in feed.entries]
+                   entry.title,
+                   entry.description,
+                   ytChannelId,
+                   time.mktime(entry.published_parsed),
+                   0)
+                  for entry in feed.entries]
 
         with database.Database(self.dbPath) as db:
             db.add_videos(videos)
@@ -110,7 +113,7 @@ class Ytcc:
         """Checks every channel for new videos"""
 
         with Pool(os.cpu_count() * 2) as threadPool:
-            threadPool.map(self._update_channel, self.db.list_channel_yt_ids())
+            threadPool.map(self._update_channel, map(lambda channel: channel.yt_channelid, self.db.list_channels()))
 
     def play_video(self, vID):
         """Plays the video identified by vID with the mpv video player and marks
@@ -120,24 +123,28 @@ class Ytcc:
             vID (int): The (local) video id.
         """
 
-        ytVideoId = self.db.get_yt_video_id(vID)
-        if ytVideoId:
-            os.system("mpv --really-quiet https://www.youtube.com/watch?v=" + ytVideoId + " 2> /dev/null")
-            self.db.mark_some_watched([vID])
+        video = self.db.get_video(vID)
+        if video:
+            os.system("mpv --really-quiet https://www.youtube.com/watch?v=" + video.yt_videoid + " 2> /dev/null")
+            self.db.mark_some_watched([video.id])
 
-    def download_video(self, vID, path):
-        """Downloads the video identified by vID with youtube-dl and marks the
+    def download_videos(self, vIDs, path):
+        """Downloads the videos identified by the given vIDs with youtube-dl and marks the
         video watched.
 
         Args:
-            vID (int): The (local) video id.
+            vIDs (list): The (local) video ids.
             path (str): The directory where the download is saved.
         """
+        downloadDir = path if path else os.path.expanduser("~/Downloads")
+        if not os.path.isdir(downloadDir):
+            return
 
-        ytVideoId = self.db.get_yt_video_id(vID)
-        if os.path.isdir(path) and ytVideoId:
-            os.system("youtube-dl -o '" + path + "/%(title)s' https://www.youtube.com/watch?v=" + ytVideoId)
-            self.db.mark_some_watched([vID])
+        for vID in vIDs:
+            video = self.db.get_video(vID)
+            if video:
+                os.system("youtube-dl -o '" + downloadDir + "/%(title)s' https://www.youtube.com/watch?v=" + video.yt_videoid)
+                self.db.mark_some_watched([vID])
 
     def add_channel(self, diplayname, channelURL):
         """Subscribes to a channel.
@@ -238,7 +245,7 @@ class Ytcc:
 
         return self.db.list_channels()
 
-    def get_video_info(self, vID):
+    def get_videos(self, vIDs):
         """Returns id, title, description, publish date, channel name for a
         given video id.
 
@@ -247,4 +254,5 @@ class Ytcc:
             id does not exist.
         """
 
-        return self.db.get_video_info(vID)
+        # filter None values
+        return list(filter(lambda x: x, map(self.db.get_video, vIDs)))

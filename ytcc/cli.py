@@ -50,17 +50,17 @@ def print_description(description):
 
 
 def play_videos(videos, interactive):
-    for vID, title, description, publish_date, channel in videos:
+    for video in videos:
         if interactive:
-            choice = input('Play video "' + title + '" by "' + channel +
+            choice = input('Play video "' + video.title + '" by "' + video.channelname +
                            '"?\n[y(es)/n(o)/m(ark)/q(uit)] (Default: y): ')
         else:
-            print('Playing "' + title + '" by "' + channel + '"...')
+            print('Playing "' + video.title + '" by "' + video.channelname + '"...')
             choice = "y"
 
         if choice in ("y", "Y", "", "yes"):
-            print_description(description)
-            ytcc.play_video(vID)
+            print_description(video.description)
+            ytcc.play_video(video.id)
         elif choice in ("m", "M", "mark"):
             ytcc.mark_some_watched([vID])
         elif choice in ("q", "Q", "quit"):
@@ -75,7 +75,7 @@ def watch(vIDs=[]):
         else:
             play_videos(unwatchedVideos, interactive)
     else:
-        play_videos(list(filter(lambda x: x, map(ytcc.get_video_info, vIDs))), False)
+        play_videos(ytcc.get_videos(vIDs), False)
 
 
 def print_unwatched_videos():
@@ -83,8 +83,8 @@ def print_unwatched_videos():
     if not unwatchedVideos:
         print("No unwatched videos.")
     else:
-        for vID, title, description, publish_date, channel in unwatchedVideos:
-            print(vID, " " + channel + ": " + title)
+        for video in unwatchedVideos:
+            print(video.id, " " + video.channelname + ": " + video.title)
 
 
 def print_recent_videos():
@@ -92,8 +92,8 @@ def print_recent_videos():
     if not recentVideos:
         print("No videos were added recently.")
     else:
-        for vID, title, description, publish_date, channel in recentVideos:
-            print(vID, " " + channel + ": " + title)
+        for video in recentVideos:
+            print(video.id, " " + video.channelname + ": " + video.title)
 
 
 def print_channels():
@@ -101,15 +101,13 @@ def print_channels():
     if not channels:
         print("No channels added, yet.")
     else:
-        for name in channels:
-            print(name)
+        for channel in channels:
+            print(channel.displayname)
 
 
 def download(vIDs, path):
-    downloadDir = path if path else os.path.expanduser("~/Downloads")
-    videoIDs = vIDs if vIDs else map(lambda x: x[0], ytcc.list_unwatched_videos(channelFilter))
-    for vID in videoIDs:
-        ytcc.download_video(vID, downloadDir)
+    videoIDs = vIDs if vIDs else map(lambda video: video.id, ytcc.list_unwatched_videos(channelFilter))
+    ytcc.download_videos(videoIDs, path)
 
 
 def add_channel(name, channelURL):
@@ -129,12 +127,14 @@ def mark_watched(vIDs):
     else:
         ytcc.mark_some_watched(vIDs)
 
+
 def is_directory(string):
     if not os.path.isdir(string):
         msg = "%r is not a directory" % string
         raise argparse.ArgumentTypeError(msg)
 
     return string
+
 
 def main():
 

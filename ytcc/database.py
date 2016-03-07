@@ -17,6 +17,8 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import sqlite3
+from ytcc.video import Video
+from ytcc.channel import Channel
 
 
 class Database:
@@ -112,31 +114,9 @@ class Database:
             A list of tuples of the form (id, name).
         """
 
-        sqlstatement = "select displayname from channel;"
+        sqlstatement = "select * from channel;"
         queryResult = self._execute_query_with_result(sqlstatement)
-        return [x[0] for x in queryResult]
-
-    def list_channel_yt_ids(self):
-        """Returns a list of the id on youtube of every channel.
-
-        Returns (list of string):
-            A list containing the youtube ids of all channels.
-        """
-
-        sqlstatement = "select yt_channelid from channel;"
-        queryResult = self._execute_query_with_result(sqlstatement)
-        return [x[0] for x in queryResult]
-
-    def get_yt_video_id(self, videoId):
-        """Returns the videoId on youtube for a given (internal) videoId.
-
-        Returns (str):
-            The youtube videoId.
-        """
-
-        sqlstatement = "select yt_videoid from video where id = ?;"
-        queryResult = self._execute_query_with_result(sqlstatement, (videoId,))
-        return queryResult[0][0]
+        return [Channel(*x) for x in queryResult]
 
     def list_videos(self, channelFilter=None, timestamp=0, includeWatched=True):
         """Returns a list of videos that were published after the given timestamp. The
@@ -152,7 +132,7 @@ class Database:
         """
 
         sqlstatement = """
-            select v.id, v.title, v.description, v.publish_date, c.displayname
+            select v.id, v.yt_videoid, v.title, v.description, v.publish_date, c.displayname
             from video v, channel c
             where v.publisher = c.yt_channelid
                 and v.publish_date > @timestamp
@@ -165,7 +145,28 @@ class Database:
         sqlargs.insert(0, timestamp)
         sqlargs.insert(1, includeWatched)
         sqlargs.insert(2, channelFilter is None)
-        return self._execute_query_with_result(sqlstatement, tuple(sqlargs))
+        queryResult = self._execute_query_with_result(sqlstatement, tuple(sqlargs))
+        return [Video(*x) for x in queryResult]
+
+    def get_video(self, vID):
+        """Returns id, title, description, publish date, channel name for a
+        given video id.
+
+        Returns (tuple)
+            The tuple containing all the above listed information or None if the
+            id does not exist.
+        """
+
+        sqlstatement = """
+            select v.id, v.yt_videoid, v.title, v.description, v.publish_date, c.displayname
+            from video v, channel c
+            where v.id = ? and v.publisher = c.yt_channelid
+            """
+        queryResult = self._execute_query_with_result(sqlstatement, (vID,))
+        if queryResult:
+            return Video(*queryResult[0])
+        else:
+            return None
 
     def mark_watched(self, channelFilter, timestamp=0):
         """Marks all videos that are older than the given timestamp and are published by
@@ -229,22 +230,3 @@ class Database:
         sqlstatement = "insert or ignore into video(yt_videoid, title, description, publisher, publish_date, watched) values (?, ?, ?, ?, ?, ?);"
         self._execute_query_many(sqlstatement, videos)
 
-    def get_video_info(self, vID):
-        """Returns id, title, description, publish date, channel name for a
-        given video id.
-
-        Returns (tuple)
-            The tuple containing all the above listed information or None if the
-            id does not exist.
-        """
-
-        sqlstatement = """
-            select v.id, v.title, v.description, v.publish_date, c.displayname
-            from video v, channel c
-            where v.id = ? and v.publisher = c.yt_channelid
-            """
-        queryResult = self._execute_query_with_result(sqlstatement, (vID,))
-        if queryResult:
-            return queryResult[0]
-        else:
-            return None
