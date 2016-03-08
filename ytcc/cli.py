@@ -22,20 +22,20 @@ import argparse
 import os
 import textwrap as wrap
 
-ytcc = core.Ytcc()
-interactive = True
-descriptionEnabled = True
-channelFilter = None
+ytcc_core = core.Ytcc()
+interactive_enabled = True
+description_enabled = True
+channel_filter = None
 
 
 def update_all():
     print("Updating channels...")
-    ytcc.update_all()
+    ytcc_core.update_all()
 
 
 def print_description(description):
-    global descriptionEnabled
-    if descriptionEnabled:
+    global description_enabled
+    if description_enabled:
         columns = shutil.get_terminal_size().columns
         delimiter = "=" * columns
         lines = description.splitlines()
@@ -60,44 +60,44 @@ def play_videos(videos, interactive):
 
         if choice in ("y", "Y", "", "yes"):
             print_description(video.description)
-            ytcc.play_video(video.id)
+            ytcc_core.play_video(video.id)
         elif choice in ("m", "M", "mark"):
-            ytcc.mark_some_watched([video.id])
+            ytcc_core.mark_some_watched([video.id])
         elif choice in ("q", "Q", "quit"):
             break
 
 
-def watch(vIDs=[]):
-    if not vIDs:
-        unwatchedVideos = ytcc.list_unwatched_videos(channelFilter)
-        if not unwatchedVideos:
+def watch(video_ids=None):
+    if not video_ids:
+        unwatched_videos = ytcc_core.list_unwatched_videos(channel_filter)
+        if not unwatched_videos:
             print("No unwatched videos to play.")
         else:
-            play_videos(unwatchedVideos, interactive)
+            play_videos(unwatched_videos, interactive_enabled)
     else:
-        play_videos(ytcc.get_videos(vIDs), False)
+        play_videos(ytcc_core.get_videos(video_ids), False)
 
 
 def print_unwatched_videos():
-    unwatchedVideos = ytcc.list_unwatched_videos(channelFilter)
-    if not unwatchedVideos:
+    unwatched_videos = ytcc_core.list_unwatched_videos(channel_filter)
+    if not unwatched_videos:
         print("No unwatched videos.")
     else:
-        for video in unwatchedVideos:
+        for video in unwatched_videos:
             print(video.id, " " + video.channelname + ": " + video.title)
 
 
 def print_recent_videos():
-    recentVideos = ytcc.list_recent_videos(channelFilter)
-    if not recentVideos:
+    recent_videos = ytcc_core.list_recent_videos(channel_filter)
+    if not recent_videos:
         print("No videos were added recently.")
     else:
-        for video in recentVideos:
+        for video in recent_videos:
             print(video.id, " " + video.channelname + ": " + video.title)
 
 
 def print_channels():
-    channels = ytcc.list_channels()
+    channels = ytcc_core.list_channels()
     if not channels:
         print("No channels added, yet.")
     else:
@@ -105,14 +105,14 @@ def print_channels():
             print(channel.displayname)
 
 
-def download(vIDs, path):
-    videoIDs = vIDs if vIDs else map(lambda video: video.id, ytcc.list_unwatched_videos(channelFilter))
-    ytcc.download_videos(videoIDs, path)
+def download(video_ids, path):
+    ids = video_ids if video_ids else map(lambda video: video.id, ytcc_core.list_unwatched_videos(channel_filter))
+    ytcc_core.download_videos(ids, path)
 
 
-def add_channel(name, channelURL):
+def add_channel(name, channel_url):
     try:
-        ytcc.add_channel(name, channelURL)
+        ytcc_core.add_channel(name, channel_url)
     except core.BadURLException as e:
         print(e.message)
     except core.DuplicateChannelException as e:
@@ -121,11 +121,11 @@ def add_channel(name, channelURL):
         print(e.message)
 
 
-def mark_watched(vIDs):
-    if not vIDs or vIDs[0] == "all":
-        ytcc.mark_watched(channelFilter)
+def mark_watched(video_ids):
+    if not video_ids or video_ids[0] == "all":
+        ytcc_core.mark_watched(channel_filter)
     else:
-        ytcc.mark_some_watched(vIDs)
+        ytcc_core.mark_some_watched(video_ids)
 
 
 def is_directory(string):
@@ -153,10 +153,10 @@ def main():
     parser.add_argument("-r", "--delete-channel",
                         help="unsubscribe from the channel identified by 'ID'",
                         metavar="ID",
-                        type=int)
+                        type=str)
 
     parser.add_argument("-u", "--update",
-                        help="update the videolist",
+                        help="update the video list",
                         action="store_true")
 
     parser.add_argument("-w", "--watch",
@@ -215,7 +215,7 @@ def main():
 
     args = parser.parse_args()
 
-    optionExecuted = False
+    option_executed = False
 
     if args.version:
         import ytcc
@@ -228,62 +228,62 @@ def main():
         return
 
     if args.yes:
-        global interactive
-        interactive = False
+        global interactive_enabled
+        interactive_enabled = False
 
     if args.no_description:
-        global descriptionEnabled
-        descriptionEnabled = False
+        global description_enabled
+        description_enabled = False
 
     if args.channel_filter:
-        global channelFilter
-        channelFilter = args.channel_filter
+        global channel_filter
+        channel_filter = args.channel_filter
 
     if args.add_channel:
         add_channel(*args.add_channel)
-        optionExecuted = True
+        option_executed = True
 
     if args.list_channels:
         print_channels()
-        optionExecuted = True
+        option_executed = True
 
     if args.delete_channel:
-        ytcc.delete_channel(args.delete_channel)
-        optionExecuted = True
+        ytcc_core.delete_channel(args.delete_channel)
+        option_executed = True
 
     if args.download is not None:
         download(args.download, args.path)
-        optionExecuted = True
+        option_executed = True
 
     if args.update:
-        if optionExecuted:
+        if option_executed:
             print()
         update_all()
-        optionExecuted = True
+        option_executed = True
 
     if args.list_unwatched:
-        if optionExecuted:
+        if option_executed:
             print()
         print_unwatched_videos()
-        optionExecuted = True
+        option_executed = True
 
     if args.watch is not None:
-        if optionExecuted:
+        if option_executed:
             print()
         watch(args.watch)
-        optionExecuted = True
+        option_executed = True
 
     if args.mark_watched is not None:
         mark_watched(args.mark_watched)
-        optionExecuted = True
+        option_executed = True
 
     if args.list_recent:
-        if optionExecuted:
+        if option_executed:
             print()
         print_recent_videos()
-        optionExecuted = True
+        option_executed = True
 
-    if not optionExecuted:
+    if not option_executed:
         update_all()
         print()
         watch()
