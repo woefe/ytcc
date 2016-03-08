@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
+
 class Video:
 
     def __init__(self, id, yt_videoid, title, description, publish_date, channelname):

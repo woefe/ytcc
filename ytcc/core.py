@@ -53,38 +53,38 @@ class ChannelDoesNotExistException(Exception):
 
 
 class InvalidIDException(Exception):
-    """Raised when a given video id or channel id does not exist."""
+    """Raised when a given video ID or channel ID does not exist."""
 
     def __init__(self, message):
         self.message = message
 
 
 class Ytcc:
-
     def __init__(self):
         self.dbPath = Path(self._get_db_path())
         self.db = database.Database(self.dbPath)
 
     def _get_db_path(self):
-        confFile = self._get_conf_file()
+        conf_file = self._get_conf_file()
         config = configparser.ConfigParser()
-        config.read(str(confFile))
+        config.read(str(conf_file))
         return config['YTCC']["DBPath"]
 
-    def _get_conf_file(self):
-        xdgConfHome = os.getenv("XDG_CONFIG_HOME")
-        if xdgConfHome is not None:
-            confFile = Path(xdgConfHome + "/ytcc/ytcc.conf")
-            if confFile.is_file():
-                return confFile
+    @staticmethod
+    def _get_conf_file():
+        xdg_conf_home = os.getenv("XDG_CONFIG_HOME")
+        if xdg_conf_home is not None:
+            conf_file = Path(xdg_conf_home + "/ytcc/ytcc.conf")
+            if conf_file.is_file():
+                return conf_file
 
         default = Path(os.path.expanduser("~/.config/ytcc/ytcc.conf"))
         if default.is_file():
             return default
 
-        confFile = Path(os.path.expanduser("~/.ytcc.conf"))
-        if confFile.is_file():
-            return confFile
+        conf_file = Path(os.path.expanduser("~/.ytcc.conf"))
+        if conf_file.is_file():
+            return conf_file
 
         # Create config if it does not exist.
         config = configparser.ConfigParser()
@@ -96,12 +96,12 @@ class Ytcc:
 
         return Path(default)
 
-    def _update_channel(self, ytChannelId, isInitialUpdate=False):
-        feed = feedparser.parse("https://www.youtube.com/feeds/videos.xml?channel_id=" + ytChannelId)
+    def _update_channel(self, yt_channel_id):
+        feed = feedparser.parse("https://www.youtube.com/feeds/videos.xml?channel_id=" + yt_channel_id)
         videos = [(entry.yt_videoid,
                    entry.title,
                    entry.description,
-                   ytChannelId,
+                   yt_channel_id,
                    time.mktime(entry.published_parsed),
                    0)
                   for entry in feed.entries]
@@ -115,54 +115,52 @@ class Ytcc:
         with Pool(os.cpu_count() * 2) as threadPool:
             threadPool.map(self._update_channel, map(lambda channel: channel.yt_channelid, self.db.list_channels()))
 
-    def play_video(self, vID):
-        """Plays the video identified by vID with the mpv video player and marks
-        the video watched.
+    def play_video(self, video_id):
+        """Plays the video identified by the given video ID with the mpv video player and marks the video watched.
 
         Args:
-            vID (int): The (local) video id.
+            video_id (int): The (local) video ID.
         """
 
-        video = self.db.get_video(vID)
+        video = self.db.get_video(video_id)
         if video:
             os.system("mpv --really-quiet https://www.youtube.com/watch?v=" + video.yt_videoid + " 2> /dev/null")
             self.db.mark_some_watched([video.id])
 
-    def download_videos(self, vIDs, path):
-        """Downloads the videos identified by the given vIDs with youtube-dl and marks the
-        video watched.
+    def download_videos(self, video_ids, path):
+        """Downloads the videos identified by the given video IDs with youtube-dl and marks the videos watched.
 
         Args:
-            vIDs (list): The (local) video ids.
+            video_ids ([int]): The (local) video IDs.
             path (str): The directory where the download is saved.
         """
-        downloadDir = path if path else os.path.expanduser("~/Downloads")
-        if not os.path.isdir(downloadDir):
+
+        download_dir = path if path else os.path.expanduser("~/Downloads")
+        if not os.path.isdir(download_dir):
             return
 
-        for vID in vIDs:
+        for vID in video_ids:
             video = self.db.get_video(vID)
             if video:
-                os.system("youtube-dl -o '" + downloadDir + "/%(title)s' https://www.youtube.com/watch?v=" + video.yt_videoid)
+                os.system("youtube-dl -o '" + download_dir +
+                          "/%(title)s' https://www.youtube.com/watch?v=" + video.yt_videoid)
                 self.db.mark_some_watched([vID])
 
-    def add_channel(self, diplayname, channelURL):
+    def add_channel(self, displayname, channel_url):
         """Subscribes to a channel.
 
         Args:
             displayname (str): a human readable name of the channel.
-            channelURL (str): the url to the channel's home page.
+            channel_url (str): the url to the channel's home page.
 
         Raises:
             ChannelDoesNotExistException: when the given URL does not exist.
-            DuplicateChannelException: when trying to subscribe to a channel the
-                second (or more) time.
-            BadURLException: when a given URL does not refer to a YouTube
-                channel.
+            DuplicateChannelException: when trying to subscribe to a channel the second (or more) time.
+            BadURLException: when a given URL does not refer to a YouTube channel.
         """
 
         regex = "^(https?://)?(www\.)?youtube\.com/(?P<type>user|channel)/(?P<channel>[^/?=]+)$"
-        match = re.search(regex, channelURL)
+        match = re.search(regex, channel_url)
 
         if match:
             channel = match.group("channel")
@@ -178,60 +176,66 @@ class Ytcc:
             yt_channelid = root.xpath('/html/head/meta[@itemprop="channelId"]')[0].attrib.get("content")
 
             try:
-                self.db.add_channel(diplayname, yt_channelid)
+                self.db.add_channel(displayname, yt_channelid)
             except sqlite3.IntegrityError:
                 raise DuplicateChannelException("Channel already subscribed: " + channel)
 
         else:
-            raise BadURLException("'" + channelURL + "' is not a valid URL")
+            raise BadURLException("'" + channel_url + "' is not a valid URL")
 
-    def list_unwatched_videos(self, channelFilter=None):
-        """Returns a list of unwatched videos.
+    def list_unwatched_videos(self, channel_filter=None):
+        """Returns a list of unwatched videos. The videos are published by the channels given in the channel filter.
+
+        Args:
+            channel_filter ([str]): a list of channel names
 
         Returns (list):
-            A list of tuples of the form (vID, title, description, publish_date, channel).
+            A list of ytcc.video.Video objects
         """
 
-        return self.db.list_videos(channelFilter, includeWatched=False)
+        return self.db.list_videos(channel_filter, include_watched=False)
 
-    def mark_some_watched(self, vIDs):
-        """Marks the videos identified by vIDs as watched without playing them.
-        Invalid video ids are ignored.
+    def mark_some_watched(self, video_ids):
+        """Marks the videos identified by the given video IDs as watched without playing them. Invalid video IDs are
+        ignored.
 
         Args:
-            vIDs (list of int): The video IDs to mark as watched.
+            video_ids ([int]): The video IDs to mark as watched.
         """
 
-        self.db.mark_some_watched(vIDs)
+        self.db.mark_some_watched(video_ids)
 
-    def mark_watched(self, channelFilter=None):
-        """Marks the videos of channels specified in the filter as watched
-        witout playing them. If channelFilter is None all unwatched videos are
-        marked as watched.
+    def mark_watched(self, channel_filter=None):
+        """Marks the videos of channels specified in the filter as watched without playing them. If channelFilter is
+        None all unwatched videos are marked as watched.
 
         Args:
-            channelFilter ([int]): the channel filter.
+            channel_filter ([int]): the channel filter.
         """
 
-        if channelFilter:
-            self.db.mark_watched(channelFilter)
+        if channel_filter:
+            self.db.mark_watched(channel_filter)
         else:
             self.db.mark_all_watched()
 
-    def list_recent_videos(self, channelFilter=None):
-        """Returns a list of videos that were added within the last week.
+    def list_recent_videos(self, channel_filter=None):
+        """Returns a list of videos that were added within the last week. The videos are published by the channels given
+        in the channel filter.
+
+        Args:
+            channel_filter ([str]): a list of channel names
 
         Returns (list):
-            A list of tuples of the form (vID, title, description, publish_date, channel)
+            A list of ytcc.video.Video objects
         """
 
-        return self.db.list_videos(channelFilter, time.mktime(time.gmtime()) - 604800)
+        return self.db.list_videos(channel_filter, time.mktime(time.gmtime()) - 604800)
 
     def delete_channel(self, displayname):
         """Delete (or unsubscribe) a channel.
 
         Args:
-            cID (str): The channel's displayname.
+            displayname (str): The channel's displayname.
         """
 
         self.db.delete_channel(displayname)
@@ -245,14 +249,15 @@ class Ytcc:
 
         return self.db.list_channels()
 
-    def get_videos(self, vIDs):
-        """Returns id, title, description, publish date, channel name for a
-        given video id.
+    def get_videos(self, video_ids):
+        """Returns the ytcc.video.Video object for the given video IDs.
 
-        Returns (tuple)
-            The tuple containing all the above listed information or None if the
-            id does not exist.
+        Args:
+            video_ids ([int]): the video IDs.
+
+        Returns (list)
+            A list of ytcc.video.Video objects
         """
 
         # filter None values
-        return list(filter(lambda x: x, map(self.db.get_video, vIDs)))
+        return list(filter(lambda x: x, map(self.db.get_video, video_ids)))

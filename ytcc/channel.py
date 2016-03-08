@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
-class Channel:
 
+class Channel:
     def __init__(self, id, displayname, yt_channelid):
         self.id = id
         self.displayname = displayname
