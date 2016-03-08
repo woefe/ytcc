@@ -68,10 +68,10 @@ class Database:
         self.dbconn.commit()
         c.close()
 
-    def _execute_query(self, sqlstatement, args=()):
+    def _execute_query(self, sql, args=()):
         # Helper method to execute sql queries that do not have return values e.g. update, insert,...
         c = self.dbconn.cursor()
-        c.execute(sqlstatement, args)
+        c.execute(sql, args)
         self.dbconn.commit()
         c.close()
 
@@ -183,7 +183,7 @@ class Database:
             update video
             set watched = 1
             where watched = 0
-                publish_date < @timestamp
+                and publish_date > @timestamp
                 and publisher in (
                     select yt_channelid
                     from channel
