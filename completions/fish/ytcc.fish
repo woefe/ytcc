@@ -17,6 +17,7 @@ complete -c $cmd -f -l download        -s d -d "download the videos"
 complete -c $cmd -f -l mark-watched    -s m -d "mark videos as watched"
 complete -c $cmd -f -l channel-filter  -s f -d "apply a filter"
 complete -c $cmd -f -l delete-channel  -s r -d "unsubscribe from a channel"
+complete -c $cmd -f -l cleanup              -d "cleanup and shrink database file"
 
 complete -c $cmd -f -n $channel -a "(ytcc --list-channels)"
 complete -c $cmd -f -n $video -a "(ytcc --list-unwatched | cut -f1 -d' ')"

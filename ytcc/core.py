@@ -261,3 +261,8 @@ class Ytcc:
 
         # filter None values
         return list(filter(lambda x: x, map(self.db.get_video, video_ids)))
+
+    def cleanup(self):
+        """Deletes old videos from the database."""
+
+        self.db.cleanup()

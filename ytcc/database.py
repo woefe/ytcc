@@ -231,3 +231,24 @@ class Database:
         sql = "insert or ignore into video(yt_videoid, title, description, publisher, publish_date, watched)" \
               " values (?, ?, ?, ?, ?, ?);"
         self._execute_query_many(sql, videos)
+
+    def cleanup(self):
+        """Deletes all videos from all channels, but keeps the 30 latest videos of every channel."""
+
+        sql = """
+            delete from video
+            where id in (
+                select v.id
+                from video v, channel c
+                where v.publisher = c.yt_channelid and c.displayname = ?
+                    and v.publish_date <= (
+                        select v.publish_date
+                        from video v, channel chan
+                        where v.publisher = chan.yt_channelid and chan.displayname = c.displayname
+                        order by v.publish_date desc
+                        limit 30,1
+                    )
+            )
+            """
+        self._execute_query_many(sql, [(e.displayname,) for e in self.list_channels()])
+        self._execute_query("vacuum;")

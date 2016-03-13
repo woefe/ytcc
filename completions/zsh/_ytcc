@@ -1,12 +1,12 @@
 #compdef ytcc
 
-_ytcc_channels () {
+_ytcc_channels() {
     local _channel_list
     _channel_list=( "${(@f)$(ytcc -c)}" )
     _describe -t values 'channel' _channel_list || compadd "$@"
 }
 
-_ytcc_videos () {
+_ytcc_videos() {
     local _video_list
     _video_list=( "${(@f)$(ytcc -l | sed "s/  /:/")}" )
 
@@ -28,7 +28,7 @@ _ytcc_mark() {
 
 }
 
-_ytcc () {
+_ytcc() {
     local context state line
     local -A opt_args
 
@@ -47,6 +47,7 @@ _ytcc () {
         '(-l --list-unwatched)'{-l,--list-unwatched}'[print a list of unwatched videos]' \
         '(-n --list-recent)'{-n,--list-recent}'[print a list of videos that were recently added]' \
         '(-y --yes)'{-y,--yes}'[automatically answer all questions with yes]' \
+        '(--cleanup)--cleanup[cleanup and shrink database file]' \
         '(-v --version)'{-v,--version}'[output version information and exit]' \
 
     case $state in

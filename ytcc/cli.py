@@ -127,6 +127,9 @@ def mark_watched(video_ids):
     else:
         ytcc_core.mark_some_watched(video_ids)
 
+def cleanup():
+    print("Cleaning up database...")
+    ytcc_core.cleanup()
 
 def is_directory(string):
     if not os.path.isdir(string):
@@ -209,6 +212,10 @@ def main():
                         help="automatically answer all questions with yes",
                         action="store_true")
 
+    parser.add_argument("--cleanup",
+                        help="removes old videos from the database and shrinks the size of the database file",
+                        action="store_true")
+
     parser.add_argument("-v", "--version",
                         help="output version information and exit",
                         action="store_true")
@@ -238,6 +245,10 @@ def main():
     if args.channel_filter:
         global channel_filter
         channel_filter = args.channel_filter
+
+    if args.cleanup:
+        cleanup()
+        option_executed = True
 
     if args.add_channel:
         add_channel(*args.add_channel)
