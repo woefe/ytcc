@@ -60,18 +60,28 @@ class InvalidIDException(Exception):
 
 
 class Ytcc:
-    def __init__(self):
-        self.dbPath = Path(self._get_db_path())
-        self.db = database.Database(self.dbPath)
+    DEFAULT_DB_PATH = "~/.local/share/ytcc/ytcc.db"
+    DEFAULT_DLOAD_DIR = "~/Downloads"
 
-    def _get_db_path(self):
-        conf_file = self._get_conf_file()
-        config = configparser.ConfigParser()
-        config.read(str(conf_file))
-        return config['YTCC']["DBPath"]
+    def __init__(self):
+        self.config = configparser.ConfigParser()
+        self.config.read(str(self._get_conf_file()))
+
+        self.download_dir = os.path.expanduser(self.config["YTCC"]["DownloadDir"])
+        self.dbPath = os.path.expanduser(self.config["YTCC"]["DBPath"])
+        self.db = database.Database(Path(self.dbPath))
+
 
     @staticmethod
     def _get_conf_file():
+        """Searches for the config file in
+            1. $XDG_CONFIG_HOME/ytcc/ytcc.conf
+            2. ~/.config/ytcc/ytcc.conf
+            3. ~/.ytcc.conf
+        If no config file is found in these three locations, a default config file is created in
+        '~/.config/ytcc/ytcc.conf'
+        """
+
         xdg_conf_home = os.getenv("XDG_CONFIG_HOME")
         if xdg_conf_home is not None:
             conf_file = Path(xdg_conf_home + "/ytcc/ytcc.conf")
@@ -88,7 +98,10 @@ class Ytcc:
 
         # Create config if it does not exist.
         config = configparser.ConfigParser()
-        config['YTCC'] = {"dbpath": "~/.local/share/ytcc/ytcc.db"}
+        config["YTCC"] = {
+                "DBPath": DEFAULT_DB_PATH,
+                "DownloadDir": DEFAULT_DLOAD_DIR
+                }
         default.parent.mkdir(parents=True, exist_ok=True)
         default.touch()
         with default.open("w") as defaultFile:
@@ -106,7 +119,7 @@ class Ytcc:
                    0)
                   for entry in feed.entries]
 
-        with database.Database(self.dbPath) as db:
+        with database.Database(Path(self.dbPath)) as db:
             db.add_videos(videos)
 
     def update_all(self):
@@ -135,7 +148,13 @@ class Ytcc:
             path (str): The directory where the download is saved.
         """
 
-        download_dir = path if path else os.path.expanduser("~/Downloads")
+        download_dir = os.path.expanduser("~/Downloads")
+
+        if self.download_dir:
+            download_dir = self.download_dir
+        elif path:
+            download_dir = path
+
         if not os.path.isdir(download_dir):
             return
 
