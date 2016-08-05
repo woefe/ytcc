@@ -119,33 +119,36 @@ class Database:
         result = self._execute_query_with_result(sql)
         return [Channel(*x) for x in result]
 
-    def list_videos(self, channel_filter=None, timestamp=0, include_watched=True):
+    def list_videos(self, channel_filter=None, begin_timestamp=0, end_timestamp=0, include_watched=True):
         """Returns a list of videos that were published after the given timestamp. The
         videos are published by the channels in channelFilter.
 
         Args:
             channel_filter (list): the list of channel names
-            timestamp (int): timestamp in seconds
+            begin_timestamp (int): timestamp in seconds
+            end_timestamp (int): timestamp in seconds
             include_watched (bool): true, if watched videos should be included in the result
 
         Returns (list):
-            A list of tuples of the form (vID, title, description, publish_date, channel)
+            A list of tuples of ytcc.video.Video
         """
 
         sql = """
             select v.id, v.yt_videoid, v.title, v.description, v.publish_date, c.displayname
             from video v, channel c
             where v.publisher = c.yt_channelid
-                and v.publish_date > @timestamp
+                and v.publish_date > @begin_timestamp
+                and v.publish_date < @end_timestamp
                 and (@include_watched or v.watched = 0)
                 and (@all_channels or c.displayname in """ + self._make_place_holder(channel_filter) + """)
             order by c.id, v.publish_date asc;
             """
 
         sql_args = channel_filter.copy() if channel_filter is not None else []
-        sql_args.insert(0, timestamp)
-        sql_args.insert(1, include_watched)
-        sql_args.insert(2, channel_filter is None)
+        sql_args.insert(0, begin_timestamp)
+        sql_args.insert(1, end_timestamp)
+        sql_args.insert(2, include_watched)
+        sql_args.insert(3, channel_filter is None or len(channel_filter) < 1)
         result = self._execute_query_with_result(sql, tuple(sql_args))
         return [Video(*x) for x in result]
 
@@ -170,20 +173,25 @@ class Database:
         else:
             return None
 
-    def mark_watched(self, channel_filter, timestamp=0):
+    def mark_watched(self, channel_filter=None, begin_timestamp=0, end_timestamp=0):
         """Marks all videos that are older than the given timestamp and are published by channels in the given filter as
         watched.
 
         Args:
             channel_filter (list): the list of channel names
-            timestamp (int): timestamp in seconds
+            begin_timestamp (int): timestamp in seconds
+            end_timestamp (int): timestamp in seconds
+
+        Returns (list):
+            A list of tuples of ytcc.video.Video
         """
 
         sql = """
             update video
             set watched = 1
             where watched = 0
-                and publish_date > @timestamp
+                and publish_date > @begin_timestamp
+                and publish_date < @end_timestamp
                 and publisher in (
                     select yt_channelid
                     from channel
@@ -191,7 +199,8 @@ class Database:
             """
 
         sql_args = channel_filter.copy() if channel_filter is not None else []
-        sql_args.insert(0, timestamp)
+        sql_args.insert(0, begin_timestamp)
+        sql_args.insert(1, end_timestamp)
         self._execute_query(sql, tuple(sql_args))
 
     def mark_all_watched(self):

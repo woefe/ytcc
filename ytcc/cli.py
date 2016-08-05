@@ -17,6 +17,7 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 from ytcc import core
+from dateutil import parser as date_parser
 import shutil
 import argparse
 import os
@@ -25,7 +26,6 @@ import textwrap as wrap
 ytcc_core = core.Ytcc()
 interactive_enabled = True
 description_enabled = True
-channel_filter = None
 
 
 def update_all():
@@ -69,30 +69,21 @@ def play_videos(videos, interactive):
 
 def watch(video_ids=None):
     if not video_ids:
-        unwatched_videos = ytcc_core.list_unwatched_videos(channel_filter)
-        if not unwatched_videos:
-            print("No unwatched videos to play.")
+        _videos = ytcc_core.list_videos()
+        if not _videos:
+            print("No videos to watch. No videos match the given criteria.")
         else:
-            play_videos(unwatched_videos, interactive_enabled)
+            play_videos(_videos, interactive_enabled)
     else:
         play_videos(ytcc_core.get_videos(video_ids), False)
 
 
-def print_unwatched_videos():
-    unwatched_videos = ytcc_core.list_unwatched_videos(channel_filter)
-    if not unwatched_videos:
-        print("No unwatched videos.")
+def print_videos():
+    videos = ytcc_core.list_videos()
+    if not videos:
+        print("No videos to list. No videos match the given criteria.")
     else:
-        for video in unwatched_videos:
-            print(video.id, " " + video.channelname + ": " + video.title)
-
-
-def print_recent_videos():
-    recent_videos = ytcc_core.list_recent_videos(channel_filter)
-    if not recent_videos:
-        print("No videos were added recently.")
-    else:
-        for video in recent_videos:
+        for video in videos:
             print(video.id, " " + video.channelname + ": " + video.title)
 
 
@@ -106,7 +97,7 @@ def print_channels():
 
 
 def download(video_ids, path):
-    ids = video_ids if video_ids else map(lambda video: video.id, ytcc_core.list_unwatched_videos(channel_filter))
+    ids = video_ids if video_ids else map(lambda video: video.id, ytcc_core.list_videos())
     ytcc_core.download_videos(ids, path)
 
 
@@ -123,13 +114,15 @@ def add_channel(name, channel_url):
 
 def mark_watched(video_ids):
     if not video_ids or video_ids[0] == "all":
-        ytcc_core.mark_watched(channel_filter)
+        ytcc_core.mark_watched()
     else:
         ytcc_core.mark_some_watched(video_ids)
+
 
 def cleanup():
     print("Cleaning up database...")
     ytcc_core.cleanup()
+
 
 def is_directory(string):
     if not os.path.isdir(string):
@@ -139,9 +132,21 @@ def is_directory(string):
     return string
 
 
+def is_date(string):
+    try:
+        date_parser.parse(string)
+    except ValueError:
+        msg = "%r is not a valid date" % string
+        raise argparse.ArgumentTypeError(msg)
+
+    return string
+
+
 def main():
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="ytcc is a commandline YouTube client that keeps track of your"
+            " favorite channels. The --list, --watch, --download, --mark-watched options can be combined with filter"
+            " options --channel-filter, --include-watched, --since, --to")
 
     parser.add_argument("-a", "--add-channel",
                         help="add a new channel. NAME is the name displayed by ytcc. URL is"
@@ -162,27 +167,54 @@ def main():
                         help="update the video list",
                         action="store_true")
 
+    parser.add_argument("-l", "--list",
+                        help="print a list of videos that match the criteria given by the filter options",
+                        action="store_true")
+
     parser.add_argument("-w", "--watch",
                         help="play the videos identified by 'ID'. Omitting the ID will "
-                        "play all unwatched videos",
+                        "play all videos specified by the filter options",
+                        nargs='*',
+                        type=int,
+                        metavar="ID")
+
+    parser.add_argument("-d", "--download",
+                        help="download the videos identified by 'ID'. The videos are saved "
+                        "in $HOME/Downloads by default. Omitting the ID will download "
+                        "all videos that match the criteria given by the filter options",
+                        nargs="*",
+                        type=int,
+                        metavar="ID")
+
+    parser.add_argument("-m", "--mark-watched",
+                        help="mark videos identified by ID as watched. Omitting the ID "
+                        "will mark all videos that match the criteria given by the filter options as watched",
                         nargs='*',
                         type=int,
                         metavar="ID")
 
     parser.add_argument("-f", "--channel-filter",
-                        help="plays, marks, downloads only videos from channels defined in "
+                        help="plays, lists, marks, downloads only videos from channels defined in "
                         "the filter",
                         nargs='+',
                         type=str,
                         metavar="NAME")
 
-    parser.add_argument("-d", "--download",
-                        help="download the videos identified by 'ID'. The videos are saved "
-                        "in $HOME/Downloads by default. Omitting the ID will download "
-                        "all unwatched videos",
-                        nargs="*",
-                        type=int,
-                        metavar="ID")
+    parser.add_argument("-n", "--include-watched",
+                        help="include already watched videos to filter rules",
+                        action="store_true")
+
+    parser.add_argument("-s", "--since",
+                        help="includes only videos published after the given date",
+                        metavar="YYYY-MM-DD",
+                        type=is_date,
+                        nargs=1)
+
+    parser.add_argument("-t", "--to",
+                        help="includes only videos published before the given date",
+                        metavar="YYYY-MM-DD",
+                        type=is_date,
+                        nargs=1)
 
     parser.add_argument("-p", "--path",
                         help="set the download path to PATH",
@@ -191,21 +223,6 @@ def main():
 
     parser.add_argument("-g", "--no-description",
                         help="do not print the video description before playing the video",
-                        action="store_true")
-
-    parser.add_argument("-m", "--mark-watched",
-                        help="mark videos identified by ID as watched. Omitting the ID "
-                        "will mark all videos as watched",
-                        nargs='*',
-                        type=int,
-                        metavar="ID")
-
-    parser.add_argument("-l", "--list-unwatched",
-                        help="print a list of unwatched videos",
-                        action="store_true")
-
-    parser.add_argument("-n", "--list-recent",
-                        help="print a list of videos that were recently added",
                         action="store_true")
 
     parser.add_argument("-y", "--yes",
@@ -243,8 +260,16 @@ def main():
         description_enabled = False
 
     if args.channel_filter:
-        global channel_filter
-        channel_filter = args.channel_filter
+        ytcc_core.set_channel_filter(args.channel_filter)
+
+    if args.since:
+        ytcc_core.set_date_begin_filter(date_parser.parse(args.since[0]))
+
+    if args.to:
+        ytcc_core.set_date_end_filter(date_parser.parse(args.to[0]))
+
+    if args.include_watched:
+        ytcc_core.set_include_watched_filter()
 
     if args.cleanup:
         cleanup()
@@ -262,20 +287,20 @@ def main():
         ytcc_core.delete_channel(args.delete_channel)
         option_executed = True
 
-    if args.download is not None:
-        download(args.download, args.path)
-        option_executed = True
-
     if args.update:
         if option_executed:
             print()
         update_all()
         option_executed = True
 
-    if args.list_unwatched:
+    if args.list:
         if option_executed:
             print()
-        print_unwatched_videos()
+        print_videos()
+        option_executed = True
+
+    if args.download is not None:
+        download(args.download, args.path)
         option_executed = True
 
     if args.watch is not None:
@@ -286,12 +311,6 @@ def main():
 
     if args.mark_watched is not None:
         mark_watched(args.mark_watched)
-        option_executed = True
-
-    if args.list_recent:
-        if option_executed:
-            print()
-        print_recent_videos()
         option_executed = True
 
     if not option_executed:

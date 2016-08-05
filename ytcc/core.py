@@ -60,6 +60,14 @@ class InvalidIDException(Exception):
 
 
 class Ytcc:
+    """The Ytcc class handles updating the YouTube RSS feed and playing and listing/filtering videos. Filters can be set
+    with with following methods:
+        set_channel_filter
+        set_date_begin_filter
+        set_date_end_filter
+        set_include_watched_filter
+    """
+
     DEFAULT_DB_PATH = "~/.local/share/ytcc/ytcc.db"
     DEFAULT_DLOAD_DIR = "~/Downloads"
 
@@ -70,7 +78,10 @@ class Ytcc:
         self.download_dir = os.path.expanduser(self.config["YTCC"]["DownloadDir"])
         self.dbPath = os.path.expanduser(self.config["YTCC"]["DBPath"])
         self.db = database.Database(Path(self.dbPath))
-
+        self.channel_filter = []
+        self.date_begin_filter = 0
+        self.date_end_filter = time.mktime(time.gmtime()) + 20
+        self.include_watched_filter = False
 
     @staticmethod
     def _get_conf_file():
@@ -99,9 +110,9 @@ class Ytcc:
         # Create config if it does not exist.
         config = configparser.ConfigParser()
         config["YTCC"] = {
-                "DBPath": DEFAULT_DB_PATH,
-                "DownloadDir": DEFAULT_DLOAD_DIR
-                }
+            "DBPath": Ytcc.DEFAULT_DB_PATH,
+            "DownloadDir": Ytcc.DEFAULT_DLOAD_DIR
+        }
         default.parent.mkdir(parents=True, exist_ok=True)
         default.touch()
         with default.open("w") as defaultFile:
@@ -121,6 +132,39 @@ class Ytcc:
 
         with database.Database(Path(self.dbPath)) as db:
             db.add_videos(videos)
+
+    def set_channel_filter(self, channel_filter):
+        """Sets the channel filter. The results when listing videos will only include videos by channels specifide in
+        the filter
+
+        Args:
+            channel_filter (list): the list of channel names
+        """
+
+        self.channel_filter = channel_filter
+
+    def set_date_begin_filter(self, begin):
+        """Sets the time filter. The results when listing videos will only include videos newer than the given time.
+
+        Args:
+            begin (datetime): the lower bound of the time filter
+        """
+
+        self.date_begin_filter = begin.timestamp()
+
+    def set_date_end_filter(self, end):
+        """Sets the time filter. The results when listing videos will only include videos older than the given time.
+
+        Args:
+            begin (datetime): the upper bound of the time filter
+        """
+
+        self.date_end_filter = end.timestamp()
+
+    def set_include_watched_filter(self):
+        """Sets "watched video" filter. The results when listing videos will both watched and unwatched videos."""
+
+        self.include_watched_filter = True
 
     def update_all(self):
         """Checks every channel for new videos"""
@@ -202,17 +246,15 @@ class Ytcc:
         else:
             raise BadURLException("'" + channel_url + "' is not a valid URL")
 
-    def list_unwatched_videos(self, channel_filter=None):
-        """Returns a list of unwatched videos. The videos are published by the channels given in the channel filter.
-
-        Args:
-            channel_filter ([str]): a list of channel names
+    def list_videos(self):
+        """Returns a list of videos that match the filters set by the set_*_filter methods.
 
         Returns (list):
             A list of ytcc.video.Video objects
         """
 
-        return self.db.list_videos(channel_filter, include_watched=False)
+        return self.db.list_videos(self.channel_filter, self.date_begin_filter, self.date_end_filter,
+                                   self.include_watched_filter)
 
     def mark_some_watched(self, video_ids):
         """Marks the videos identified by the given video IDs as watched without playing them. Invalid video IDs are
@@ -224,31 +266,15 @@ class Ytcc:
 
         self.db.mark_some_watched(video_ids)
 
-    def mark_watched(self, channel_filter=None):
-        """Marks the videos of channels specified in the filter as watched without playing them. If channelFilter is
-        None all unwatched videos are marked as watched.
-
-        Args:
-            channel_filter ([int]): the channel filter.
+    def mark_watched(self):
+        """Marks the videos of channels specified in the filter as watched without playing them. The filters are set by
+        the set_*_filter methods.
         """
 
-        if channel_filter:
-            self.db.mark_watched(channel_filter)
+        if self.channel_filter:
+            self.db.mark_watched(self.channel_filter, self.date_begin_filter, self.date_end_filter)
         else:
             self.db.mark_all_watched()
-
-    def list_recent_videos(self, channel_filter=None):
-        """Returns a list of videos that were added within the last week. The videos are published by the channels given
-        in the channel filter.
-
-        Args:
-            channel_filter ([str]): a list of channel names
-
-        Returns (list):
-            A list of ytcc.video.Video objects
-        """
-
-        return self.db.list_videos(channel_filter, time.mktime(time.gmtime()) - 604800)
 
     def delete_channel(self, displayname):
         """Delete (or unsubscribe) a channel.

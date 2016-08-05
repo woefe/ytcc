@@ -12,7 +12,7 @@ setup(
     author=ytcc.__author__,
     author_email=ytcc.__email__,
     license=ytcc.__license__,
-    scripts=[ 'scripts/ytcc' ],
-    packages=[ 'ytcc' ],
-    install_requires=[ 'lxml', 'feedparser' ]
+    scripts=['scripts/ytcc'],
+    packages=['ytcc'],
+    install_requires=['lxml', 'feedparser', 'dateutil']
 )
