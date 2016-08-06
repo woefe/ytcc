@@ -173,9 +173,9 @@ def import_channels(file):
     print("Importing...")
     try:
         ytcc_core.import_channels(file)
-        print("\nSubscriptions:")
+        print("\nSubscriptions")
+        print("=============")
         print_channels()
-        print()
     except core.InvalidSubscriptionFile as e:
         print(e.message)
 
@@ -344,8 +344,8 @@ def main():
         ytcc_core.set_include_watched_filter()
 
     if args.import_from:
-        print(args.import_from)
         import_channels(args.import_from)
+        option_executed = True
 
     if args.cleanup:
         cleanup()
