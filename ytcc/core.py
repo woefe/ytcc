@@ -268,6 +268,7 @@ class Ytcc:
             root = etree.parse(file)
         except Exception:
             raise InvalidSubscriptionFile("'" + file.name + "' is not a valid YouTube export file")
+
         elements = root.xpath('//outline[@type="rss"]')
         channels = [(e.attrib["title"], urlparse(e.attrib["xmlUrl"]).query[11:]) for e in elements]
 

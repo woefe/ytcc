@@ -313,7 +313,7 @@ def main():
         import ytcc
         print("ytcc version " + ytcc.__version__)
         print()
-        print("Copyright (C) 2015  " + ytcc.__author__)
+        print("Copyright (C) 2015-2016  " + ytcc.__author__)
         print("This program comes with ABSOLUTELY NO WARRANTY; This is free software, and you")
         print("are welcome to redistribute it under certain conditions.  See the GNU General ")
         print("Public Licence for details.")
