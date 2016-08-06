@@ -169,6 +169,17 @@ def cleanup():
     ytcc_core.cleanup()
 
 
+def import_channels(file):
+    print("Importing...")
+    try:
+        ytcc_core.import_channels(file)
+        print("\nSubscriptions:")
+        print_channels()
+        print()
+    except core.InvalidSubscriptionFile as e:
+        print(e.message)
+
+
 def is_directory(string):
     if not os.path.isdir(string):
         msg = "%r is not a directory" % string
@@ -253,14 +264,12 @@ def main():
     parser.add_argument("-s", "--since",
                         help="includes only videos published after the given date",
                         metavar="YYYY-MM-DD",
-                        type=is_date,
-                        nargs=1)
+                        type=is_date)
 
     parser.add_argument("-t", "--to",
                         help="includes only videos published before the given date",
                         metavar="YYYY-MM-DD",
-                        type=is_date,
-                        nargs=1)
+                        type=is_date)
 
     parser.add_argument("-p", "--path",
                         help="set the download path to PATH",
@@ -281,6 +290,12 @@ def main():
     parser.add_argument("-y", "--yes",
                         help="automatically answer all questions with yes",
                         action="store_true")
+
+    parser.add_argument("--import-from",
+                        help="import YouTube channels from YouTube's subscription export (available at "
+                        "https://www.youtube.com/subscription_manager)",
+                        metavar="PATH",
+                        type=argparse.FileType("r"))
 
     parser.add_argument("--cleanup",
                         help="removes old videos from the database and shrinks the size of the database file",
@@ -320,13 +335,17 @@ def main():
         ytcc_core.set_channel_filter(args.channel_filter)
 
     if args.since:
-        ytcc_core.set_date_begin_filter(date_parser.parse(args.since[0]))
+        ytcc_core.set_date_begin_filter(date_parser.parse(args.since))
 
     if args.to:
-        ytcc_core.set_date_end_filter(date_parser.parse(args.to[0]))
+        ytcc_core.set_date_end_filter(date_parser.parse(args.to))
 
     if args.include_watched:
         ytcc_core.set_include_watched_filter()
+
+    if args.import_from:
+        print(args.import_from)
+        import_channels(args.import_from)
 
     if args.cleanup:
         cleanup()

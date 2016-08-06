@@ -18,6 +18,7 @@
 
 from urllib.request import urlopen
 from urllib.error import URLError
+from urllib.parse import urlparse
 from lxml import etree
 from io import StringIO
 from pathlib import Path
@@ -54,6 +55,13 @@ class ChannelDoesNotExistException(Exception):
 
 class InvalidIDException(Exception):
     """Raised when a given video ID or channel ID does not exist."""
+
+    def __init__(self, message):
+        self.message = message
+
+
+class InvalidSubscriptionFile(Exception):
+    """Raised when the given file is not a valid XML file."""
 
     def __init__(self, message):
         self.message = message
@@ -254,6 +262,20 @@ class Ytcc:
 
         else:
             raise BadURLException("'" + channel_url + "' is not a valid URL")
+
+    def import_channels(self, file):
+        try:
+            root = etree.parse(file)
+        except Exception:
+            raise InvalidSubscriptionFile("'" + file.name + "' is not a valid YouTube export file")
+        elements = root.xpath('//outline[@type="rss"]')
+        channels = [(e.attrib["title"], urlparse(e.attrib["xmlUrl"]).query[11:]) for e in elements]
+
+        for channel in channels:
+            try:
+                self.db.add_channel(*channel)
+            except sqlite3.IntegrityError:
+                pass
 
     def list_videos(self):
         """Returns a list of videos that match the filters set by the set_*_filter methods.
