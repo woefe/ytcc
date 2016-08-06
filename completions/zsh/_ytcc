@@ -8,20 +8,14 @@ _ytcc_channels() {
 
 _ytcc_videos() {
     local _video_list
-    _video_list=( "${(@f)$(ytcc -l | sed "s/  /:/")}" )
-
-    if [[ ${_video_list[1]} == "No unwatched videos." ]]; then
-        _video_list=( "${(@f)$(ytcc -n | sed "s/  /:/")}" )
-        _describe -t values 'recent videos' _video_list || compadd "$@"
-    else
-        _describe -t values 'unwatched videos' _video_list || compadd "$@"
-    fi
+    _video_list=( "${(@f)$(ytcc -nlo ID Channel Title -s "$(date --date '-1 week')" | tail -n +3 | sed -r "s/ ([0-9]+) │/\1:/")}" )
+    _describe -t values 'videos' _video_list || compadd "$@"
 }
 
 _ytcc_mark() {
     local _video_list
-    _video_list=( "${(@f)$(ytcc -l | sed "s/  /:/")}" )
-    if [[ ${_video_list[1]} == "No unwatched videos." ]]; then
+    _video_list=( "${(@f)$(ytcc -lo ID Channel Title | tail -n +3 | sed -r "s/ ([0-9]+) │/\1:/")}" )
+    if [[ ${_video_list[1]} == "No videos to list. No videos match the given criteria." ]]; then
         _video_list=( )
     fi
     _describe -t values 'unwatched videos' _video_list || compadd "$@"
@@ -38,14 +32,17 @@ _ytcc() {
         '(-c --list-channels)'{-c,--list-channels}'[print a list of all subscribed channels]' \
         '(-r --delete-channel)'{-r,--delete-channel}'[unsubscribe from a channel]:: :->channels' \
         '(-u --update)'{-u,--update}'[update the videolist]' \
+        '(-l --list)'{-l,--list}'[print a list of videos]' \
         '(-w --watch)'{-w,--watch}'[play videos]:*: :->videos' \
-        '(-f --channel-filter)'{-f,--channel-filter}'[apply a filter]:*: :->channels' \
         '(-d --download)'{-d,--download}'[download the videos]:*: :->videos' \
+        '(-m --mark-watched)'{-m,--mark-watched}'[mark videos as watched]:*: :->mark' \
+        '(-f --channel-filter)'{-f,--channel-filter}'[apply a filter]:*: :->channels' \
+        '(-n --include-watched)'{-n,--list-recent}'[include watched videos to filter]' \
+        '(-s --since)'{-s,--since}'[set lower limit of date filter]:1::' \
+        '(-t --to)'{-t,--to}'[set upper limit of date filter]:1::' \
         '(-p --path)'{-p,--path}'[set the download path]::download path:_path_files -/' \
         '(-g --no-description)'{-g,--no-description}'[do not print the video description]' \
-        '(-m --mark-watched)'{-m,--mark-watched}'[mark videos as watched]:*: :->mark' \
-        '(-l --list-unwatched)'{-l,--list-unwatched}'[print a list of unwatched videos]' \
-        '(-n --list-recent)'{-n,--list-recent}'[print a list of videos that were recently added]' \
+        '(-o --columns)'{-o,--columns}'[set which columns will be displayed]:::(ID Date Channel Title URL):' \
         '(-y --yes)'{-y,--yes}'[automatically answer all questions with yes]' \
         '(--cleanup)--cleanup[cleanup and shrink database file]' \
         '(-v --version)'{-v,--version}'[output version information and exit]' \
