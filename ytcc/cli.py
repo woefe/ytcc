@@ -27,6 +27,8 @@ import textwrap as wrap
 ytcc_core = core.Ytcc()
 interactive_enabled = True
 description_enabled = True
+table_header = ["ID", "Date", "Channel", "Title", "URL"]
+column_filter = None
 
 
 def update_all():
@@ -108,13 +110,16 @@ def print_videos():
     if not videos:
         print("No videos to list. No videos match the given criteria.")
     else:
-        table_header = ["ID", "Date", "Channel", "Title", "URL"]
         table_format = ytcc_core.config["TableFormat"]
-        table_col_filter = [table_format.getboolean("ID"),
-                            table_format.getboolean("Date"),
-                            table_format.getboolean("Channel"),
-                            table_format.getboolean("Title"),
-                            table_format.getboolean("URL")]
+
+        if column_filter:
+            table_col_filter = column_filter
+        else:
+            table_col_filter = [table_format.getboolean("ID"),
+                                table_format.getboolean("Date"),
+                                table_format.getboolean("Channel"),
+                                table_format.getboolean("Title"),
+                                table_format.getboolean("URL")]
 
         def row_filter(row):
             return list(map(lambda e: e[1], filter(lambda e: e[0], zip(table_col_filter, row))))
@@ -266,6 +271,13 @@ def main():
                         help="do not print the video description before playing the video",
                         action="store_true")
 
+    parser.add_argument("-o", "--columns",
+                        help="specifies which columns will be printed when listing videos. COL can be any of "
+                        + str(table_header),
+                        nargs='+',
+                        metavar="COL",
+                        choices=table_header)
+
     parser.add_argument("-y", "--yes",
                         help="automatically answer all questions with yes",
                         action="store_true")
@@ -299,6 +311,10 @@ def main():
     if args.no_description:
         global description_enabled
         description_enabled = False
+
+    if args.columns:
+        global column_filter
+        column_filter = [True if f in args.columns else False for f in table_header]
 
     if args.channel_filter:
         ytcc_core.set_channel_filter(args.channel_filter)
