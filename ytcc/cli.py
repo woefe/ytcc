@@ -18,6 +18,7 @@
 
 from ytcc import core
 from dateutil import parser as date_parser
+from datetime import datetime
 import shutil
 import argparse
 import os
@@ -78,13 +79,52 @@ def watch(video_ids=None):
         play_videos(ytcc_core.get_videos(video_ids), False)
 
 
+def table_print(header, table):
+    col_widths = []
+    header_line = ""
+
+    for h in header:
+        col_widths.append(len(h))
+
+    for i in range(0, len(header)):
+        col_widths[i] = max(map(lambda h: len(str(h[i])), table))
+
+    for width in col_widths:
+        header_line += "─" * (width + 2)
+        header_line += "┼"
+
+    header_line = header_line[:-1]
+    format = (" {{:<{}}} │" * len(header))[:-2].format(*col_widths)
+
+    print(format.format(*header))
+    print(header_line)
+
+    for row in table:
+        print(format.format(*row))
+
+
 def print_videos():
     videos = ytcc_core.list_videos()
     if not videos:
         print("No videos to list. No videos match the given criteria.")
     else:
-        for video in videos:
-            print(video.id, " " + video.channelname + ": " + video.title)
+        table_header = ["ID", "Date", "Channel", "Title", "URL"]
+        table_format = ytcc_core.config["TableFormat"]
+        table_col_filter = [table_format.getboolean("ID"),
+                            table_format.getboolean("Date"),
+                            table_format.getboolean("Channel"),
+                            table_format.getboolean("Title"),
+                            table_format.getboolean("URL")]
+
+        def row_filter(row):
+            return list(map(lambda e: e[1], filter(lambda e: e[0], zip(table_col_filter, row))))
+
+        def video_to_list(video):
+            return [video.id, datetime.fromtimestamp(video.publish_date).strftime("%Y-%m-%d %H:%M"),
+                    video.channelname, video.title, ytcc_core.get_youtube_video_url(video.yt_videoid)]
+
+        table = [row_filter(video_to_list(v)) for v in videos]
+        table_print(row_filter(table_header), table)
 
 
 def print_channels():
@@ -144,9 +184,10 @@ def is_date(string):
 
 def main():
 
-    parser = argparse.ArgumentParser(description="ytcc is a commandline YouTube client that keeps track of your"
-            " favorite channels. The --list, --watch, --download, --mark-watched options can be combined with filter"
-            " options --channel-filter, --include-watched, --since, --to")
+    parser = argparse.ArgumentParser(description="ytcc is a commandline YouTube client that keeps track of your "
+                                     "favorite channels. The --list, --watch, --download, --mark-watched options can "
+                                     "be combined with filter options --channel-filter, --include-watched, --since, "
+                                     "--to")
 
     parser.add_argument("-a", "--add-channel",
                         help="add a new channel. NAME is the name displayed by ytcc. URL is"

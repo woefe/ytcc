@@ -113,12 +113,19 @@ class Ytcc:
             "DBPath": Ytcc.DEFAULT_DB_PATH,
             "DownloadDir": Ytcc.DEFAULT_DLOAD_DIR
         }
+        config["TableFormat"] = {
+            "ID": "on",
+            "Date": "off",
+            "Channel": "on",
+            "Title": "on",
+            "URL": "off"
+        }
         default.parent.mkdir(parents=True, exist_ok=True)
         default.touch()
         with default.open("w") as defaultFile:
             config.write(defaultFile)
 
-        return Path(default)
+        return default
 
     def _update_channel(self, yt_channel_id):
         feed = feedparser.parse("https://www.youtube.com/feeds/videos.xml?channel_id=" + yt_channel_id)
@@ -181,8 +188,11 @@ class Ytcc:
 
         video = self.db.get_video(video_id)
         if video:
-            os.system("mpv --really-quiet https://www.youtube.com/watch?v=" + video.yt_videoid + " 2> /dev/null")
+            os.system("mpv --really-quiet " + self.get_youtube_video_url(video.yt_videoid) + " 2> /dev/null")
             self.db.mark_some_watched([video.id])
+
+    def get_youtube_video_url(self, yt_videoid):
+        return "https://www.youtube.com/watch?v=" + yt_videoid
 
     def download_videos(self, video_ids, path):
         """Downloads the videos identified by the given video IDs with youtube-dl and marks the videos watched.
@@ -205,8 +215,7 @@ class Ytcc:
         for vID in video_ids:
             video = self.db.get_video(vID)
             if video:
-                os.system("youtube-dl -o '" + download_dir +
-                          "/%(title)s' https://www.youtube.com/watch?v=" + video.yt_videoid)
+                os.system("youtube-dl -o '" + download_dir + "/%(title)s' " + get_youtube_video_url(video.yt_videoid))
                 self.db.mark_some_watched([vID])
 
     def add_channel(self, displayname, channel_url):
