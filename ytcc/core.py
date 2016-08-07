@@ -235,8 +235,10 @@ class Ytcc:
         for vID in video_ids:
             video = self.db.get_video(vID)
             if video:
-                os.system("youtube-dl -o '" + download_dir + "/%(title)s' " + get_youtube_video_url(video.yt_videoid))
-                self.db.mark_some_watched([vID])
+                ytdl_result = subprocess.run(["youtube-dl", "-o", download_dir + "/%(title)s",
+                                              self.get_youtube_video_url(video.yt_videoid)])
+                if ytdl_result.returncode == 0:
+                    self.db.mark_some_watched([vID])
 
     def add_channel(self, displayname, channel_url):
         """Subscribes to a channel.
