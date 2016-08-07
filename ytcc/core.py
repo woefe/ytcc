@@ -204,7 +204,8 @@ class Ytcc:
 
         video = self.db.get_video(video_id)
         if video:
-            mpv_result = subprocess.run(["mpv", *self.mpv_flags, self.get_youtube_video_url(video.yt_videoid)])
+            mpv_result = subprocess.run(["mpv", *self.mpv_flags, self.get_youtube_video_url(video.yt_videoid)],
+                                        stderr=subprocess.DEVNULL)
             if mpv_result.returncode == 0:
                 self.db.mark_some_watched([video.id])
                 return True
