@@ -77,13 +77,8 @@ class Ytcc:
         set_include_watched_filter
     """
 
-    DEFAULT_DB_PATH = "~/.local/share/ytcc/ytcc.db"
-    DEFAULT_DLOAD_DIR = "~/Downloads"
-
     def __init__(self):
-        self.config = configparser.ConfigParser()
-        self.config.read(str(self._get_conf_file()))
-
+        self.config = self._get_config()
         self.download_dir = os.path.expanduser(self.config["YTCC"]["DownloadDir"])
         self.dbPath = os.path.expanduser(self.config["YTCC"]["DBPath"])
         self.mpv_flags = re.compile("\\s+").split(self.config["YTCC"]["mpvFlags"])
@@ -94,49 +89,54 @@ class Ytcc:
         self.include_watched_filter = False
 
     @staticmethod
-    def _get_conf_file():
+    def _get_config():
         """Searches for the config file in
             1. $XDG_CONFIG_HOME/ytcc/ytcc.conf
             2. ~/.config/ytcc/ytcc.conf
             3. ~/.ytcc.conf
         If no config file is found in these three locations, a default config file is created in
         '~/.config/ytcc/ytcc.conf'
+
+        Returns (configparser.ConfigParser):
+            the config
         """
 
-        xdg_conf_home = os.getenv("XDG_CONFIG_HOME")
-        if xdg_conf_home is not None:
-            conf_file = Path(xdg_conf_home + "/ytcc/ytcc.conf")
-            if conf_file.is_file():
-                return conf_file
-
-        default = Path(os.path.expanduser("~/.config/ytcc/ytcc.conf"))
-        if default.is_file():
-            return default
-
-        conf_file = Path(os.path.expanduser("~/.ytcc.conf"))
-        if conf_file.is_file():
-            return conf_file
-
-        # Create config if it does not exist.
+        defaults = {"YTCC": {"DBPath": "~/.local/share/ytcc/ytcc.db",
+                             "DownloadDir": "~/Downloads",
+                             "mpvFlags": "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best"},
+                    "TableFormat": {"ID": "on",
+                                    "Date": "off",
+                                    "Channel": "on",
+                                    "Title": "on",
+                                    "URL": "off"}
+                    }
         config = configparser.ConfigParser()
-        config["YTCC"] = {
-            "DBPath": Ytcc.DEFAULT_DB_PATH,
-            "DownloadDir": Ytcc.DEFAULT_DLOAD_DIR,
-            "mpvFlags": "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best"
-        }
-        config["TableFormat"] = {
-            "ID": "on",
-            "Date": "off",
-            "Channel": "on",
-            "Title": "on",
-            "URL": "off"
-        }
-        default.parent.mkdir(parents=True, exist_ok=True)
-        default.touch()
-        with default.open("w") as defaultFile:
-            config.write(defaultFile)
+        config.read_dict(defaults)
+        config_file = None
+        default = Path(os.path.expanduser("~/.config/ytcc/ytcc.conf"))
+        fallback = Path(os.path.expanduser("~/.ytcc.conf"))
+        xdg_conf_home = os.getenv("XDG_CONFIG_HOME")
+        xdg_conf_file = None
 
-        return default
+        if xdg_conf_home is not None:
+            xdg_conf_file = Path(xdg_conf_home + "/ytcc/ytcc.conf")
+
+        if xdg_conf_file is not None and xdg_conf_file.is_file():
+            config_file = str(xdg_conf_file)
+        elif default.is_file():
+            config_file = str(default)
+        elif fallback.is_file():
+            config_file = str(fallback)
+
+        if config_file is None:
+            config_file = str(default)
+            default.parent.mkdir(parents=True, exist_ok=True)
+            default.touch()
+            with default.open("w") as defaultFile:
+                config.write(defaultFile)
+
+        config.read(config_file)
+        return config
 
     def _update_channel(self, yt_channel_id):
         feed = feedparser.parse("https://www.youtube.com/feeds/videos.xml?channel_id=" + yt_channel_id)
