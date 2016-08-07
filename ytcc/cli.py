@@ -63,7 +63,9 @@ def play_videos(videos, interactive):
 
         if choice in ("y", "Y", "", "yes"):
             print_description(video.description)
-            ytcc_core.play_video(video.id)
+            if not ytcc_core.play_video(video.id):
+                print("\nWARNING: The video player terminated with an error.")
+                print("         The last video is not marked as watched!\n")
         elif choice in ("m", "M", "mark"):
             ytcc_core.mark_some_watched([video.id])
         elif choice in ("q", "Q", "quit"):

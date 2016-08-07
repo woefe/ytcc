@@ -29,6 +29,7 @@ import feedparser
 import sqlite3
 import time
 import re
+import subprocess
 import os
 
 
@@ -85,6 +86,7 @@ class Ytcc:
 
         self.download_dir = os.path.expanduser(self.config["YTCC"]["DownloadDir"])
         self.dbPath = os.path.expanduser(self.config["YTCC"]["DBPath"])
+        self.mpv_flags = re.compile("\\s+").split(self.config["YTCC"]["mpvFlags"])
         self.db = database.Database(Path(self.dbPath))
         self.channel_filter = []
         self.date_begin_filter = 0
@@ -119,7 +121,8 @@ class Ytcc:
         config = configparser.ConfigParser()
         config["YTCC"] = {
             "DBPath": Ytcc.DEFAULT_DB_PATH,
-            "DownloadDir": Ytcc.DEFAULT_DLOAD_DIR
+            "DownloadDir": Ytcc.DEFAULT_DLOAD_DIR,
+            "mpvFlags": "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best"
         }
         config["TableFormat"] = {
             "ID": "on",
@@ -188,16 +191,25 @@ class Ytcc:
             threadPool.map(self._update_channel, map(lambda channel: channel.yt_channelid, self.db.list_channels()))
 
     def play_video(self, video_id):
-        """Plays the video identified by the given video ID with the mpv video player and marks the video watched.
+        """Plays the video identified by the given video ID with the mpv video player and marks the video watched, if
+        the player exits with an exit code of zero.
 
         Args:
             video_id (int): The (local) video ID.
+
+        Returns (bool):
+            False if the given video_id does not exist or the player closed with a non zero exit code. True if the video
+            was played successfully.
         """
 
         video = self.db.get_video(video_id)
         if video:
-            os.system("mpv --really-quiet " + self.get_youtube_video_url(video.yt_videoid) + " 2> /dev/null")
-            self.db.mark_some_watched([video.id])
+            mpv_result = subprocess.run(["mpv", *self.mpv_flags, self.get_youtube_video_url(video.yt_videoid)])
+            if mpv_result.returncode == 0:
+                self.db.mark_some_watched([video.id])
+                return True
+
+        return False
 
     def get_youtube_video_url(self, yt_videoid):
         return "https://www.youtube.com/watch?v=" + yt_videoid
