@@ -44,6 +44,7 @@ _ytcc() {
         '(-g --no-description)'{-g,--no-description}'[do not print the video description]' \
         '(-o --columns)'{-o,--columns}'[set which columns will be displayed]:::(ID Date Channel Title URL):' \
         '(-y --yes)'{-y,--yes}'[automatically answer all questions with yes]' \
+        '(--import-from)--import-from[import subscriptions from youtube]::subscription file:_path_files -f' \
         '(--cleanup)--cleanup[cleanup and shrink database file]' \
         '(-v --version)'{-v,--version}'[output version information and exit]' \
 

@@ -35,6 +35,7 @@ complete -c $cmd    -r -l path            -s p -d "set the download path"
 complete -c $cmd -f    -l no-description  -s g -d "do not print the video description"
 complete -c $cmd -f -r -l columns         -s o -d "column" -a 'ID Date Channel Title URL'
 complete -c $cmd -f    -l yes             -s y -d "automatically answer all questions with yes"
+complete -c $cmd    -r -l import-from     -s y -d "import subscriptions from youtube"
 complete -c $cmd -x    -l cleanup              -d "cleanup and shrink database file"
 complete -c $cmd -x    -l version         -s v -d "output version information and exit"
 
