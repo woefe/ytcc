@@ -46,14 +46,19 @@ ytcc -y
 ytcc -a "Jupiter Broadcasting" https://www.youtube.com/user/jupiterbroadcasting
 ```
 
+Import subscriptions from YouTube's subscription manager export.
+```shell
+ytcc --import-from ~/Downloads/subscription_manager
+```
+
 Check for new videos, print a list of new videos and play them.
 ```shell
 ytcc -ulw
 ```
 
-Download all unwatched videos from a channel.
+Download all videos from a channel that were published in July.
 ```shell
-ytcc -f "Jupiter Broadcasting" -d
+ytcc -f "Jupiter Broadcasting" --download --since 07-01 --to 07-31 --include-watched
 ```
 
 Mark all videos of a channel as watched.
@@ -63,8 +68,9 @@ ytcc -f "Jupiter Broadcasting" -m
 
 ## Video quality settings
 Quality settings can be adjusted via the youtube-dl config file. For more information see `man youtube-dl`.
+It is now also possible to pass the quality settings via a mpv flag in ytcc's config file.
 
-### Example
+### Example (youtube-dl config)
 Play videos in best audio and video quality but don't use a resolution higher than 1080p.
 ```shell
 mkdir -p ~/.config/youtube-dl
