@@ -8,13 +8,13 @@ _ytcc_channels() {
 
 _ytcc_videos() {
     local _video_list
-    _video_list=( "${(@f)$(ytcc -nlo ID Channel Title -s "$(date --date '-1 week')" | tail -n +3 | sed -r "s/ ([0-9]+) │/\1:/")}" )
+    _video_list=( "${(@f)$(ytcc -nlo ID Channel Title -s "$(date --date '-1 week')" --no-header | sed -r "s/ ([0-9]+) │/\1:/")}" )
     _describe -t values 'videos' _video_list || compadd "$@"
 }
 
 _ytcc_mark() {
     local _video_list
-    _video_list=( "${(@f)$(ytcc -lo ID Channel Title | tail -n +3 | sed -r "s/ ([0-9]+) │/\1:/")}" )
+    _video_list=( "${(@f)$(ytcc -lo ID Channel Title --no-header | sed -r "s/ ([0-9]+) │/\1:/")}" )
     if [[ ${_video_list[1]} == "No videos to list. No videos match the given criteria." ]]; then
         _video_list=( )
     fi

@@ -29,6 +29,7 @@ interactive_enabled = True
 description_enabled = True
 table_header = ["ID", "Date", "Channel", "Title", "URL"]
 column_filter = None
+header_enabled = True
 
 
 def update_all():
@@ -100,8 +101,9 @@ def table_print(header, table):
     header_line = header_line[:-1]
     format = (" {{:<{}}} │" * len(header))[:-2].format(*col_widths)
 
-    print(format.format(*header))
-    print(header_line)
+    if header_enabled:
+        print(format.format(*header))
+        print(header_line)
 
     for row in table:
         print(format.format(*row))
@@ -290,6 +292,10 @@ def main():
                         metavar="COL",
                         choices=table_header)
 
+    parser.add_argument("--no-header",
+                        help="do not print the header of the table when listing videos",
+                        action="store_true")
+
     parser.add_argument("-y", "--yes",
                         help="automatically answer all questions with yes",
                         action="store_true")
@@ -329,6 +335,10 @@ def main():
     if args.no_description:
         global description_enabled
         description_enabled = False
+
+    if args.no_header:
+        global header_enabled
+        header_enabled = False
 
     if args.columns:
         global column_filter
