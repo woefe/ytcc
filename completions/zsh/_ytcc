@@ -30,7 +30,7 @@ _ytcc() {
         '(-h --help)'{-h,--help}'[show help message and exit]' \
         '(-a --add-channel)'{-a,--add-channel}'[add a new channel]:2::' \
         '(-c --list-channels)'{-c,--list-channels}'[print a list of all subscribed channels]' \
-        '(-r --delete-channel)'{-r,--delete-channel}'[unsubscribe from a channel]:: :->channels' \
+        '(-r --delete-channel)'{-r,--delete-channel}'[unsubscribe from channels]:*: :->channels' \
         '(-u --update)'{-u,--update}'[update the videolist]' \
         '(-l --list)'{-l,--list}'[print a list of videos]' \
         '(-w --watch)'{-w,--watch}'[play videos]:*: :->videos' \

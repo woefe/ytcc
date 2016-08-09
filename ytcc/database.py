@@ -219,15 +219,15 @@ class Database:
         sql = "update video set watched = 1 where id = ?"
         self._execute_query_many(sql, [(vid,) for vid in video_ids])
 
-    def delete_channel(self, displayname):
-        """Delete (or unsubscribe) a channel.
+    def delete_channels(self, displaynames):
+        """Delete (or unsubscribe) channels.
 
         Args:
-            displayname (str): The channel's displayname.
+            displaynames (list): A list of channels' displaynames.
         """
 
-        sql = "delete from channel where displayname = ?"
-        self._execute_query(sql, (displayname,))
+        sql = "delete from channel where displayname in " + self._make_place_holder(displaynames) + ";"
+        self._execute_query(sql, tuple(displaynames))
 
     def add_videos(self, videos):
         """Adds new videos to the database.

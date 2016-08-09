@@ -220,6 +220,7 @@ def main():
     parser.add_argument("-r", "--delete-channel",
                         help="unsubscribe from the channel identified by 'ID'",
                         metavar="ID",
+                        nargs='+',
                         type=str)
 
     parser.add_argument("-u", "--update",
@@ -362,7 +363,7 @@ def main():
         option_executed = True
 
     if args.delete_channel:
-        ytcc_core.delete_channel(args.delete_channel)
+        ytcc_core.delete_channels(args.delete_channel)
         option_executed = True
 
     if args.update:

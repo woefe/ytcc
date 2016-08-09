@@ -21,7 +21,7 @@ end
 complete -c $cmd -x    -l help            -s h -d "show help message and exit"
 complete -c $cmd -f -r -l add-channel     -s a -d "add a new channel"
 complete -c $cmd -f    -l list-channels   -s c -d "print all subscribed channels"
-complete -c $cmd -f -r -l delete-channel  -s r -d "unsubscribe from a channel"
+complete -c $cmd -f    -l delete-channel  -s r -d "unsubscribe from channels"
 complete -c $cmd -f    -l update          -s u -d "update the videolist"
 complete -c $cmd -f    -l list-unwatched  -s l -d "print all of unwatched videos"
 complete -c $cmd -f    -l watch           -s w -d "play videos"

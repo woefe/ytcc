@@ -323,14 +323,14 @@ class Ytcc:
         else:
             self.db.mark_all_watched()
 
-    def delete_channel(self, displayname):
-        """Delete (or unsubscribe) a channel.
+    def delete_channels(self, displaynames):
+        """Delete (or unsubscribe) channels.
 
         Args:
-            displayname (str): The channel's displayname.
+            displaynames (list): A list of channels' displaynames.
         """
 
-        self.db.delete_channel(displayname)
+        self.db.delete_channels(displaynames)
 
     def list_channels(self):
         """Returns a list of all subscribed channels.
