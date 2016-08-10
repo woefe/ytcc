@@ -223,12 +223,12 @@ class Ytcc:
             path (str): The directory where the download is saved.
         """
 
-        download_dir = os.path.expanduser("~/Downloads")
-
-        if self.download_dir:
-            download_dir = self.download_dir
-        elif path:
+        if path:
             download_dir = path
+        elif self.download_dir:
+            download_dir = self.download_dir
+        else:
+            download_dir = os.path.expanduser("~/Downloads")
 
         if not os.path.isdir(download_dir):
             return
