@@ -43,6 +43,8 @@ _ytcc() {
         '(-p --path)'{-p,--path}'[set the download path]::download path:_path_files -/' \
         '(-g --no-description)'{-g,--no-description}'[do not print the video description]' \
         '(-o --columns)'{-o,--columns}'[set which columns will be displayed]:::(ID Date Channel Title URL):' \
+        '(--no-header)--no-header[do not print table header]' \
+        '(-x --no-video)'{-x,--no-video}'[audio only]' \
         '(-y --yes)'{-y,--yes}'[automatically answer all questions with yes]' \
         '(--import-from)--import-from[import subscriptions from youtube]::subscription file:_path_files -f' \
         '(--cleanup)--cleanup[cleanup and shrink database file]' \
