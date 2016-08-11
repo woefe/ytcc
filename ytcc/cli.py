@@ -30,6 +30,7 @@ description_enabled = True
 table_header = ["ID", "Date", "Channel", "Title", "URL"]
 column_filter = None
 header_enabled = True
+no_video = False
 
 
 def update_all():
@@ -64,7 +65,7 @@ def play_videos(videos, interactive):
 
         if choice in ("y", "Y", "", "yes"):
             print_description(video.description)
-            if not ytcc_core.play_video(video.id):
+            if not ytcc_core.play_video(video.id, no_video):
                 print("\nWARNING: The video player terminated with an error.")
                 print("         The last video is not marked as watched!\n")
         elif choice in ("m", "M", "mark"):
@@ -147,7 +148,7 @@ def print_channels():
 
 def download(video_ids, path):
     ids = video_ids if video_ids else map(lambda video: video.id, ytcc_core.list_videos())
-    ytcc_core.download_videos(ids, path)
+    ytcc_core.download_videos(ids, path, no_video)
 
 
 def add_channel(name, channel_url):
@@ -296,6 +297,10 @@ def main():
                         help="do not print the header of the table when listing videos",
                         action="store_true")
 
+    parser.add_argument("-x", "--no-video",
+                        help="plays or downloads only the audio part of a video",
+                        action="store_true")
+
     parser.add_argument("-y", "--yes",
                         help="automatically answer all questions with yes",
                         action="store_true")
@@ -339,6 +344,10 @@ def main():
     if args.no_header:
         global header_enabled
         header_enabled = False
+
+    if args.no_video:
+        global no_video
+        no_video = True
 
     if args.columns:
         global column_filter

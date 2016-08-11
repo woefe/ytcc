@@ -190,21 +190,27 @@ class Ytcc:
         with Pool(os.cpu_count() * 2) as threadPool:
             threadPool.map(self._update_channel, map(lambda channel: channel.yt_channelid, self.db.list_channels()))
 
-    def play_video(self, video_id):
+    def play_video(self, video_id, no_video=False):
         """Plays the video identified by the given video ID with the mpv video player and marks the video watched, if
         the player exits with an exit code of zero.
 
         Args:
             video_id (int): The (local) video ID.
+            no_video (bool): If True only the audio is played
 
         Returns (bool):
             False if the given video_id does not exist or the player closed with a non zero exit code. True if the video
             was played successfully.
         """
 
+        no_video_flag = []
+        if no_video:
+            no_video_flag.append("--no-video")
+
         video = self.db.get_video(video_id)
         if video:
-            mpv_result = subprocess.run(["mpv", *self.mpv_flags, self.get_youtube_video_url(video.yt_videoid)],
+            mpv_result = subprocess.run(["mpv", *no_video_flag, *self.mpv_flags,
+                                         self.get_youtube_video_url(video.yt_videoid)],
                                         stderr=subprocess.DEVNULL)
             if mpv_result.returncode == 0:
                 self.db.mark_some_watched([video.id])
@@ -215,12 +221,13 @@ class Ytcc:
     def get_youtube_video_url(self, yt_videoid):
         return "https://www.youtube.com/watch?v=" + yt_videoid
 
-    def download_videos(self, video_ids, path):
+    def download_videos(self, video_ids, path, no_video=False):
         """Downloads the videos identified by the given video IDs with youtube-dl and marks the videos watched.
 
         Args:
             video_ids ([int]): The (local) video IDs.
             path (str): The directory where the download is saved.
+            no_video (bool): If True only the audio is downloaded
         """
 
         if path:
@@ -233,10 +240,14 @@ class Ytcc:
         if not os.path.isdir(download_dir):
             return
 
+        no_video_flag = []
+        if no_video:
+            no_video_flag.append("--extract-audio")
+
         for vID in video_ids:
             video = self.db.get_video(vID)
             if video:
-                ytdl_result = subprocess.run(["youtube-dl", "-o", download_dir + "/%(title)s",
+                ytdl_result = subprocess.run(["youtube-dl", *no_video_flag, "-o", download_dir + "/%(title)s.%(ext)s",
                                               self.get_youtube_video_url(video.yt_videoid)])
                 if ytdl_result.returncode == 0:
                     self.db.mark_some_watched([vID])
