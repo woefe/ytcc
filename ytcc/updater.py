@@ -63,8 +63,6 @@ def update(old_version, new_version, dbconn):
         dbconn (sqlite3.Connection): the connection to the database wich is updated
     """
 
-    print(type(old_version))
-    print(type(new_version))
     c = dbconn.cursor()
     for script in UPDATES[old_version:new_version]:
         c.executescript(script)

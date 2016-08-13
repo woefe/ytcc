@@ -83,10 +83,11 @@ class Ytcc:
         self.dbPath = os.path.expanduser(self.config["YTCC"]["DBPath"])
         self.mpv_flags = re.compile("\\s+").split(self.config["YTCC"]["mpvFlags"])
         self.db = database.Database(Path(self.dbPath))
-        self.channel_filter = []
+        self.channel_filter = None
         self.date_begin_filter = 0
         self.date_end_filter = time.mktime(time.gmtime()) + 20
         self.include_watched_filter = False
+        self.search_filter = None
 
     @staticmethod
     def _get_config():
@@ -183,6 +184,15 @@ class Ytcc:
         """Sets "watched video" filter. The results when listing videos will both watched and unwatched videos."""
 
         self.include_watched_filter = True
+
+    def set_search_filter(self, searchterm):
+        """Sets a search filter. When this filter is set, all other filters are ignored
+
+        Args:
+            searchterm (str): only videos whose title, channel or description match this term will be included
+        """
+
+        self.search_filter = searchterm
 
     def update_all(self):
         """Checks every channel for new videos"""
@@ -310,6 +320,9 @@ class Ytcc:
         Returns (list):
             A list of ytcc.video.Video objects
         """
+
+        if self.search_filter:
+            return self.db.search(self.search_filter)
 
         return self.db.list_videos(self.channel_filter, self.date_begin_filter, self.date_end_filter,
                                    self.include_watched_filter)

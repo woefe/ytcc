@@ -93,7 +93,7 @@ class Database:
                 DELETE FROM user_search WHERE id = OLD.id;
             END;
 
-            PRAGMA USER_VERSION = ''' + Database.VERSION + ";")
+            PRAGMA USER_VERSION = ''' + str(Database.VERSION) + ";")
         self.dbconn.commit()
         c.close()
 
@@ -184,6 +184,30 @@ class Database:
         sql_args.insert(2, include_watched)
         sql_args.insert(3, channel_filter is None or len(channel_filter) < 1)
         result = self._execute_query_with_result(sql, tuple(sql_args))
+        return [Video(*x) for x in result]
+
+    def search(self, searchterm):
+        """Performs a full-text search.
+
+        Returns(list):
+            A list of ytcc.video.Video
+        """
+
+        sql = """
+            SELECT
+                v.id,
+                v.yt_videoid,
+                v.title,
+                v.description,
+                v.publish_date,
+                c.displayname
+            FROM video v
+                JOIN channel c ON v.publisher = c.yt_channelid
+                JOIN user_search s ON v.id = s.id
+            WHERE s.user_search MATCH ?;
+            """
+
+        result = self._execute_query_with_result(sql, (searchterm,))
         return [Video(*x) for x in result]
 
     def get_video(self, video_id):
