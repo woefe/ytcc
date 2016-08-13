@@ -1,5 +1,5 @@
 # ytcc - The YouTube channel checker
-# Copyright (C) 2015  Wolfgang Popp
+# Copyright (C) 2016  Wolfgang Popp
 #
 # This file is part of ytcc.
 #
@@ -17,12 +17,15 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import sqlite3
+import ytcc.updater as updater
 from ytcc.video import Video
 from ytcc.channel import Channel
 
 
 class Database:
     """Database interface for ytcc"""
+
+    VERSION = 1
 
     def __init__(self, path):
         """Connects to the given sqlite3 database file or creates a new file,
@@ -38,6 +41,8 @@ class Database:
         self.dbconn = sqlite3.connect(str(path))
         if is_new_db:
             self._init_db()
+        else:
+            self._maybe_update()
 
     def __enter__(self):
         return self
@@ -50,23 +55,52 @@ class Database:
 
         c = self.dbconn.cursor()
         c.executescript('''
-            create table channel (
-                id integer not null primary key,
-                displayname varchar unique,
-                yt_channelid varchar unique
+            CREATE TABLE channel (
+                id           INTEGER NOT NULL PRIMARY KEY,
+                displayname  VARCHAR UNIQUE,
+                yt_channelid VARCHAR UNIQUE
             );
-            create table video (
-                id integer not null primary key,
-                yt_videoid varchar unique,
-                title varchar,
-                description varchar,
-                publisher varchar references channel(yt_channelid),
-                publish_date float,
-                watched integer constraint watchedBool check(watched = 1 or watched = 0)
+
+            CREATE TABLE video (
+                id           INTEGER NOT NULL PRIMARY KEY,
+                yt_videoid   VARCHAR UNIQUE,
+                title        VARCHAR,
+                description  VARCHAR,
+                publisher    VARCHAR REFERENCES channel (yt_channelid),
+                publish_date FLOAT,
+                watched      INTEGER CONSTRAINT watchedBool CHECK (watched = 1 OR watched = 0)
             );
-        ''')
+
+            CREATE VIRTUAL TABLE user_search USING fts4(id, channel, title, description, tokenize = unicode61);
+
+            CREATE TRIGGER IF NOT EXISTS populate_search
+            AFTER INSERT ON video FOR EACH ROW
+            BEGIN
+                INSERT INTO user_search (id, channel, title, description)
+                    SELECT
+                        v.id,
+                        c.displayname,
+                        v.title,
+                        v.description
+                    FROM video v
+                        JOIN channel c ON v.publisher = c.yt_channelid
+                    WHERE v.id = NEW.id;
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS delete_from_search
+            AFTER DELETE ON video FOR EACH ROW
+            BEGIN
+                DELETE FROM user_search WHERE id = OLD.id;
+            END;
+
+            PRAGMA USER_VERSION = ''' + Database.VERSION + ";")
         self.dbconn.commit()
         c.close()
+
+    def _maybe_update(self):
+        db_version = int(self._execute_query_with_result("PRAGMA USER_VERSION;")[0][0])
+        if db_version < Database.VERSION:
+            updater.update(db_version, Database.VERSION, self.dbconn)
 
     def _execute_query(self, sql, args=()):
         # Helper method to execute sql queries that do not have return values e.g. update, insert,...
