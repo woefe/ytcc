@@ -139,18 +139,9 @@ class Ytcc:
         config.read(config_file)
         return config
 
-    def _update_channel(self, yt_channel_id):
-        feed = feedparser.parse("https://www.youtube.com/feeds/videos.xml?channel_id=" + yt_channel_id)
-        videos = [(entry.yt_videoid,
-                   entry.title,
-                   entry.description,
-                   yt_channel_id,
-                   time.mktime(entry.published_parsed),
-                   0)
-                  for entry in feed.entries]
-
-        with database.Database(Path(self.dbPath)) as db:
-            db.add_videos(videos)
+    @staticmethod
+    def get_youtube_video_url(yt_videoid):
+        return "https://www.youtube.com/watch?v=" + yt_videoid
 
     def set_channel_filter(self, channel_filter):
         """Sets the channel filter. The results when listing videos will only include videos by channels specifide in
@@ -166,7 +157,7 @@ class Ytcc:
         """Sets the time filter. The results when listing videos will only include videos newer than the given time.
 
         Args:
-            begin (datetime): the lower bound of the time filter
+            begin (datetime.datetime): the lower bound of the time filter
         """
 
         self.date_begin_filter = begin.timestamp()
@@ -175,13 +166,14 @@ class Ytcc:
         """Sets the time filter. The results when listing videos will only include videos older than the given time.
 
         Args:
-            begin (datetime): the upper bound of the time filter
+            end (datetime.datetime): the upper bound of the time filter
         """
 
         self.date_end_filter = end.timestamp()
 
     def set_include_watched_filter(self):
-        """Sets "watched video" filter. The results when listing videos will both watched and unwatched videos."""
+        """Sets "watched video" filter. The results when listing videos will include both watched and unwatched videos.
+        """
 
         self.include_watched_filter = True
 
@@ -193,6 +185,19 @@ class Ytcc:
         """
 
         self.search_filter = searchterm
+
+    def _update_channel(self, yt_channel_id):
+        feed = feedparser.parse("https://www.youtube.com/feeds/videos.xml?channel_id=" + yt_channel_id)
+        videos = [(entry.yt_videoid,
+                   entry.title,
+                   entry.description,
+                   yt_channel_id,
+                   time.mktime(entry.published_parsed),
+                   0)
+                  for entry in feed.entries]
+
+        with database.Database(Path(self.dbPath)) as db:
+            db.add_videos(videos)
 
     def update_all(self):
         """Checks every channel for new videos"""
@@ -228,10 +233,7 @@ class Ytcc:
 
         return False
 
-    def get_youtube_video_url(self, yt_videoid):
-        return "https://www.youtube.com/watch?v=" + yt_videoid
-
-    def download_videos(self, video_ids, path, no_video=False):
+    def download_videos(self, video_ids=None, path=None, no_video=False):
         """Downloads the videos identified by the given video IDs with youtube-dl and marks the videos watched.
 
         Args:
@@ -253,6 +255,9 @@ class Ytcc:
         no_video_flag = []
         if no_video:
             no_video_flag.append("--extract-audio")
+
+        if not video_ids:
+            video_ids = self._get_filtered_video_ids()
 
         for vID in video_ids:
             video = self.db.get_video(vID)
@@ -327,25 +332,21 @@ class Ytcc:
         return self.db.list_videos(self.channel_filter, self.date_begin_filter, self.date_end_filter,
                                    self.include_watched_filter)
 
-    def mark_some_watched(self, video_ids):
-        """Marks the videos identified by the given video IDs as watched without playing them. Invalid video IDs are
-        ignored.
+    def _get_filtered_video_ids(self):
+        return list(map(lambda video: video.id, self.list_videos()))
+
+    def mark_watched(self, video_ids=None):
+        """Marks the videos of channels specified in the filter as watched without playing them. The filters are set by
+        the set_*_filter methods.
 
         Args:
             video_ids ([int]): The video IDs to mark as watched.
         """
 
-        self.db.mark_some_watched(video_ids)
-
-    def mark_watched(self):
-        """Marks the videos of channels specified in the filter as watched without playing them. The filters are set by
-        the set_*_filter methods.
-        """
-
-        if self.channel_filter:
-            self.db.mark_watched(self.channel_filter, self.date_begin_filter, self.date_end_filter)
+        if video_ids:
+            self.db.mark_some_watched(video_ids)
         else:
-            self.db.mark_all_watched()
+            self.db.mark_some_watched(self._get_filtered_video_ids())
 
     def delete_channels(self, displaynames):
         """Delete (or unsubscribe) channels.

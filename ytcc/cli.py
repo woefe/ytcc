@@ -69,7 +69,7 @@ def play_videos(videos, interactive):
                 print("\nWARNING: The video player terminated with an error.")
                 print("         The last video is not marked as watched!\n")
         elif choice in ("m", "M", "mark"):
-            ytcc_core.mark_some_watched([video.id])
+            ytcc_core.mark_watched([video.id])
         elif choice in ("q", "Q", "quit"):
             break
 
@@ -100,14 +100,14 @@ def table_print(header, table):
         header_line += "┼"
 
     header_line = header_line[:-1]
-    format = (" {{:<{}}} │" * len(header))[:-2].format(*col_widths)
+    table_format = (" {{:<{}}} │" * len(header))[:-2].format(*col_widths)
 
     if header_enabled:
-        print(format.format(*header))
+        print(table_format.format(*header))
         print(header_line)
 
     for row in table:
-        print(format.format(*row))
+        print(table_format.format(*row))
 
 
 def print_videos():
@@ -146,11 +146,6 @@ def print_channels():
             print(channel.displayname)
 
 
-def download(video_ids, path):
-    ids = video_ids if video_ids else map(lambda video: video.id, ytcc_core.list_videos())
-    ytcc_core.download_videos(ids, path, no_video)
-
-
 def add_channel(name, channel_url):
     try:
         ytcc_core.add_channel(name, channel_url)
@@ -160,13 +155,6 @@ def add_channel(name, channel_url):
         print(e.message)
     except core.ChannelDoesNotExistException as e:
         print(e.message)
-
-
-def mark_watched(video_ids):
-    if not video_ids or video_ids[0] == "all":
-        ytcc_core.mark_watched()
-    else:
-        ytcc_core.mark_some_watched(video_ids)
 
 
 def cleanup():
@@ -409,7 +397,7 @@ def main():
         option_executed = True
 
     if args.download is not None:
-        download(args.download, args.path)
+        ytcc_core.download_videos(video_ids=args.download, path=args.path, no_video=no_video)
         option_executed = True
 
     if args.watch is not None:
@@ -419,7 +407,7 @@ def main():
         option_executed = True
 
     if args.mark_watched is not None:
-        mark_watched(args.mark_watched)
+        ytcc_core.mark_watched(args.mark_watched)
         option_executed = True
 
     if not option_executed:

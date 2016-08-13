@@ -164,7 +164,7 @@ class Database:
             include_watched (bool): true, if watched videos should be included in the result
 
         Returns (list):
-            A list of tuples of ytcc.video.Video
+            A list of ytcc.video.Video
         """
 
         sql = """
@@ -230,42 +230,6 @@ class Database:
             return Video(*result[0])
         else:
             return None
-
-    def mark_watched(self, channel_filter=None, begin_timestamp=0, end_timestamp=0):
-        """Marks all videos that are older than the given timestamp and are published by channels in the given filter as
-        watched.
-
-        Args:
-            channel_filter (list): the list of channel names
-            begin_timestamp (int): timestamp in seconds
-            end_timestamp (int): timestamp in seconds
-
-        Returns (list):
-            A list of tuples of ytcc.video.Video
-        """
-
-        sql = """
-            update video
-            set watched = 1
-            where watched = 0
-                and publish_date > @begin_timestamp
-                and publish_date < @end_timestamp
-                and publisher in (
-                    select yt_channelid
-                    from channel
-                    where displayname in """ + self._make_place_holder(channel_filter) + """)
-            """
-
-        sql_args = channel_filter.copy() if channel_filter is not None else []
-        sql_args.insert(0, begin_timestamp)
-        sql_args.insert(1, end_timestamp)
-        self._execute_query(sql, tuple(sql_args))
-
-    def mark_all_watched(self):
-        """Marks all unwatched videos as watched without playing them."""
-
-        sql = "update video set watched = 1 where watched = 0"
-        self._execute_query(sql)
 
     def mark_some_watched(self, video_ids):
         """Marks the videos identified by the given video IDs as watched without playing them.
