@@ -31,6 +31,7 @@ complete -c $cmd -f    -l channel-filter  -s f -d "apply a channel filter"
 complete -c $cmd -f    -l include-watched -s n -d "apply include-watched filter"
 complete -c $cmd -f -r -l since           -s s -d "apply date begin filter"
 complete -c $cmd -f -r -l to              -s t -d "apply date end filter"
+complete -c $cmd -f -r -l search          -s q -d "search for a given pattern"
 complete -c $cmd    -r -l path            -s p -d "set the download path"
 complete -c $cmd -f    -l no-description  -s g -d "do not print the video description"
 complete -c $cmd -f -r -l columns         -s o -d "column" -a 'ID Date Channel Title URL'

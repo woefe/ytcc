@@ -40,6 +40,7 @@ _ytcc() {
         '(-n --include-watched)'{-n,--list-recent}'[include watched videos to filter]' \
         '(-s --since)'{-s,--since}'[set lower limit of date filter]:1::' \
         '(-t --to)'{-t,--to}'[set upper limit of date filter]:1::' \
+        '(-q --search)'{-q,--search}'[search for a given pattern]:1::' \
         '(-p --path)'{-p,--path}'[set the download path]::download path:_path_files -/' \
         '(-g --no-description)'{-g,--no-description}'[do not print the video description]' \
         '(-o --columns)'{-o,--columns}'[set which columns will be displayed]:::(ID Date Channel Title URL):' \
