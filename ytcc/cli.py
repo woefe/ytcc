@@ -16,13 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
-from ytcc import core
-from dateutil import parser as date_parser
-from datetime import datetime
 import shutil
 import argparse
 import os
+import signal
 import textwrap as wrap
+from datetime import datetime
+from ytcc import core
+from dateutil import parser as date_parser
 
 ytcc_core = core.Ytcc()
 interactive_enabled = True
@@ -191,8 +192,7 @@ def is_date(string):
     return string
 
 
-def main():
-
+def parse_args():
     parser = argparse.ArgumentParser(description="ytcc is a commandline YouTube client that keeps track of your "
                                      "favorite channels. The --list, --watch, --download, --mark-watched options can "
                                      "be combined with filter options --channel-filter, --include-watched, --since, "
@@ -421,3 +421,17 @@ def main():
         update_all()
         print()
         watch()
+
+
+def register_signal_handlers():
+    def handler(signum, frame):
+        print("\nBye...")
+        exit(1)
+
+    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
+
+
+def main():
+    register_signal_handlers()
+    parse_args()
