@@ -397,7 +397,14 @@ def main():
         option_executed = True
 
     if args.download is not None:
-        ytcc_core.download_videos(video_ids=args.download, path=args.path, no_video=no_video)
+        if option_executed:
+            print()
+
+        try:
+            ytcc_core.download_videos(video_ids=args.download, path=args.path, no_video=no_video)
+        except core.DownloadError as e:
+            print(e.message)
+
         option_executed = True
 
     if args.watch is not None:

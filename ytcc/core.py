@@ -34,35 +34,49 @@ import os
 import youtube_dl
 
 
-class BadURLException(Exception):
+class YtccException(Exception):
+    """A general parent class of all Exceptions that are used in Ytcc"""
+
+    def __init__(self, message):
+        self.message = message
+
+
+class DownloadError(YtccException):
+    """Raised when the download via youtube-dl fails"""
+
+    def __init__(self, message):
+        self.message = message
+
+
+class BadURLException(YtccException):
     """Raised when a given URL does not refer to a YouTube channel."""
 
     def __init__(self, message):
         self.message = message
 
 
-class DuplicateChannelException(Exception):
+class DuplicateChannelException(YtccException):
     """Raised when trying to subscribe to a channel the second (or more) time."""
 
     def __init__(self, message):
         self.message = message
 
 
-class ChannelDoesNotExistException(Exception):
+class ChannelDoesNotExistException(YtccException):
     """Raised when the url of a given channel does not exist."""
 
     def __init__(self, message):
         self.message = message
 
 
-class InvalidIDException(Exception):
+class InvalidIDException(YtccException):
     """Raised when a given video ID or channel ID does not exist."""
 
     def __init__(self, message):
         self.message = message
 
 
-class InvalidSubscriptionFile(Exception):
+class InvalidSubscriptionFile(YtccException):
     """Raised when the given file is not a valid XML file."""
 
     def __init__(self, message):
@@ -251,7 +265,7 @@ class Ytcc:
             download_dir = os.path.expanduser("~/Downloads")
 
         if not os.path.isdir(download_dir):
-            return
+            raise DownloadError(download_dir + " is not a directory")
 
         no_video_flag = []
         if no_video:
