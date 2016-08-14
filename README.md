@@ -61,9 +61,26 @@ Download all videos from a channel that were published in July.
 ytcc -f "Jupiter Broadcasting" --download --since 07-01 --to 07-31 --include-watched
 ```
 
+Download only the audio track of "LINUX Unplugged" episodes
+```shell
+ytcc --search "channel:jupiter title:unplugged" --download --no-video
+```
+Note that the `--search` option only searches ytcc's database and not youtube.com.
+
 Mark all videos of a channel as watched.
 ```shell
 ytcc -f "Jupiter Broadcasting" -m
+```
+
+Search for Playthroughs, Let's Plays, ...
+```shell
+ytcc --search "title:*play*" -l
+```
+
+Listen to epic music
+```shell
+ytcc --add "Two Steps From Hell" https://www.youtube.com/channel/UC3swwxiALG5c0Tvom83tPGg --update
+ytcc --search "thomas bergersen" --yes --list --watch --no-video
 ```
 
 ## Video quality settings
