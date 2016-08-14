@@ -31,6 +31,7 @@ import time
 import re
 import subprocess
 import os
+import youtube_dl
 
 
 class BadURLException(Exception):
@@ -259,13 +260,21 @@ class Ytcc:
         if not video_ids:
             video_ids = self._get_filtered_video_ids()
 
-        for vID in video_ids:
-            video = self.db.get_video(vID)
-            if video:
-                ytdl_result = subprocess.run(["youtube-dl", *no_video_flag, "-o", download_dir + "/%(title)s.%(ext)s",
-                                              self.get_youtube_video_url(video.yt_videoid)])
-                if ytdl_result.returncode == 0:
-                    self.db.mark_some_watched([vID])
+        videos = map(self.db.get_video, video_ids)
+        urls = list(map(lambda v: self.get_youtube_video_url(v.yt_videoid), videos))
+
+        ydl_opts = {
+            "outtmpl": download_dir + "/%(title)s.%(ext)s",
+        }
+
+        if no_video:
+            ydl_opts["format"] = "bestaudio/best"
+
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            if ydl.download(urls) == 0:
+                self.db.mark_some_watched(video_ids)
+            else:
+                raise DownloadError("youtube-dl return with an error")
 
     def add_channel(self, displayname, channel_url):
         """Subscribes to a channel.
