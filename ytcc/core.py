@@ -274,7 +274,7 @@ class Ytcc:
         if not video_ids:
             video_ids = self._get_filtered_video_ids()
 
-        videos = map(self.db.get_video, video_ids)
+        videos = self.get_videos(video_ids)
         urls = list(map(lambda v: self.get_youtube_video_url(v.yt_videoid), videos))
 
         ydl_opts = {
@@ -364,12 +364,18 @@ class Ytcc:
 
         Args:
             video_ids ([int]): The video IDs to mark as watched.
+
+        Returns (list):
+            A list of ytcc.video.Video objects. Contains the videos that were marked watched.
         """
 
         if video_ids:
-            self.db.mark_some_watched(video_ids)
+            mark_ids = video_ids
         else:
-            self.db.mark_some_watched(self._get_filtered_video_ids())
+            mark_ids = self._get_filtered_video_ids()
+
+        self.db.mark_some_watched(mark_ids)
+        return self.get_videos(mark_ids)
 
     def delete_channels(self, displaynames):
         """Delete (or unsubscribe) channels.

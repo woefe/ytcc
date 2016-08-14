@@ -111,31 +111,43 @@ def table_print(header, table):
         print(table_format.format(*row))
 
 
-def print_videos():
+def print_videos(videos):
+    if column_filter:
+        table_col_filter = column_filter
+    else:
+        table_format = ytcc_core.config["TableFormat"]
+        table_col_filter = [table_format.getboolean("ID"),
+                            table_format.getboolean("Date"),
+                            table_format.getboolean("Channel"),
+                            table_format.getboolean("Title"),
+                            table_format.getboolean("URL")]
+
+    def row_filter(row):
+        return list(map(lambda e: e[1], filter(lambda e: e[0], zip(table_col_filter, row))))
+
+    def video_to_list(video):
+        return [video.id, datetime.fromtimestamp(video.publish_date).strftime("%Y-%m-%d %H:%M"),
+                video.channelname, video.title, ytcc_core.get_youtube_video_url(video.yt_videoid)]
+
+    table = [row_filter(video_to_list(v)) for v in videos]
+    table_print(row_filter(table_header), table)
+
+
+def mark_watched(video_ids):
+    marked_videos = ytcc_core.mark_watched(video_ids)
+    if not marked_videos:
+        print("No videos were marked as watched")
+    else:
+        print("Following videos were marked as watched:\n")
+        print_videos(marked_videos)
+
+
+def list_videos():
     videos = ytcc_core.list_videos()
     if not videos:
         print("No videos to list. No videos match the given criteria.")
     else:
-        table_format = ytcc_core.config["TableFormat"]
-
-        if column_filter:
-            table_col_filter = column_filter
-        else:
-            table_col_filter = [table_format.getboolean("ID"),
-                                table_format.getboolean("Date"),
-                                table_format.getboolean("Channel"),
-                                table_format.getboolean("Title"),
-                                table_format.getboolean("URL")]
-
-        def row_filter(row):
-            return list(map(lambda e: e[1], filter(lambda e: e[0], zip(table_col_filter, row))))
-
-        def video_to_list(video):
-            return [video.id, datetime.fromtimestamp(video.publish_date).strftime("%Y-%m-%d %H:%M"),
-                    video.channelname, video.title, ytcc_core.get_youtube_video_url(video.yt_videoid)]
-
-        table = [row_filter(video_to_list(v)) for v in videos]
-        table_print(row_filter(table_header), table)
+        print_videos(videos)
 
 
 def print_channels():
@@ -393,7 +405,7 @@ def parse_args():
     if args.list:
         if option_executed:
             print()
-        print_videos()
+        list_videos()
         option_executed = True
 
     if args.download is not None:
@@ -414,7 +426,9 @@ def parse_args():
         option_executed = True
 
     if args.mark_watched is not None:
-        ytcc_core.mark_watched(args.mark_watched)
+        if option_executed:
+            print()
+        mark_watched(args.mark_watched)
         option_executed = True
 
     if not option_executed:
