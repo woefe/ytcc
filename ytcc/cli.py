@@ -94,7 +94,7 @@ def table_print(header, table):
         col_widths.append(len(h))
 
     for i in range(0, len(header)):
-        col_widths[i] = max(map(lambda h: len(str(h[i])), table))
+        col_widths[i] = max(col_widths[i], max(map(lambda h: len(str(h[i])), table)))
 
     for width in col_widths:
         header_line += "─" * (width + 2)
