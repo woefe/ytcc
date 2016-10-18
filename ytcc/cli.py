@@ -21,6 +21,7 @@ import argparse
 import os
 import signal
 import textwrap as wrap
+import readline
 from datetime import datetime
 from ytcc import core
 from dateutil import parser as date_parser
@@ -39,7 +40,7 @@ def update_all():
     ytcc_core.update_all()
 
 
-def print_description(description):
+def maybe_print_description(description):
     global description_enabled
     if description_enabled:
         columns = shutil.get_terminal_size().columns
@@ -55,35 +56,92 @@ def print_description(description):
         print(delimiter, end="\n\n")
 
 
-def play_videos(videos, interactive):
-    for video in videos:
-        if interactive:
-            choice = input('Play video "' + video.title + '" by "' + video.channelname +
-                           '"?\n[y(es)/n(o)/m(ark)/q(uit)] (Default: y): ')
-        else:
-            print('Playing "' + video.title + '" by "' + video.channelname + '"...')
-            choice = "y"
+def interactive_prompt(video):
+    executed_cmd = False
+    commands = [
+        ("help", "print this help"),
+        ("play-video", "play the video"),
+        ("play-audio", "play only the audio track of the video"),
+        ("yes", "an alias for 'play-video'"),
+        ("no", "do not play the video"),
+        ("mark", "mark the video watched without playing it"),
+        ("download-video", "download the video"),
+        ("download-audio", "download the audio track of the video"),
+        ("quit", "exit ytcc"),
+    ]
 
-        if choice in ("y", "Y", "", "yes"):
-            print_description(video.description)
-            if not ytcc_core.play_video(video.id, no_video):
-                print("\nWARNING: The video player terminated with an error.")
-                print("         The last video is not marked as watched!\n")
-        elif choice in ("m", "M", "mark"):
+    def completer(text, state):
+        options = [cmd[0] for cmd in commands if cmd[0].startswith(text)]
+        if state < len(options):
+            return options[state]
+        else:
+            return None
+
+    readline.parse_and_bind("tab: complete")
+    readline.set_completer_delims(" ")
+    readline.set_completer(completer)
+
+    while not executed_cmd:
+        try:
+            choice = input('Play video "' + video.title + '" by "' + video.channelname +
+                           '"?\n[y(es)/n(o)/m(ark)/q(uit)/h(elp)] (Default: y): ')
+        except EOFError:
+            print()
+            return False
+
+        executed_cmd = True
+        choice = choice.lower()
+
+        if choice in ("h", "help"):
+            print("\nAvailable commands:")
+            for command in commands:
+                print("{:>20}  {}".format(command[0], command[1]))
+            print()
+            executed_cmd=False
+        elif choice in ("y", "", "yes", "play-video"):
+            play(video, no_video)
+        elif choice in ("a", "audio", "play-audio"):
+            play(video, True)
+        elif choice in ("m", "mark"):
             ytcc_core.mark_watched([video.id])
-        elif choice in ("q", "Q", "quit"):
-            break
+        elif choice in ("download-video", "dv"):
+            ytcc_core.download_videos(video_ids=[video.id], no_video=False)
+        elif choice in ("download-audio", "da"):
+            ytcc_core.download_videos(video_ids=[video.id], no_video=True)
+        elif choice in ("q", "quit", "exit"):
+            return False
+        elif choice in ("n", "no"):
+            pass
+        else:
+            print("\n'" + choice + "' is an invalid command. Type 'help' for more info.\n")
+            executed_cmd=False
+
+    return True
+
+
+def play(video, audio_only):
+    maybe_print_description(video.description)
+    if not ytcc_core.play_video(video.id, audio_only):
+        print("\nWARNING: The video player terminated with an error.")
+        print("         The last video is not marked as watched!\n")
 
 
 def watch(video_ids=None):
     if not video_ids:
-        _videos = ytcc_core.list_videos()
-        if not _videos:
-            print("No videos to watch. No videos match the given criteria.")
-        else:
-            play_videos(_videos, interactive_enabled)
+        videos = ytcc_core.list_videos()
     else:
-        play_videos(ytcc_core.get_videos(video_ids), False)
+        videos = ytcc_core.get_videos(video_ids)
+
+    if not videos:
+        print("No videos to watch. No videos match the given criteria.")
+    else:
+        for video in videos:
+            if interactive_enabled:
+                if not interactive_prompt(video):
+                    break
+            else:
+                print('Playing "' + video.title + '" by "' + video.channelname + '"...')
+                play(video, no_video)
 
 
 def table_print(header, table):
