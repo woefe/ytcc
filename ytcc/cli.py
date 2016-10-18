@@ -445,7 +445,6 @@ def register_signal_handlers():
         exit(1)
 
     signal.signal(signal.SIGINT, handler)
-    signal.signal(signal.SIGTERM, handler)
 
 
 def main():
