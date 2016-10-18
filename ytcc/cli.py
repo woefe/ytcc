@@ -434,6 +434,8 @@ def parse_args():
     if not option_executed:
         update_all()
         print()
+        list_videos()
+        print()
         watch()
 
 
