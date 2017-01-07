@@ -21,6 +21,7 @@ from urllib.error import URLError
 from urllib.parse import urlparse
 from lxml import etree
 from io import StringIO
+from itertools import chain
 from pathlib import Path
 from multiprocessing import Pool
 from ytcc import database
@@ -81,7 +82,6 @@ class InvalidSubscriptionFile(YtccException):
 
     def __init__(self, message):
         self.message = message
-
 
 class Ytcc:
     """The Ytcc class handles updating the YouTube RSS feed and playing and listing/filtering videos. Filters can be set
@@ -201,9 +201,10 @@ class Ytcc:
 
         self.search_filter = searchterm
 
-    def _update_channel(self, yt_channel_id):
+    @staticmethod
+    def _update_channel(yt_channel_id):
         feed = feedparser.parse("https://www.youtube.com/feeds/videos.xml?channel_id=" + yt_channel_id)
-        videos = [(entry.yt_videoid,
+        return [(entry.yt_videoid,
                    entry.title,
                    entry.description,
                    yt_channel_id,
@@ -211,14 +212,16 @@ class Ytcc:
                    0)
                   for entry in feed.entries]
 
-        with database.Database(Path(self.dbPath)) as db:
-            db.add_videos(videos)
-
     def update_all(self):
         """Checks every channel for new videos"""
 
-        with Pool(os.cpu_count() * 2) as threadPool:
-            threadPool.map(self._update_channel, map(lambda channel: channel.yt_channelid, self.db.list_channels()))
+        channels = map(lambda channel: channel.yt_channelid, self.db.list_channels())
+
+        with Pool(os.cpu_count() * 2) as pool:
+            videos = chain.from_iterable(pool.map(self._update_channel, channels))
+
+        with database.Database(Path(self.dbPath)) as db:
+            db.add_videos(videos)
 
     def play_video(self, video_id, no_video=False):
         """Plays the video identified by the given video ID with the mpv video player and marks the video watched, if
