@@ -14,5 +14,5 @@ setup(
     license=ytcc.__license__,
     scripts=['scripts/ytcc'],
     packages=['ytcc'],
-    install_requires=['lxml', 'feedparser', 'python-dateutil', 'youtube_dl']
+    install_requires=['lxml', 'feedparser>=5.2.0', 'python-dateutil', 'youtube_dl']
 )
