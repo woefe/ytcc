@@ -33,6 +33,7 @@ table_header = ["ID", "Date", "Channel", "Title", "URL"]
 column_filter = None
 header_enabled = True
 no_video = False
+download_path = None
 
 
 def update_all():
@@ -105,9 +106,9 @@ def interactive_prompt(video):
         elif choice in ("m", "mark"):
             ytcc_core.mark_watched([video.id])
         elif choice in ("download-video", "dv"):
-            ytcc_core.download_videos(video_ids=[video.id], no_video=False)
+            download([video.id], audio_only=False)
         elif choice in ("download-audio", "da"):
-            ytcc_core.download_videos(video_ids=[video.id], no_video=True)
+            download([video.id], audio_only=True)
         elif choice in ("q", "quit", "exit"):
             return False
         elif choice in ("n", "no"):
@@ -260,6 +261,18 @@ def is_date(string):
         raise argparse.ArgumentTypeError(msg)
 
     return string
+
+
+def download(video_ids, audio_only=None):
+    try:
+        if audio_only is None:
+            ytcc_core.download_videos(video_ids=video_ids, path=download_path, no_video=no_video)
+        else:
+            ytcc_core.download_videos(video_ids=video_ids, path=download_path, no_video=not audio_only)
+    except core.DownloadError as e:
+        print("The video has not been downloaded due to the following error.")
+        print(e.message)
+        print()
 
 
 def parse_args():
@@ -415,6 +428,10 @@ def parse_args():
         global no_video
         no_video = True
 
+    if args.path:
+        global download_path
+        download_path = args.path
+
     if args.columns:
         global column_filter
         column_filter = [True if f in args.columns else False for f in table_header]
@@ -469,12 +486,7 @@ def parse_args():
     if args.download is not None:
         if option_executed:
             print()
-
-        try:
-            ytcc_core.download_videos(video_ids=args.download, path=args.path, no_video=no_video)
-        except core.DownloadError as e:
-            print(e.message)
-
+        download(args.download)
         option_executed = True
 
     if args.watch is not None:
