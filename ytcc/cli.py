@@ -174,7 +174,7 @@ def print_videos(videos):
     if column_filter:
         table_col_filter = column_filter
     else:
-        table_format = ytcc_core.config["TableFormat"]
+        table_format = ytcc_core.config.table_format
         table_col_filter = [table_format.getboolean("ID"),
                             table_format.getboolean("Date"),
                             table_format.getboolean("Channel"),

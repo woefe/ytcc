@@ -24,7 +24,8 @@ from io import StringIO
 from itertools import chain
 from pathlib import Path
 from multiprocessing import Pool
-from ytcc import database
+from ytcc.database import Database
+from ytcc.config import Config
 import configparser
 import feedparser
 import sqlite3
@@ -39,49 +40,33 @@ class YtccException(Exception):
     """A general parent class of all Exceptions that are used in Ytcc"""
 
     def __init__(self, message):
+        super(YtccException, self).__init__()
         self.message = message
 
 
 class DownloadError(YtccException):
     """Raised when the download via youtube-dl fails"""
 
-    def __init__(self, message):
-        self.message = message
-
 
 class BadURLException(YtccException):
     """Raised when a given URL does not refer to a YouTube channel."""
-
-    def __init__(self, message):
-        self.message = message
 
 
 class DuplicateChannelException(YtccException):
     """Raised when trying to subscribe to a channel the second (or more) time."""
 
-    def __init__(self, message):
-        self.message = message
-
 
 class ChannelDoesNotExistException(YtccException):
     """Raised when the url of a given channel does not exist."""
-
-    def __init__(self, message):
-        self.message = message
 
 
 class InvalidIDException(YtccException):
     """Raised when a given video ID or channel ID does not exist."""
 
-    def __init__(self, message):
-        self.message = message
-
 
 class InvalidSubscriptionFile(YtccException):
     """Raised when the given file is not a valid XML file."""
 
-    def __init__(self, message):
-        self.message = message
 
 class Ytcc:
     """The Ytcc class handles updating the YouTube RSS feed and playing and listing/filtering videos. Filters can be set
@@ -93,66 +78,19 @@ class Ytcc:
     """
 
     def __init__(self):
-        self.config = self._get_config()
-        self.download_dir = os.path.expanduser(self.config["YTCC"]["DownloadDir"])
-        self.dbPath = os.path.expanduser(self.config["YTCC"]["DBPath"])
-        self.mpv_flags = re.compile("\\s+").split(self.config["YTCC"]["mpvFlags"])
-        self.db = database.Database(Path(self.dbPath))
+        self.config = Config()
+        self.db = Database(Path(self.config.db_path))
         self.channel_filter = None
         self.date_begin_filter = 0
         self.date_end_filter = time.mktime(time.gmtime()) + 20
         self.include_watched_filter = False
         self.search_filter = None
 
-    @staticmethod
-    def _get_config():
-        """Searches for the config file in
-            1. $XDG_CONFIG_HOME/ytcc/ytcc.conf
-            2. ~/.config/ytcc/ytcc.conf
-            3. ~/.ytcc.conf
-        If no config file is found in these three locations, a default config file is created in
-        '~/.config/ytcc/ytcc.conf'
+    def __enter__(self):
+        return self
 
-        Returns (configparser.ConfigParser):
-            the config
-        """
-
-        defaults = {"YTCC": {"DBPath": "~/.local/share/ytcc/ytcc.db",
-                             "DownloadDir": "~/Downloads",
-                             "mpvFlags": "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best"},
-                    "TableFormat": {"ID": "on",
-                                    "Date": "off",
-                                    "Channel": "on",
-                                    "Title": "on",
-                                    "URL": "off"}
-                    }
-        config = configparser.ConfigParser()
-        config.read_dict(defaults)
-        config_file = None
-        default = Path(os.path.expanduser("~/.config/ytcc/ytcc.conf"))
-        fallback = Path(os.path.expanduser("~/.ytcc.conf"))
-        xdg_conf_home = os.getenv("XDG_CONFIG_HOME")
-        xdg_conf_file = None
-
-        if xdg_conf_home is not None:
-            xdg_conf_file = Path(xdg_conf_home + "/ytcc/ytcc.conf")
-
-        if xdg_conf_file is not None and xdg_conf_file.is_file():
-            config_file = str(xdg_conf_file)
-        elif default.is_file():
-            config_file = str(default)
-        elif fallback.is_file():
-            config_file = str(fallback)
-
-        if config_file is None:
-            config_file = str(default)
-            default.parent.mkdir(parents=True, exist_ok=True)
-            default.touch()
-            with default.open("w") as defaultFile:
-                config.write(defaultFile)
-
-        config.read(config_file)
-        return config
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.db.__exit__(exc_type, exc_val, exc_tb)
 
     @staticmethod
     def get_youtube_video_url(yt_videoid):
@@ -205,12 +143,12 @@ class Ytcc:
     def _update_channel(yt_channel_id):
         feed = feedparser.parse("https://www.youtube.com/feeds/videos.xml?channel_id=" + yt_channel_id)
         return [(entry.yt_videoid,
-                   entry.title,
-                   entry.description,
-                   yt_channel_id,
-                   time.mktime(entry.published_parsed),
-                   0)
-                  for entry in feed.entries]
+                 entry.title,
+                 entry.description,
+                 yt_channel_id,
+                 time.mktime(entry.published_parsed),
+                 0)
+                for entry in feed.entries]
 
     def update_all(self):
         """Checks every channel for new videos"""
@@ -220,8 +158,7 @@ class Ytcc:
         with Pool(os.cpu_count() * 2) as pool:
             videos = chain.from_iterable(pool.map(self._update_channel, channels))
 
-        with database.Database(Path(self.dbPath)) as db:
-            db.add_videos(videos)
+        self.db.add_videos(videos)
 
     def play_video(self, video_id, no_video=False):
         """Plays the video identified by the given video ID with the mpv video player and marks the video watched, if
@@ -242,7 +179,7 @@ class Ytcc:
 
         video = self.db.get_video(video_id)
         if video:
-            mpv_result = subprocess.run(["mpv", *no_video_flag, *self.mpv_flags,
+            mpv_result = subprocess.run(["mpv", *no_video_flag, *self.config.mpv_flags,
                                          self.get_youtube_video_url(video.yt_videoid)],
                                         stderr=subprocess.DEVNULL)
             if mpv_result.returncode == 0:
@@ -262,8 +199,8 @@ class Ytcc:
 
         if path:
             download_dir = path
-        elif self.download_dir:
-            download_dir = self.download_dir
+        elif self.config.download_dir:
+            download_dir = self.config.download_dir
         else:
             download_dir = os.path.expanduser("~/Downloads")
 
@@ -281,7 +218,7 @@ class Ytcc:
         urls = list(map(lambda v: self.get_youtube_video_url(v.yt_videoid), videos))
 
         ydl_opts = {
-            "outtmpl": download_dir + "/%(title)s.%(ext)s",
+            "outtmpl": download_dir + "/" + self.config.ytdl_output_template,
         }
 
         if no_video:
