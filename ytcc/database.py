@@ -174,7 +174,8 @@ class Database:
                 and v.publish_date > @begin_timestamp
                 and v.publish_date < @end_timestamp
                 and (@include_watched or v.watched = 0)
-                and (@all_channels or c.displayname in """ + self._make_place_holder(channel_filter) + """)
+                and (@all_channels or c.displayname in """ + \
+                        self._make_place_holder(channel_filter) + """)
             order by c.id, v.publish_date asc;
             """
 
@@ -228,8 +229,8 @@ class Database:
         result = self._execute_query_with_result(sql, (video_id,))
         if result:
             return Video(*result[0])
-        else:
-            return None
+
+        return None
 
     def mark_some_watched(self, video_ids):
         """Marks the videos identified by the given video IDs as watched without playing them.
@@ -248,7 +249,8 @@ class Database:
             displaynames (list): A list of channels' displaynames.
         """
 
-        sql = "delete from channel where displayname in " + self._make_place_holder(displaynames) + ";"
+        sql = "delete from channel where displayname in " + self._make_place_holder(displaynames) \
+                + ";"
         self._execute_query(sql, tuple(displaynames))
 
     def add_videos(self, videos):
@@ -259,12 +261,16 @@ class Database:
                            (yt_videoid, title, description, publisher, publish_date, watched).
         """
 
-        sql = "insert or ignore into video(yt_videoid, title, description, publisher, publish_date, watched)" \
-              " values (?, ?, ?, ?, ?, ?);"
+        sql = """
+            insert or ignore
+            into video(yt_videoid, title, description, publisher, publish_date, watched)
+            values (?, ?, ?, ?, ?, ?);
+            """
         self._execute_query_many(sql, videos)
 
     def cleanup(self):
-        """Deletes all videos from all channels, but keeps the 30 latest videos of every channel."""
+        """Deletes all videos from all channels, but keeps the 30 latest videos of every channel.
+        """
 
         sql = """
             delete from video
