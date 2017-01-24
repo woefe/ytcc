@@ -1,5 +1,5 @@
 # ytcc - The YouTube channel checker
-# Copyright (C) 2016  Wolfgang Popp
+# Copyright (C) 2017  Wolfgang Popp
 #
 # This file is part of ytcc.
 #
@@ -412,7 +412,7 @@ def parse_args():
         import ytcc
         print("ytcc version " + ytcc.__version__)
         print()
-        print("Copyright (C) 2015-2016  " + ytcc.__author__)
+        print("Copyright (C) 2015-2017  " + ytcc.__author__)
         print("This program comes with ABSOLUTELY NO WARRANTY; This is free software, and you")
         print("are welcome to redistribute it under certain conditions.  See the GNU General ")
         print("Public Licence for details.")
