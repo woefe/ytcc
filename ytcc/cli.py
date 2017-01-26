@@ -120,7 +120,7 @@ def interactive_prompt(video):
             pass
         else:
             print()
-            print(_("'%(cmd)s is an invalid command. Type 'help' for more info.\n") % {
+            print(_("'%(cmd)s' is an invalid command. Type 'help' for more info.\n") % {
                 "cmd": choice
             })
             executed_cmd = False
@@ -321,8 +321,7 @@ def parse_args():
 
     parser.add_argument("-l", "--list",
                         help=_("print a list of videos that match the criteria given by the "
-                            "filter")
-                        "options",
+                            "filter" "options"),
                         action="store_true")
 
     parser.add_argument("-w", "--watch",
@@ -388,8 +387,8 @@ def parse_args():
                         action="store_true")
 
     parser.add_argument("-o", "--columns",
-                        help=_("specifies which columns will be printed when listing videos. COL ")
-                        "can be any of " + str(table_header),
+                        help=_("specifies which columns will be printed when listing videos. COL "
+                        "can be any of %(columns)s") % { "columns": str(table_header)},
                         nargs='+',
                         metavar="COL",
                         choices=table_header)
