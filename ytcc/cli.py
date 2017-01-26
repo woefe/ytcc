@@ -37,7 +37,7 @@ download_path = None
 
 
 def update_all():
-    print("Updating channels...")
+    print(_("Updating channels..."))
     ytcc_core.update_all()
 
 
@@ -48,7 +48,8 @@ def maybe_print_description(description):
         delimiter = "=" * columns
         lines = description.splitlines()
 
-        print("\nVideo description:")
+        print()
+        print(_("Video description:"))
         print(delimiter)
 
         for line in lines:
@@ -60,15 +61,15 @@ def maybe_print_description(description):
 def interactive_prompt(video):
     executed_cmd = False
     commands = [
-        ("help", "print this help"),
-        ("play-video", "play the video"),
-        ("play-audio", "play only the audio track of the video"),
-        ("yes", "an alias for 'play-video'"),
-        ("no", "do not play the video"),
-        ("mark", "mark the video watched without playing it"),
-        ("download-video", "download the video"),
-        ("download-audio", "download the audio track of the video"),
-        ("quit", "exit ytcc"),
+        ("help", _("print this help")),
+        ("play-video", _("play the video")),
+        ("play-audio", _("play only the audio track of the video")),
+        ("yes", _("an alias for 'play-video'")),
+        ("no", _("do not play the video")),
+        ("mark", _("mark the video watched without playing it")),
+        ("download-video", _("download the video")),
+        ("download-audio", _("download the audio track of the video")),
+        ("quit", _("exit ytcc")),
     ]
 
     def completer(text, state):
@@ -84,8 +85,11 @@ def interactive_prompt(video):
 
     while not executed_cmd:
         try:
-            choice = input('Play video "' + video.title + '" by "' + video.channelname +
-                           '"?\n[y(es)/n(o)/m(ark)/q(uit)/h(elp)] (Default: y): ')
+            question = _('Play video "%(title)s" by "%(channel)s?"') % {
+                "title": video.title,
+                "channel": video.channelname
+            }
+            choice = input(question + '\n[y(es)/n(o)/m(ark)/q(uit)/h(elp)] (Default: y): ')
         except EOFError:
             print()
             return False
@@ -94,7 +98,8 @@ def interactive_prompt(video):
         choice = choice.lower()
 
         if choice in ("h", "help"):
-            print("\nAvailable commands:")
+            print()
+            print(_("Available commands:"))
             for command in commands:
                 print("{:>20}  {}".format(command[0], command[1]))
             print()
@@ -114,7 +119,10 @@ def interactive_prompt(video):
         elif choice in ("n", "no"):
             pass
         else:
-            print("\n'" + choice + "' is an invalid command. Type 'help' for more info.\n")
+            print()
+            print(_("'%(cmd)s is an invalid command. Type 'help' for more info.\n") % {
+                "cmd": choice
+            })
             executed_cmd = False
 
     return True
@@ -123,8 +131,9 @@ def interactive_prompt(video):
 def play(video, audio_only):
     maybe_print_description(video.description)
     if not ytcc_core.play_video(video.id, audio_only):
-        print("\nWARNING: The video player terminated with an error.")
-        print("         The last video is not marked as watched!\n")
+        print()
+        print(_("WARNING: The video player terminated with an error."))
+        print(_("         The last video is not marked as watched!\n"))
 
 
 def watch(video_ids=None):
@@ -134,14 +143,17 @@ def watch(video_ids=None):
         videos = ytcc_core.get_videos(video_ids)
 
     if not videos:
-        print("No videos to watch. No videos match the given criteria.")
+        print(_("No videos to watch. No videos match the given criteria."))
     else:
         for video in videos:
             if interactive_enabled:
                 if not interactive_prompt(video):
                     break
             else:
-                print('Playing "' + video.title + '" by "' + video.channelname + '"...')
+                print(_('Playing "%(video)s" by "%(channel)s"...') % {
+                    "video": video.title,
+                    "channel": video.channelname
+                })
                 play(video, no_video)
 
 
@@ -195,16 +207,17 @@ def print_videos(videos):
 def mark_watched(video_ids):
     marked_videos = ytcc_core.mark_watched(video_ids)
     if not marked_videos:
-        print("No videos were marked as watched")
+        print(_("No videos were marked as watched"))
     else:
-        print("Following videos were marked as watched:\n")
+        print(_("Following videos were marked as watched:"))
+        print()
         print_videos(marked_videos)
 
 
 def list_videos():
     videos = ytcc_core.list_videos()
     if not videos:
-        print("No videos to list. No videos match the given criteria.")
+        print(_("No videos to list. No videos match the given criteria."))
     else:
         print_videos(videos)
 
@@ -212,7 +225,7 @@ def list_videos():
 def print_channels():
     channels = ytcc_core.list_channels()
     if not channels:
-        print("No channels added, yet.")
+        print(_("No channels added, yet."))
     else:
         for channel in channels:
             print(channel.displayname)
@@ -230,16 +243,18 @@ def add_channel(name, channel_url):
 
 
 def cleanup():
-    print("Cleaning up database...")
+    print(_("Cleaning up database..."))
     ytcc_core.cleanup()
 
 
 def import_channels(file):
-    print("Importing...")
+    print(_("Importing..."))
     try:
         ytcc_core.import_channels(file)
-        print("\nSubscriptions")
-        print("=============")
+        subscriptions = _("Subscriptions")
+        print()
+        print(subscriptions)
+        print("=" * len(subscriptions))
         print_channels()
     except core.InvalidSubscriptionFile as e:
         print(e)
@@ -247,7 +262,7 @@ def import_channels(file):
 
 def is_directory(string):
     if not os.path.isdir(string):
-        msg = "%r is not a directory" % string
+        msg = _("%r is not a directory") % string
         raise argparse.ArgumentTypeError(msg)
 
     return string
@@ -257,7 +272,7 @@ def is_date(string):
     try:
         date_parser.parse(string)
     except ValueError:
-        msg = "%r is not a valid date" % string
+        msg = _("%r is not a valid date") % string
         raise argparse.ArgumentTypeError(msg)
 
     return string
@@ -271,7 +286,7 @@ def download(video_ids, audio_only=None):
             ytcc_core.download_videos(
                 video_ids=video_ids, path=download_path, no_video=not audio_only)
     except core.DownloadError as e:
-        print("The video has not been downloaded due to the following error.")
+        print(_("The video has not been downloaded due to the following error."))
         print(e)
         print()
 
@@ -517,7 +532,8 @@ def parse_args():
 
 def register_signal_handlers():
     def handler(signum, frame):
-        print("\nBye...")
+        print()
+        print(_("Bye..."))
         exit(1)
 
     signal.signal(signal.SIGINT, handler)

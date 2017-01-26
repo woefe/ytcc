@@ -26,3 +26,18 @@ __license__ = "GPLv3"
 __version__ = "1.5.2"
 __author__ = __maintainer__ = "Wolfgang Popp"
 __email__ = "mail@wolfgang-popp.de"
+
+
+from pathlib import Path
+import gettext
+import sys
+
+def get_translations_path():
+    path = Path(__file__)
+    path = path.parent.joinpath("resources", "locale")
+    if path.is_dir():
+        return (str(path))
+
+    return sys.prefix + "/share/locale"
+
+gettext.install('ytcc', get_translations_path())
