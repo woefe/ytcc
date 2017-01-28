@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: YTCC 1.5.2\n"
 "Report-Msgid-Bugs-To: mail@wolfgang-popp.de\n"
-"POT-Creation-Date: 2017-01-26 10:28+0100\n"
-"PO-Revision-Date: 2017-01-28 14:37+0100\n"
+"POT-Creation-Date: 2017-01-28 14:43+0100\n"
+"PO-Revision-Date: 2017-01-28 14:54+0100\n"
 "Last-Translator: Wolfgang Popp <mail@wolfgang-popp.de>\n"
 "Language-Team: German <>\n"
 "Language: de\n"
@@ -41,7 +41,7 @@ msgstr "URL"
 
 #: ytcc/cli.py:40
 msgid "Updating channels..."
-msgstr "Aktualisiere Kanäle"
+msgstr "Aktualisiere Kanäle..."
 
 #: ytcc/cli.py:52
 msgid "Video description:"
@@ -94,7 +94,7 @@ msgstr "Verfügbare Befehle"
 
 #: ytcc/cli.py:123
 #, python-format
-msgid "'%(cmd)s is an invalid command. Type 'help' for more info.\n"
+msgid "'%(cmd)s' is an invalid command. Type 'help' for more info.\n"
 msgstr ""
 "'%(cmd)s ist kein gültiger Befehl. Tippe 'help' für mehr Informationen\n"
 
@@ -195,11 +195,12 @@ msgid "update the video list"
 msgstr "aktualisiert die Videoliste"
 
 #: ytcc/cli.py:323
-msgid "print a list of videos that match the criteria given by the filter"
+msgid ""
+"print a list of videos that match the criteria given by the filter options"
 msgstr ""
 "zeigt eine Liste von Videos an, die den gegebenen Kriterien entsprechen"
 
-#: ytcc/cli.py:329
+#: ytcc/cli.py:328
 msgid ""
 "play the videos identified by 'ID'. Omitting the ID will play all videos "
 "specified by the filter options"
@@ -207,7 +208,7 @@ msgstr ""
 "spielt das Video mit der gegebenen 'ID' ab. Wird keine ID angegeben, werden "
 "alle Videos abgespielt, die auf die Filteroptionen zutreffen"
 
-#: ytcc/cli.py:336
+#: ytcc/cli.py:335
 msgid ""
 "download the videos identified by 'ID'. The videos are saved in $HOME/"
 "Downloads by default. Omitting the ID will download all videos that match "
@@ -218,7 +219,7 @@ msgstr ""
 "angegeben, werden alle Videos heruntergeladen, die auf die Filteroptionen "
 "zutreffen"
 
-#: ytcc/cli.py:344
+#: ytcc/cli.py:343
 msgid ""
 "mark videos identified by ID as watched. Omitting the ID will mark all "
 "videos that match the criteria given by the filter options as watched"
@@ -227,7 +228,7 @@ msgstr ""
 "angegeben, werden alle Videos als gesehen markiert, die auf die "
 "Filteroptionen zutreffen"
 
-#: ytcc/cli.py:352
+#: ytcc/cli.py:351
 msgid ""
 "plays, lists, marks, downloads only videos from channels defined in the "
 "filter"
@@ -236,23 +237,23 @@ msgstr ""
 "gegebenen Kanälen abgespielt / heruntergeladen / aufgelistet / als gesehen "
 "markiert"
 
-#: ytcc/cli.py:359
+#: ytcc/cli.py:358
 msgid "include already watched videos to filter rules"
 msgstr ""
 "standardmäßig werden bei Suchen und den Filteroptionen bereits gesehene "
 "Videos ignoriert. Diese Option ermöglicht, dass auch bereits gesehene Videos "
 "berücksichtigt werden."
 
-#: ytcc/cli.py:363
+#: ytcc/cli.py:362
 msgid "includes only videos published after the given date"
 msgstr ""
 "filtert nach Videos, die nach dem gegebenen Datum veröffentlicht wurden"
 
-#: ytcc/cli.py:368
+#: ytcc/cli.py:367
 msgid "includes only videos published before the given date"
 msgstr "filtert nach Videos, die vor dem gegebenen Datum veröffentlicht wurden"
 
-#: ytcc/cli.py:373
+#: ytcc/cli.py:372
 msgid ""
 "searches for the given PATTERN. The pattern can specify one of the three "
 "columns 'channel', 'title', 'description'. If no column is specified, all "
@@ -269,35 +270,39 @@ msgstr ""
 "Wort enthalten, das mit 'box' beginnt. Wenn diese Option aktiviert ist, "
 "werden die -f, -n, -s und -t Optionen ignoriert."
 
-#: ytcc/cli.py:382
+#: ytcc/cli.py:381
 msgid "set the download path to PATH"
 msgstr "setzt den Download Pfad"
 
-#: ytcc/cli.py:387
+#: ytcc/cli.py:386
 msgid "do not print the video description before playing the video"
 msgstr ""
 "deaktiviert die Videobeschreibung, die vor dem Abspielen des Videos "
 "angezeigt wird"
 
-#: ytcc/cli.py:391
-msgid "specifies which columns will be printed when listing videos. COL "
+#: ytcc/cli.py:390
+#, python-format
+msgid ""
+"specifies which columns will be printed when listing videos. COL can be any "
+"of %(columns)s"
 msgstr ""
-"legt fest welche Spalten in der Tabelle der Videoauflistung angezeigt werden."
+"legt fest welche Spalten in der Tabelle der Videoauflistung angezeigt "
+"werden. Mögliche Spalten sind: %(columns)s"
 
-#: ytcc/cli.py:398
+#: ytcc/cli.py:397
 msgid "do not print the header of the table when listing videos"
 msgstr "deaktiviert die Kopfzeile der Tabelle der Videoauflistung"
 
-#: ytcc/cli.py:402
+#: ytcc/cli.py:401
 msgid "plays or downloads only the audio part of a video"
 msgstr ""
 "spielt nur die Tonspur der Videos ab bzw. lädt nur die Tonspur herunter"
 
-#: ytcc/cli.py:406
+#: ytcc/cli.py:405
 msgid "automatically answer all questions with yes"
 msgstr "beantwortet alle Fragen automatisch mit 'yes'"
 
-#: ytcc/cli.py:410
+#: ytcc/cli.py:409
 msgid ""
 "import YouTube channels from YouTube's subscription export (available at "
 "https://www.youtube.com/subscription_manager)"
@@ -305,7 +310,7 @@ msgstr ""
 "importiert die YouTube Kanäle aus YouTubes Abo Export (verfügbar hier: "
 "https://www.youtube.com/subscription_manager)"
 
-#: ytcc/cli.py:416
+#: ytcc/cli.py:415
 msgid ""
 "removes old videos from the database and shrinks the size of the database "
 "file"
@@ -313,10 +318,10 @@ msgstr ""
 "löscht alte Videos aus der Datenbank und reduziert die Größe der "
 "Datenbankdatei"
 
-#: ytcc/cli.py:421
+#: ytcc/cli.py:420
 msgid "output version information and exit"
 msgstr "Versionsinformationen anzeigen und beenden"
 
-#: ytcc/cli.py:538
+#: ytcc/cli.py:537
 msgid "Bye..."
 msgstr "Tschüss..."
