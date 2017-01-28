@@ -288,4 +288,9 @@ class Database:
             )
             """
         self._execute_query_many(sql, [(e.displayname,) for e in self.list_channels()])
-        self._execute_query("vacuum;")
+        # self._execute_query("vacuum;")
+
+        # Workaround for https://bugs.python.org/issue28518
+        self.dbconn.isolation_level = None
+        self.dbconn.execute('VACUUM')
+        self.dbconn.isolation_level = ''  # <- note that this is the default value of isolation_level
