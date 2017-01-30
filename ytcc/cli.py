@@ -111,9 +111,9 @@ def interactive_prompt(video):
         elif choice in ("m", "mark"):
             ytcc_core.mark_watched([video.id])
         elif choice in ("download-video", "dv"):
-            download([video.id], audio_only=False)
+            download([video.id], False)
         elif choice in ("download-audio", "da"):
-            download([video.id], audio_only=True)
+            download([video.id], True)
         elif choice in ("q", "quit", "exit"):
             return False
         elif choice in ("n", "no"):
@@ -279,13 +279,9 @@ def is_date(string):
     return string
 
 
-def download(video_ids, audio_only=None):
+def download(video_ids, no_video):
     try:
-        if audio_only is None:
-            ytcc_core.download_videos(video_ids=video_ids, path=download_path, no_video=no_video)
-        else:
-            ytcc_core.download_videos(
-                video_ids=video_ids, path=download_path, no_video=not audio_only)
+        ytcc_core.download_videos(video_ids=video_ids, path=download_path, no_video=no_video)
     except core.DownloadError as e:
         print(_("The video has not been downloaded due to the following error:"))
         print(e)
@@ -508,7 +504,7 @@ def parse_args():
     if args.download is not None:
         if option_executed:
             print()
-        download(args.download)
+        download(args.download, no_video)
         option_executed = True
 
     if args.watch is not None:
