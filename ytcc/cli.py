@@ -297,7 +297,7 @@ def parse_args():
 
     parser.add_argument("-a", "--add-channel",
                         help=_("add a new channel. NAME is the name displayed by ytcc. URL is the "
-                        "url of the channel's front page"),
+                               "url of the channel's front page"),
                         nargs=2,
                         metavar=("NAME", "URL"))
 
@@ -317,35 +317,35 @@ def parse_args():
 
     parser.add_argument("-l", "--list",
                         help=_("print a list of videos that match the criteria given by the "
-                            "filter options"),
+                               "filter options"),
                         action="store_true")
 
     parser.add_argument("-w", "--watch",
                         help=_("play the videos identified by 'ID'. Omitting the ID will play all "
-                        "videos specified by the filter options"),
+                               "videos specified by the filter options"),
                         nargs='*',
                         type=int,
                         metavar="ID")
 
     parser.add_argument("-d", "--download",
                         help=_("download the videos identified by 'ID'. The videos are saved "
-                        "in $HOME/Downloads by default. Omitting the ID will download "
-                        "all videos that match the criteria given by the filter options"),
+                               "in $HOME/Downloads by default. Omitting the ID will download "
+                               "all videos that match the criteria given by the filter options"),
                         nargs="*",
                         type=int,
                         metavar="ID")
 
     parser.add_argument("-m", "--mark-watched",
                         help=_("mark videos identified by ID as watched. Omitting the ID will mark"
-                        " all videos that match the criteria given by the filter options as "
-                        "watched"),
+                               " all videos that match the criteria given by the filter options as "
+                               "watched"),
                         nargs='*',
                         type=int,
                         metavar="ID")
 
     parser.add_argument("-f", "--channel-filter",
                         help=_("plays, lists, marks, downloads only videos from channels defined "
-                        "in the filter"),
+                               "in the filter"),
                         nargs='+',
                         type=str,
                         metavar="NAME")
@@ -366,11 +366,11 @@ def parse_args():
 
     parser.add_argument("-q", "--search",
                         help=_("searches for the given PATTERN. The pattern can specify one of the"
-                        " three columns 'channel', 'title', 'description'. If no column is "
-                        "specified, all columns are searched. The pattern can also specify '*' "
-                        "wildcards. Example: --search 'title:box*' will find all video that have "
-                        "a word that starts with 'box' in their title. If this flag is enabled, "
-                        "the -f, -n, " "-s, -t flags will be ignored."),
+                               " three columns 'channel', 'title', 'description'. If no column is "
+                               "specified, all columns are searched. The pattern can also specify "
+                               "'*' wildcards. Example: --search 'title:box*' will find all video "
+                               "that have a word that starts with 'box' in their title. If this "
+                               "flag is enabled, the -f, -n, " "-s, -t flags will be ignored."),
                         metavar="PATTERN")
 
     parser.add_argument("-p", "--path",
@@ -384,7 +384,7 @@ def parse_args():
 
     parser.add_argument("-o", "--columns",
                         help=_("specifies which columns will be printed when listing videos. COL "
-                        "can be any of %(columns)s") % { "columns": str(table_header)},
+                               "can be any of %(columns)s") % {"columns": str(table_header)},
                         nargs='+',
                         metavar="COL",
                         choices=table_header)
@@ -403,13 +403,13 @@ def parse_args():
 
     parser.add_argument("--import-from",
                         help=_("import YouTube channels from YouTube's subscription export "
-                        "(available at https://www.youtube.com/subscription_manager)"),
+                               "(available at https://www.youtube.com/subscription_manager)"),
                         metavar="PATH",
                         type=argparse.FileType("r"))
 
     parser.add_argument("--cleanup",
                         help=_("removes old videos from the database and shrinks the size of the "
-                        "database file"),
+                               "database file"),
                         action="store_true")
 
     parser.add_argument("-v", "--version",
