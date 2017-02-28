@@ -59,8 +59,8 @@ class Database:
     def _init_db(self):
         """Creates all needed tables."""
 
-        c = self.dbconn.cursor()
-        c.executescript('''
+        cursor = self.dbconn.cursor()
+        cursor.executescript('''
             CREATE TABLE channel (
                 id           INTEGER NOT NULL PRIMARY KEY,
                 displayname  VARCHAR UNIQUE,
@@ -101,7 +101,7 @@ class Database:
 
             PRAGMA USER_VERSION = ''' + str(Database.VERSION) + ";")
         self.dbconn.commit()
-        c.close()
+        cursor.close()
 
     def _maybe_update(self):
         db_version = int(self._execute_query_with_result("PRAGMA USER_VERSION;")[0][0])
@@ -109,33 +109,32 @@ class Database:
             updater.update(db_version, Database.VERSION, self.dbconn)
 
     def _execute_query(self, sql, args=()):
-        # Helper method to execute sql queries that do not have return values e.g. update, insert,...
-        c = self.dbconn.cursor()
-        c.execute(sql, args)
+        # Helper method to execute sql queries that do not have return values e.g. update, insert
+        cursor = self.dbconn.cursor()
+        cursor.execute(sql, args)
         self.dbconn.commit()
-        c.close()
+        cursor.close()
 
     def _execute_query_with_result(self, sql, args=()):
         # Helper method to execute sql queries that return values e.g. select,...
-        c = self.dbconn.cursor()
-        result = c.execute(sql, args).fetchall()
+        cursor = self.dbconn.cursor()
+        result = cursor.execute(sql, args).fetchall()
         self.dbconn.commit()
-        c.close()
+        cursor.close()
         return result
 
     def _execute_query_many(self, sql, args):
         # Helper method for cursor.executemany()
-        c = self.dbconn.cursor()
-        c.executemany(sql, args)
+        cursor = self.dbconn.cursor()
+        cursor.executemany(sql, args)
         self.dbconn.commit()
-        c.close()
+        cursor.close()
 
     @staticmethod
     def _make_place_holder(elements):
         if elements:
             return "(" + ("?," * (len(elements) - 1)) + "?)"
-        else:
-            return "()"
+        return "()"
 
     def add_channel(self, name, yt_channelid):
         """Adds a new channel to the database.
@@ -159,7 +158,7 @@ class Database:
         result = self._execute_query_with_result(sql)
         return [Channel(*x) for x in result]
 
-    def list_videos(self, channel_filter=None, begin_timestamp=0, end_timestamp=0, include_watched=True):
+    def get_videos(self, channel_filter=None, begin_timestamp=0, end_timestamp=0, include_watched=True):
         """Returns a list of videos that were published after and before the given timestamps. The
         videos are published by the channels in channelFilter.
 
@@ -217,7 +216,7 @@ class Database:
         result = self._execute_query_with_result(sql, (searchterm,))
         return [Video(*x) for x in result]
 
-    def get_video(self, video_id):
+    def resolve_video_id(self, video_id):
         """Queries and returns the video object for the given video ID.
 
         Args:
@@ -238,7 +237,7 @@ class Database:
 
         return None
 
-    def mark_some_watched(self, video_ids):
+    def mark_watched(self, video_ids):
         """Marks the videos identified by the given video IDs as watched without playing them.
 
         Args:
@@ -299,4 +298,4 @@ class Database:
         # Workaround for https://bugs.python.org/issue28518
         self.dbconn.isolation_level = None
         self.dbconn.execute('VACUUM')
-        self.dbconn.isolation_level = ''  # <- note that this is the default value of isolation_level
+        self.dbconn.isolation_level = ''  # note that '' is the default value of isolation_level

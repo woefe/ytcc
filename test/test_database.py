@@ -42,7 +42,7 @@ class DatabaseTest(unittest.TestCase):
     def test_add_and_get_videos(self):
         db = init_db()
         db.add_videos(insert_list)
-        videos = db.list_videos(end_timestamp=1488286171, include_watched=True)
+        videos = db.get_videos(end_timestamp=1488286171, include_watched=True)
         self.assertEqual(len(videos), 2)
         self.assertEqual(videos[0].yt_videoid, "0")
         self.assertEqual(videos[1].yt_videoid, "1")
@@ -62,13 +62,13 @@ class DatabaseTest(unittest.TestCase):
 
     def test_resolve_video_id(self):
         db = init_db()
-        video = db.get_video(1)
+        video = db.resolve_video_id(1)
         self.assertEqual(video, Video(1, "0", "title1", "description1", 1488286166, "publisher1"))
 
     def test_mark_watched(self):
         db = init_db()
-        db.mark_some_watched([2, 3])
-        videos = db.list_videos(end_timestamp=1488286172, include_watched=False)
+        db.mark_watched([2, 3])
+        videos = db.get_videos(end_timestamp=1488286172, include_watched=False)
         self.assertEqual(len(videos), 1)
         self.assertEqual(videos[0],
                          Video(1, "0", "title1", "description1", 1488286166, "publisher1"))

@@ -98,6 +98,15 @@ class Ytcc:
 
     @staticmethod
     def get_youtube_video_url(yt_videoid):
+        """Returns the YouTube URL for the given youtube video ID
+
+        Args:
+            yt_videoid (str): the YouTube video ID
+
+        Returns (str):
+            the YouTube URL for the given youtube video ID
+        """
+
         return "https://www.youtube.com/watch?v=" + yt_videoid
 
     def set_channel_filter(self, channel_filter):
@@ -186,13 +195,13 @@ class Ytcc:
         if no_video:
             no_video_flag.append("--no-video")
 
-        video = self.db.get_video(video_id)
+        video = self.db.resolve_video_id(video_id)
         if video:
             mpv_result = subprocess.run(["mpv", *no_video_flag, *self.config.mpv_flags,
                                          self.get_youtube_video_url(video.yt_videoid)],
                                         stderr=subprocess.DEVNULL)
             if mpv_result.returncode == 0:
-                self.db.mark_some_watched([video.id])
+                self.db.mark_watched([video.id])
                 return True
 
         return False
@@ -229,7 +238,7 @@ class Ytcc:
 
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             if ydl.download(urls) == 0:
-                self.db.mark_some_watched(video_ids)
+                self.db.mark_watched(video_ids)
             else:
                 raise DownloadError("youtube-dl returned with an error")
 
@@ -261,7 +270,8 @@ class Ytcc:
 
             parser = etree.HTMLParser()
             root = etree.parse(StringIO(response), parser).getroot()
-            yt_channelid = root.xpath('/html/head/meta[@itemprop="channelId"]')[0].attrib.get("content")
+            result = root.xpath('/html/head/meta[@itemprop="channelId"]')
+            yt_channelid = result[0].attrib.get("content")
 
             try:
                 self.db.add_channel(displayname, yt_channelid)
@@ -272,6 +282,12 @@ class Ytcc:
             raise BadURLException("'" + channel_url + "' is not a valid URL")
 
     def import_channels(self, file):
+        """Imports all channels from YouTube's subsciption export file.
+
+        Args:
+            file (TextIOWrapper): the opened file
+        """
+
         try:
             root = etree.parse(file)
         except Exception:
@@ -296,8 +312,8 @@ class Ytcc:
         if self.search_filter:
             return self.db.search(self.search_filter)
 
-        return self.db.list_videos(self.channel_filter, self.date_begin_filter,
-                                   self.date_end_filter, self.include_watched_filter)
+        return self.db.get_videos(self.channel_filter, self.date_begin_filter,
+                                  self.date_end_filter, self.include_watched_filter)
 
     def _get_filtered_video_ids(self):
         return list(map(lambda video: video.id, self.list_videos()))
@@ -318,7 +334,7 @@ class Ytcc:
         else:
             mark_ids = self._get_filtered_video_ids()
 
-        self.db.mark_some_watched(mark_ids)
+        self.db.mark_watched(mark_ids)
         return self.get_videos(mark_ids)
 
     def delete_channels(self, displaynames):
@@ -350,7 +366,7 @@ class Ytcc:
         """
 
         # filter None values
-        return list(filter(lambda x: x, map(self.db.get_video, video_ids)))
+        return list(filter(lambda x: x, map(self.db.resolve_video_id, video_ids)))
 
     def cleanup(self):
         """Deletes old videos from the database."""
