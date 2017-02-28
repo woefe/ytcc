@@ -26,3 +26,11 @@ class Video:
         self.description = description
         self.publish_date = publish_date
         self.channelname = channelname
+
+    def __eq__(self, other):
+        return self.id == other.id and \
+            self.yt_videoid == other.yt_videoid and \
+            self.title == other.title and \
+            self.description == other.description and \
+            self.publish_date == other.publish_date and \
+            self.channelname == other.channelname

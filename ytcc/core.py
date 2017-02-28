@@ -20,7 +20,6 @@
 from io import StringIO
 from itertools import chain
 from multiprocessing import Pool
-from pathlib import Path
 from urllib.error import URLError
 from urllib.parse import urlparse
 from urllib.request import urlopen
@@ -84,7 +83,7 @@ class Ytcc:
 
     def __init__(self):
         self.config = Config()
-        self.db = Database(Path(self.config.db_path))
+        self.db = Database(self.config.db_path)
         self.channel_filter = None
         self.date_begin_filter = 0
         self.date_end_filter = time.mktime(time.gmtime()) + 20
@@ -163,7 +162,7 @@ class Ytcc:
     def update_all(self):
         """Checks every channel for new videos"""
 
-        channels = map(lambda channel: channel.yt_channelid, self.db.list_channels())
+        channels = map(lambda channel: channel.yt_channelid, self.db.get_channels())
 
         with Pool(os.cpu_count() * 2) as pool:
             videos = chain.from_iterable(pool.map(self._update_channel, channels))
@@ -334,14 +333,14 @@ class Ytcc:
 
         self.db.delete_channels(displaynames)
 
-    def list_channels(self):
+    def get_channels(self):
         """Returns a list of all subscribed channels.
 
         Returns ([str]):
             A list of channel names.
         """
 
-        return self.db.list_channels()
+        return self.db.get_channels()
 
     def get_videos(self, video_ids):
         """Returns the ytcc.video.Video object for the given video IDs.

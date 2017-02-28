@@ -224,7 +224,7 @@ def list_videos():
 
 
 def print_channels():
-    channels = ytcc_core.list_channels()
+    channels = ytcc_core.get_channels()
     if not channels:
         print(_("No channels added, yet."))
     else:

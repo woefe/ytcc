@@ -17,6 +17,7 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import sqlite3
+from pathlib import Path
 import ytcc.updater as updater
 from ytcc.video import Video
 from ytcc.channel import Channel
@@ -27,18 +28,23 @@ class Database:
 
     VERSION = 1
 
-    def __init__(self, path):
-        """Connects to the given sqlite3 database file or creates a new file,
-        if it does not yet exist.
+    def __init__(self, path=":memory:"):
+        """Connects to the given sqlite3 database file or creates a new file, if it does not yet
+        exist. If 'path' is not given, a new database is created in memory.
 
         Args:
-            path (pathlib.Path): the path to the sqlite database file
+            path (str): the path to the sqlite database file
         """
 
-        path = path.expanduser()
-        is_new_db = not path.is_file()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        self.dbconn = sqlite3.connect(str(path))
+        is_new_db = True
+        if path != ":memory:":
+            p = Path(path).expanduser()
+            is_new_db = not p.is_file()
+            p.parent.mkdir(parents=True, exist_ok=True)
+            path = str(p)
+
+        self.dbconn = sqlite3.connect(path)
+        self._execute_query("PRAGMA foreign_keys = ON;")
         if is_new_db:
             self._init_db()
         else:
@@ -66,7 +72,7 @@ class Database:
                 yt_videoid   VARCHAR UNIQUE,
                 title        VARCHAR,
                 description  VARCHAR,
-                publisher    VARCHAR REFERENCES channel (yt_channelid),
+                publisher    VARCHAR REFERENCES channel (yt_channelid) ON DELETE CASCADE,
                 publish_date FLOAT,
                 watched      INTEGER CONSTRAINT watchedBool CHECK (watched = 1 OR watched = 0)
             );
@@ -142,11 +148,11 @@ class Database:
         sql = "insert into channel(displayname, yt_channelid) values (?, ?);"
         self._execute_query(sql, (name, yt_channelid))
 
-    def list_channels(self):
+    def get_channels(self):
         """Returns a list of all subscribed channels.
 
-        Returns ([str]):
-            A list of tuples of the form (id, name).
+        Returns ([Channel]):
+            A list of Channel objects.
         """
 
         sql = "select * from channel;"
@@ -154,7 +160,7 @@ class Database:
         return [Channel(*x) for x in result]
 
     def list_videos(self, channel_filter=None, begin_timestamp=0, end_timestamp=0, include_watched=True):
-        """Returns a list of videos that were published after the given timestamp. The
+        """Returns a list of videos that were published after and before the given timestamps. The
         videos are published by the channels in channelFilter.
 
         Args:
@@ -287,7 +293,7 @@ class Database:
                     )
             )
             """
-        self._execute_query_many(sql, [(e.displayname,) for e in self.list_channels()])
+        self._execute_query_many(sql, [(e.displayname,) for e in self.get_channels()])
         # self._execute_query("vacuum;")
 
         # Workaround for https://bugs.python.org/issue28518
