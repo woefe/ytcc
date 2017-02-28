@@ -76,8 +76,7 @@ def interactive_prompt(video):
         options = [cmd[0] for cmd in commands if cmd[0].startswith(text)]
         if state < len(options):
             return options[state]
-        else:
-            return None
+        return None
 
     readline.parse_and_bind("tab: complete")
     readline.set_completer_delims(" ")

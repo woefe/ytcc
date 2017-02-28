@@ -36,7 +36,7 @@ def get_translations_path():
     path = Path(__file__)
     path = path.parent.joinpath("resources", "locale")
     if path.is_dir():
-        return (str(path))
+        return str(path)
 
     return sys.prefix + "/share/locale"
 
