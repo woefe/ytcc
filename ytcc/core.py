@@ -67,7 +67,7 @@ class InvalidIDException(YtccException):
     pass
 
 
-class InvalidSubscriptionFile(YtccException):
+class InvalidSubscriptionFileError(YtccException):
     """Raised when the given file is not a valid XML file."""
     pass
 
@@ -197,9 +197,13 @@ class Ytcc:
 
         video = self.db.resolve_video_id(video_id)
         if video:
-            mpv_result = subprocess.run(["mpv", *no_video_flag, *self.config.mpv_flags,
-                                         self.get_youtube_video_url(video.yt_videoid)],
-                                        stderr=subprocess.DEVNULL)
+            try:
+                mpv_result = subprocess.run(["mpv", *no_video_flag, *self.config.mpv_flags,
+                                             self.get_youtube_video_url(video.yt_videoid)],
+                                            stderr=subprocess.DEVNULL)
+            except FileNotFoundError:
+                raise YtccException("Could not locate the mpv video player!")
+
             if mpv_result.returncode == 0:
                 self.db.mark_watched([video.id])
                 return True
@@ -291,7 +295,9 @@ class Ytcc:
         try:
             root = etree.parse(file)
         except Exception:
-            raise InvalidSubscriptionFile("'" + file.name + "' is not a valid YouTube export file")
+            raise InvalidSubscriptionFileError(
+                "'" + file.name + "' is not a valid YouTube export file"
+            )
 
         elements = root.xpath('//outline[@type="rss"]')
         channels = [(e.attrib["title"], urlparse(e.attrib["xmlUrl"]).query[11:]) for e in elements]

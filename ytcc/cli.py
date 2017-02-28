@@ -234,12 +234,12 @@ def print_channels():
 def add_channel(name, channel_url):
     try:
         ytcc_core.add_channel(name, channel_url)
-    except core.BadURLException as e:
-        print(e)
-    except core.DuplicateChannelException as e:
-        print(e)
-    except core.ChannelDoesNotExistException as e:
-        print(e)
+    except core.BadURLException:
+        print(_("'%r' is not a valid YouTube URL") % channelurl)
+    except core.DuplicateChannelException:
+        print(_("You are already subscribed to '%r'") % name)
+    except core.ChannelDoesNotExistException:
+        print(_("The channel '%r' does not exist") % channel_url)
 
 
 def cleanup():
@@ -256,8 +256,8 @@ def import_channels(file):
         print(subscriptions)
         print("=" * len(subscriptions))
         print_channels()
-    except core.InvalidSubscriptionFile as e:
-        print(e)
+    except core.InvalidSubscriptionFileError:
+        print(_("The given file is not valid YouTube export file"))
 
 
 def is_directory(string):
@@ -281,10 +281,8 @@ def is_date(string):
 def download(video_ids, no_video):
     try:
         ytcc_core.download_videos(video_ids=video_ids, path=download_path, no_video=no_video)
-    except core.DownloadError as e:
-        print(_("The video has not been downloaded due to the following error:"))
-        print(e)
-        print()
+    except core.DownloadError:
+        print(_("An Error occured while downloading the video"))
 
 
 def parse_args():
