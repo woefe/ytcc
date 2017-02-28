@@ -212,10 +212,7 @@ class Ytcc:
         elif self.config.download_dir:
             download_dir = self.config.download_dir
         else:
-            download_dir = os.path.expanduser("~/Downloads")
-
-        if not os.path.isdir(download_dir):
-            raise DownloadError(download_dir + " is not a directory")
+            download_dir = ""
 
         if not video_ids:
             video_ids = self._get_filtered_video_ids()
@@ -224,7 +221,7 @@ class Ytcc:
         urls = list(map(lambda v: self.get_youtube_video_url(v.yt_videoid), videos))
 
         ydl_opts = {
-            "outtmpl": download_dir + "/" + self.config.ytdl_output_template,
+            "outtmpl": os.path.join(download_dir, self.config.ytdl_output_template),
         }
 
         if no_video:
