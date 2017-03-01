@@ -37,13 +37,17 @@ DEFAULTS = {
     }
 }
 
-def _get_config():
+def _get_config(override_cfg_file=None):
     """Searches for the config file in
+        0. override_cfg_file
         1. $XDG_CONFIG_HOME/ytcc/ytcc.conf
         2. ~/.config/ytcc/ytcc.conf
         3. ~/.ytcc.conf
     If no config file is found in these three locations, a default config file is created in
     '~/.config/ytcc/ytcc.conf'
+
+    Args:
+        override_cfg_file (str): reads the config from the given file
 
     Returns (configparser.ConfigParser):
         the config
@@ -60,7 +64,11 @@ def _get_config():
     config = configparser.ConfigParser(interpolation=None)
     config.read_dict(DEFAULTS)
 
-    if len(config.read([global_cfg_file, default_cfg_file, fallback_cfg_file])) < 1:
+    cfg_file_locations = [global_cfg_file, default_cfg_file, fallback_cfg_file]
+    if override_cfg_file:
+        cfg_file_locations.append(override_cfg_file)
+
+    if len(config.read(cfg_file_locations)) < 1:
         path = Path(default_cfg_file)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.touch()
@@ -73,9 +81,9 @@ def _get_config():
 class Config(object):
     """Handles the ini-based configuration file"""
 
-    def __init__(self):
+    def __init__(self, override_cfg_file=None):
         super(Config, self).__init__()
-        config = _get_config()
+        config = _get_config(override_cfg_file)
         self.download_dir = os.path.expanduser(config["YTCC"]["DownloadDir"])
         self.db_path = os.path.expanduser(config["YTCC"]["DBPath"])
         self.mpv_flags = re.compile("\\s+").split(config["YTCC"]["mpvFlags"])

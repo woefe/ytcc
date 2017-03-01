@@ -81,8 +81,8 @@ class Ytcc:
         set_include_watched_filter
     """
 
-    def __init__(self):
-        self.config = Config()
+    def __init__(self, override_cfg_file=None):
+        self.config = Config(override_cfg_file)
         self.db = Database(self.config.db_path)
         self.channel_filter = None
         self.date_begin_filter = 0
