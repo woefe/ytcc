@@ -33,7 +33,8 @@ DEFAULTS = {
         "Date": "off",
         "Channel": "on",
         "Title": "on",
-        "URL": "off"
+        "URL": "off",
+        "Watched": "off"
     }
 }
 

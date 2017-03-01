@@ -29,11 +29,17 @@ from dateutil import parser as date_parser
 ytcc_core = core.Ytcc()
 interactive_enabled = True
 description_enabled = True
-table_header = [_("ID"), _("Date"), _("Channel"), _("Title"), _("URL")]
-column_filter = None
-header_enabled = True
 no_video = False
 download_path = None
+
+header_enabled = True
+table_header = [_("ID"), _("Date"), _("Channel"), _("Title"), _("URL"), _("Watched")]
+column_filter = [ytcc_core.config.table_format.getboolean("ID"),
+                 ytcc_core.config.table_format.getboolean("Date"),
+                 ytcc_core.config.table_format.getboolean("Channel"),
+                 ytcc_core.config.table_format.getboolean("Title"),
+                 ytcc_core.config.table_format.getboolean("URL"),
+                 ytcc_core.config.table_format.getboolean("Watched")]
 
 
 def update_all():
@@ -183,22 +189,14 @@ def table_print(header, table):
 
 
 def print_videos(videos):
-    if column_filter:
-        table_col_filter = column_filter
-    else:
-        table_format = ytcc_core.config.table_format
-        table_col_filter = [table_format.getboolean("ID"),
-                            table_format.getboolean("Date"),
-                            table_format.getboolean("Channel"),
-                            table_format.getboolean("Title"),
-                            table_format.getboolean("URL")]
 
     def row_filter(row):
-        return list(map(lambda e: e[1], filter(lambda e: e[0], zip(table_col_filter, row))))
+        return list(map(lambda e: e[1], filter(lambda e: e[0], zip(column_filter, row))))
 
     def video_to_list(video):
         return [video.id, datetime.fromtimestamp(video.publish_date).strftime("%Y-%m-%d %H:%M"),
-                video.channelname, video.title, ytcc_core.get_youtube_video_url(video.yt_videoid)]
+                video.channelname, video.title, ytcc_core.get_youtube_video_url(video.yt_videoid),
+                _("Yes") if video.watched else _("No")]
 
     table = [row_filter(video_to_list(v)) for v in videos]
     table_print(row_filter(table_header), table)
@@ -447,8 +445,12 @@ def parse_args():
         global download_path
         download_path = args.path
 
-    if args.columns:
+    if args.include_watched:
+        ytcc_core.set_include_watched_filter()
         global column_filter
+        column_filter[5] = True
+
+    if args.columns:
         column_filter = [True if f in args.columns else False for f in table_header]
 
     if args.channel_filter:
@@ -459,9 +461,6 @@ def parse_args():
 
     if args.to:
         ytcc_core.set_date_end_filter(date_parser.parse(args.to))
-
-    if args.include_watched:
-        ytcc_core.set_include_watched_filter()
 
     if args.search:
         ytcc_core.set_search_filter(args.search)
