@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: YTCC 1.5.2\n"
 "Report-Msgid-Bugs-To: mail@wolfgang-popp.de\n"
-"POT-Creation-Date: 2017-01-28 14:43+0100\n"
+"POT-Creation-Date: 2017-03-01 12:24+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,142 +17,173 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ytcc/cli.py:32
+#: ytcc/cli.py:36
 msgid "ID"
 msgstr ""
 
-#: ytcc/cli.py:32
+#: ytcc/cli.py:36
 msgid "Date"
 msgstr ""
 
-#: ytcc/cli.py:32
+#: ytcc/cli.py:36
 msgid "Channel"
 msgstr ""
 
-#: ytcc/cli.py:32
+#: ytcc/cli.py:36
 msgid "Title"
 msgstr ""
 
-#: ytcc/cli.py:32
+#: ytcc/cli.py:36
 msgid "URL"
 msgstr ""
 
-#: ytcc/cli.py:40
+#: ytcc/cli.py:36
+msgid "Watched"
+msgstr ""
+
+#: ytcc/cli.py:46
 msgid "Updating channels..."
 msgstr ""
 
-#: ytcc/cli.py:52
+#: ytcc/cli.py:58
 msgid "Video description:"
 msgstr ""
 
-#: ytcc/cli.py:64
+#: ytcc/cli.py:70
 msgid "print this help"
 msgstr ""
 
-#: ytcc/cli.py:65
+#: ytcc/cli.py:71
 msgid "play the video"
 msgstr ""
 
-#: ytcc/cli.py:66
+#: ytcc/cli.py:72
 msgid "play only the audio track of the video"
 msgstr ""
 
-#: ytcc/cli.py:67
+#: ytcc/cli.py:73
 msgid "an alias for 'play-video'"
 msgstr ""
 
-#: ytcc/cli.py:68
+#: ytcc/cli.py:74
 msgid "do not play the video"
 msgstr ""
 
-#: ytcc/cli.py:69
+#: ytcc/cli.py:75
 msgid "mark the video watched without playing it"
 msgstr ""
 
-#: ytcc/cli.py:70
+#: ytcc/cli.py:76
 msgid "download the video"
 msgstr ""
 
-#: ytcc/cli.py:71
+#: ytcc/cli.py:77
 msgid "download the audio track of the video"
 msgstr ""
 
-#: ytcc/cli.py:72
+#: ytcc/cli.py:78
 msgid "exit ytcc"
 msgstr ""
 
-#: ytcc/cli.py:88
+#: ytcc/cli.py:93
 #, python-format
 msgid "Play video \"%(title)s\" by \"%(channel)s?\""
 msgstr ""
 
-#: ytcc/cli.py:102
+#: ytcc/cli.py:107
 msgid "Available commands:"
 msgstr ""
 
-#: ytcc/cli.py:123
+#: ytcc/cli.py:128
 #, python-format
 msgid "'%(cmd)s' is an invalid command. Type 'help' for more info.\n"
 msgstr ""
 
-#: ytcc/cli.py:135
+#: ytcc/cli.py:140
 msgid ""
 "WARNING: The video player terminated with an error.\n"
 "         The last video is not marked as watched!"
 msgstr ""
 
-#: ytcc/cli.py:147
+#: ytcc/cli.py:152
 msgid "No videos to watch. No videos match the given criteria."
 msgstr ""
 
-#: ytcc/cli.py:154
+#: ytcc/cli.py:159
 #, python-format
 msgid "Playing \"%(video)s\" by \"%(channel)s\"..."
 msgstr ""
 
-#: ytcc/cli.py:211
+#: ytcc/cli.py:199
+msgid "Yes"
+msgstr ""
+
+#: ytcc/cli.py:199
+msgid "No"
+msgstr ""
+
+#: ytcc/cli.py:208
 msgid "No videos were marked as watched"
 msgstr ""
 
-#: ytcc/cli.py:213
+#: ytcc/cli.py:210
 msgid "Following videos were marked as watched:"
 msgstr ""
 
-#: ytcc/cli.py:221
+#: ytcc/cli.py:218
 msgid "No videos to list. No videos match the given criteria."
 msgstr ""
 
-#: ytcc/cli.py:229
+#: ytcc/cli.py:226
 msgid "No channels added, yet."
 msgstr ""
 
-#: ytcc/cli.py:247
+#: ytcc/cli.py:236
+#, python-format
+msgid "'%r' is not a valid YouTube URL"
+msgstr ""
+
+#: ytcc/cli.py:238
+#, python-format
+msgid "You are already subscribed to '%r'"
+msgstr ""
+
+#: ytcc/cli.py:240
+#, python-format
+msgid "The channel '%r' does not exist"
+msgstr ""
+
+#: ytcc/cli.py:244
 msgid "Cleaning up database..."
 msgstr ""
 
-#: ytcc/cli.py:252
+#: ytcc/cli.py:249
 msgid "Importing..."
 msgstr ""
 
-#: ytcc/cli.py:255
+#: ytcc/cli.py:252
 msgid "Subscriptions"
 msgstr ""
 
-#: ytcc/cli.py:266
+#: ytcc/cli.py:258
+msgid "The given file is not valid YouTube export file"
+msgstr ""
+
+#: ytcc/cli.py:263
 #, python-format
 msgid "%r is not a directory"
 msgstr ""
 
-#: ytcc/cli.py:276
+#: ytcc/cli.py:273
 #, python-format
 msgid "%r is not a valid date"
 msgstr ""
 
-#: ytcc/cli.py:290
-msgid "The video has not been downloaded due to the following error:"
+#: ytcc/cli.py:283
+msgid "An Error occured while downloading the video"
 msgstr ""
 
-#: ytcc/cli.py:297
+#: ytcc/cli.py:288
 msgid ""
 "ytcc is a commandline YouTube client that keeps track of your favorite "
 "channels. The --list, --watch, --download, --mark-watched options can be "
@@ -160,67 +191,67 @@ msgid ""
 "to"
 msgstr ""
 
-#: ytcc/cli.py:303
+#: ytcc/cli.py:294
 msgid ""
 "add a new channel. NAME is the name displayed by ytcc. URL is the url of the "
 "channel's front page"
 msgstr ""
 
-#: ytcc/cli.py:309
+#: ytcc/cli.py:300
 msgid "print a list of all subscribed channels"
 msgstr ""
 
-#: ytcc/cli.py:313
+#: ytcc/cli.py:304
 msgid "unsubscribe from the channel identified by 'ID'"
 msgstr ""
 
-#: ytcc/cli.py:319
+#: ytcc/cli.py:310
 msgid "update the video list"
 msgstr ""
 
-#: ytcc/cli.py:323
+#: ytcc/cli.py:314
 msgid ""
 "print a list of videos that match the criteria given by the filter options"
 msgstr ""
 
-#: ytcc/cli.py:328
+#: ytcc/cli.py:319
 msgid ""
 "play the videos identified by 'ID'. Omitting the ID will play all videos "
 "specified by the filter options"
 msgstr ""
 
-#: ytcc/cli.py:335
+#: ytcc/cli.py:326
 msgid ""
 "download the videos identified by 'ID'. The videos are saved in $HOME/"
 "Downloads by default. Omitting the ID will download all videos that match "
 "the criteria given by the filter options"
 msgstr ""
 
-#: ytcc/cli.py:343
+#: ytcc/cli.py:334
 msgid ""
 "mark videos identified by ID as watched. Omitting the ID will mark all "
 "videos that match the criteria given by the filter options as watched"
 msgstr ""
 
-#: ytcc/cli.py:351
+#: ytcc/cli.py:342
 msgid ""
 "plays, lists, marks, downloads only videos from channels defined in the "
 "filter"
 msgstr ""
 
-#: ytcc/cli.py:358
+#: ytcc/cli.py:349
 msgid "include already watched videos to filter rules"
 msgstr ""
 
-#: ytcc/cli.py:362
+#: ytcc/cli.py:353
 msgid "includes only videos published after the given date"
 msgstr ""
 
-#: ytcc/cli.py:367
+#: ytcc/cli.py:358
 msgid "includes only videos published before the given date"
 msgstr ""
 
-#: ytcc/cli.py:372
+#: ytcc/cli.py:363
 msgid ""
 "searches for the given PATTERN. The pattern can specify one of the three "
 "columns 'channel', 'title', 'description'. If no column is specified, all "
@@ -230,49 +261,49 @@ msgid ""
 "be ignored."
 msgstr ""
 
-#: ytcc/cli.py:381
+#: ytcc/cli.py:372
 msgid "set the download path to PATH"
 msgstr ""
 
-#: ytcc/cli.py:386
+#: ytcc/cli.py:377
 msgid "do not print the video description before playing the video"
 msgstr ""
 
-#: ytcc/cli.py:390
+#: ytcc/cli.py:381
 #, python-format
 msgid ""
 "specifies which columns will be printed when listing videos. COL can be any "
 "of %(columns)s"
 msgstr ""
 
-#: ytcc/cli.py:397
+#: ytcc/cli.py:388
 msgid "do not print the header of the table when listing videos"
 msgstr ""
 
-#: ytcc/cli.py:401
+#: ytcc/cli.py:392
 msgid "plays or downloads only the audio part of a video"
 msgstr ""
 
-#: ytcc/cli.py:405
+#: ytcc/cli.py:396
 msgid "automatically answer all questions with yes"
 msgstr ""
 
-#: ytcc/cli.py:409
+#: ytcc/cli.py:400
 msgid ""
 "import YouTube channels from YouTube's subscription export (available at "
 "https://www.youtube.com/subscription_manager)"
 msgstr ""
 
-#: ytcc/cli.py:415
+#: ytcc/cli.py:406
 msgid ""
 "removes old videos from the database and shrinks the size of the database "
 "file"
 msgstr ""
 
-#: ytcc/cli.py:420
+#: ytcc/cli.py:411
 msgid "output version information and exit"
 msgstr ""
 
-#: ytcc/cli.py:537
+#: ytcc/cli.py:529
 msgid "Bye..."
 msgstr ""
