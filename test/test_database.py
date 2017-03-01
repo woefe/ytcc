@@ -1,5 +1,5 @@
 import sqlite3
-import unittest
+from unittest import TestCase
 from nose.tools import raises
 from ytcc.database import Database
 from ytcc.video import Video
@@ -20,7 +20,7 @@ def init_db():
     return db
 
 
-class DatabaseTest(unittest.TestCase):
+class DatabaseTest(TestCase):
 
     @raises(sqlite3.IntegrityError)
     def test_add_channel_duplicate(self):

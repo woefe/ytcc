@@ -1,0 +1,122 @@
+<opml version="1.1">
+    <body>
+        <outline text="YouTube Subscriptions" title="YouTube Subscriptions">
+            <outline text="TEDx Talks" title="TEDx Talks" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCsT0YIqwnpJCM-mx7-gSA4Q" />
+            <outline text="TED" title="TED" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCAuUUnT6oDeKwE6v1NGQxug" />
+            <outline text="Google Developers" title="Google Developers" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC_x5XG1OV2P6uZZ5FSM9Ttw" />
+            <outline text="Black Hat" title="Black Hat" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCJ6q9Ie29ajGqKApbLqfBOg" />
+            <outline text="HackersSecurity" title="HackersSecurity" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCWNuOp4oOrVJquyHx0uj5JQ" />
+            <outline text="Computerphile" title="Computerphile" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC9-y-6csu5WGm29I7JiwpnA" />
+            <outline text="TomSka" title="TomSka" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCOYWgypDktXdb-HfZnSMK6A" />
+            <outline text="Rick and Morty" title="Rick and Morty" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=SWhmkH03AZgk0" />
+            <outline text="colinfurze" title="colinfurze" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCp68_FLety0O-n9QU6phsgw" />
+            <outline text="SemperCensio" title="SemperCensio" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC6KC8ACsni6wEER04OC_Ogw" />
+            <outline text="SemperErratum" title="SemperErratum" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC2bppIaClWZjSb38b9zI21A" />
+            <outline text="SemperVideo" title="SemperVideo" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCCI6C8hD-hTZi2JEmS7zvQw" />
+            <outline text="YTITTY" title="YTITTY" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCzZ2N81E6ureM3slotgJfUw" />
+            <outline text="LastWeekTonight" title="LastWeekTonight" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC3XTzVzaHQEd30rQbuvCtTQ" />
+            <outline text="Sportschau" title="Sportschau" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCRFsyeKu07-LnHDG44O6uCA" />
+            <outline text="audiomachine" title="audiomachine" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCRuEUl3ItCGGo-wCSwG3wbw" />
+            <outline text="Two Steps From Hell" title="Two Steps From Hell" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC3swwxiALG5c0Tvom83tPGg" />
+            <outline text="Lindsey Stirling" title="Lindsey Stirling" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCyC_4jvPzLiSkJkLIkA7B8g" />
+            <outline text="MrSuicideSheep" title="MrSuicideSheep" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC5nc_ZtjKW1htCVZVRxlQAQ" />
+            <outline text="MA Music" title="MA Music" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC0XKvSq8CcMBSQTKXZXnEiQ" />
+            <outline text="NoCopyrightSounds" title="NoCopyrightSounds" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC_aEa8K-EOJ3D6gOs7HcyNg" />
+            <outline text="Alan Walker" title="Alan Walker" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCJrOtniJ0-NWz37R30urifQ" />
+            <outline text="Aleksander Vinter" title="Aleksander Vinter" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC5ur2L6Zu4oCShmtFw9UTfQ" />
+            <outline text="Android Developers" title="Android Developers" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCVHFbqXqoYvEWM1Ddxl0QDg" />
+            <outline text="Paweł Zadrożniak" title="Paweł Zadrożniak" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCximsD7EJ38jzCNgfP_YTmA" />
+            <outline text="Taran Van Hemert" title="Taran Van Hemert" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCd0ZD4iCXRXf18p3cA7EQfg" />
+            <outline text="The Slow Mo Guys 2" title="The Slow Mo Guys 2" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCgC4Nn0rqqdeqACnzaIMo_Q" />
+            <outline text="The Slow Mo Guys" title="The Slow Mo Guys" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCUK0HBIBWgM2c4vsPhkYY4w" />
+            <outline text="Hak5" title="Hak5" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC3s0BtrBJpwNDaflRSoiieQ" />
+            <outline text="DEFCONConference" title="DEFCONConference" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC6Om9kAkl32dWlDSNlDS9Iw" />
+            <outline text="CCCdeVideos" title="CCCdeVideos" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC1Jnp8rErjUAygOfRMhP1Yg" />
+            <outline text="media.ccc.de" title="media.ccc.de" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC2TXq_t06Hjdr2g_KdKpHQg" />
+            <outline text="LinuxFest Northwest" title="LinuxFest Northwest" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCqeKeRXssKqbK4XHqLYrctQ" />
+            <outline text="CNN" title="CNN" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCupvZG-5ko_eiXAupbDfxWw" />
+            <outline text="Anthrit" title="Anthrit" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCs4bbsuIVBqPRXtgbM4gmmg" />
+            <outline text="gotbletu" title="gotbletu" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCkf4VIqu3Acnfzuk3kRIFwA" />
+            <outline text="Spatry" title="Spatry" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCmO_G49F6QTFS5CPUfuQADg" />
+            <outline text="PewDiePie" title="PewDiePie" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC-lHJZR3Gqxm24_Vd_AJ5Yw" />
+            <outline text="Rémi GAILLARD" title="Rémi GAILLARD" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCmPSwsooZq8an7xOLQQhAdw" />
+            <outline text="Roadrunner Records" title="Roadrunner Records" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCRRxSTgPUY0q_YToaczc2BQ" />
+            <outline text="Trap Nation" title="Trap Nation" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCa10nxShhzNrCE1o2ZOPztg" />
+            <outline text="UKF Dubstep" title="UKF Dubstep" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCfLFTP1uTuIizynWsZq2nkQ" />
+            <outline text="UKF Drum &amp; Bass" title="UKF Drum &amp; Bass" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCr8oc-LOaApCXWLjL7vdsgw" />
+            <outline text="UKF" title="UKF" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC9UTBXS_XpBCUIcOG7fwM8A" />
+            <outline text="Vox" title="Vox" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCLXo7UDZvByw2ixzpQCufnA" />
+            <outline text="Monstercat" title="Monstercat" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCJ6td3C9QlPO9O_J5dF4ZzA" />
+            <outline text="The Mod Zoo" title="The Mod Zoo" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC31i9d5-tLB-Jzd0MmU5U9w" />
+            <outline text="Bill Owen" title="Bill Owen" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCcnCXoB2dRjaTKkcd3l517Q" />
+            <outline text="Tek Linux" title="Tek Linux" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCOWcZ6Wicl-1N34H0zZe38w" />
+            <outline text="Techquickie" title="Techquickie" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC0vBXGSyV14uvJ4hECDOl0Q" />
+            <outline text="ChannelSuperFun" title="ChannelSuperFun" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCBZiUUYeLfS5rIj4TQvgSvA" />
+            <outline text="tagesschau" title="tagesschau" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC5NOEUbkLheQcaaRldYW5GA" />
+            <outline text="Paul's Hardware" title="Paul's Hardware" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCvWWf-LYjaujE50iYai8WgQ" />
+            <outline text="Tek Syndicate Hardware" title="Tek Syndicate Hardware" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC4w1YQAJMWOz4qtxinq55LQ" />
+            <outline text="Tek Syndicate" title="Tek Syndicate" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCNovoA9w0KnxyDP5bGrOYzg" />
+            <outline text="SingularityComputers" title="SingularityComputers" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCqChlb8y4cQ0jAFaNFPQLqA" />
+            <outline text="Jupiter Broadcasting" title="Jupiter Broadcasting" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCHugE6eRhqB9_AZQh4DDbIw" />
+            <outline text="LinusTechTips" title="LinusTechTips" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCXuqSBlHAE6Xw-yeJA0Tunw" />
+        </outline>
+    </body>
+</opml>
