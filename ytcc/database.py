@@ -44,7 +44,8 @@ class Database:
             path = str(p)
 
         self.dbconn = sqlite3.connect(path)
-        self._execute_query("PRAGMA foreign_keys = ON;")
+        # TODO Enable foreign key support on next major release
+        # self._execute_query("PRAGMA foreign_keys = ON;")
         if is_new_db:
             self._init_db()
         else:
