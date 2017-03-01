@@ -19,13 +19,14 @@
 
 class Video:
 
-    def __init__(self, id, yt_videoid, title, description, publish_date, channelname):
+    def __init__(self, id, yt_videoid, title, description, publish_date, channelname, watched):
         self.id = id
         self.yt_videoid = yt_videoid
         self.title = title
         self.description = description
         self.publish_date = publish_date
         self.channelname = channelname
+        self.watched = bool(watched)
 
     def __eq__(self, other):
         return self.id == other.id and \
@@ -33,4 +34,5 @@ class Video:
             self.title == other.title and \
             self.description == other.description and \
             self.publish_date == other.publish_date and \
-            self.channelname == other.channelname
+            self.channelname == other.channelname and \
+            self.watched == other.watched

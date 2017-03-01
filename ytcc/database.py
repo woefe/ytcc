@@ -173,7 +173,14 @@ class Database:
         """
 
         sql = """
-            select v.id, v.yt_videoid, v.title, v.description, v.publish_date, c.displayname
+            select
+                v.id,
+                v.yt_videoid,
+                v.title,
+                v.description,
+                v.publish_date,
+                c.displayname,
+                v.watched
             from video v, channel c
             where v.publisher = c.yt_channelid
                 and v.publish_date > @begin_timestamp
@@ -206,7 +213,8 @@ class Database:
                 v.title,
                 v.description,
                 v.publish_date,
-                c.displayname
+                c.displayname,
+                v.watched
             FROM video v
                 JOIN channel c ON v.publisher = c.yt_channelid
                 JOIN user_search s ON v.id = s.id
@@ -227,7 +235,14 @@ class Database:
         """
 
         sql = """
-            select v.id, v.yt_videoid, v.title, v.description, v.publish_date, c.displayname
+            select
+                v.id,
+                v.yt_videoid,
+                v.title,
+                v.description,
+                v.publish_date,
+                c.displayname,
+                v.watched
             from video v, channel c
             where v.id = ? and v.publisher = c.yt_channelid
             """
