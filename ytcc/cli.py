@@ -233,7 +233,7 @@ def add_channel(name, channel_url):
     try:
         ytcc_core.add_channel(name, channel_url)
     except core.BadURLException:
-        print(_("'%r' is not a valid YouTube URL") % channelurl)
+        print(_("'%r' is not a valid YouTube URL") % channel_url)
     except core.DuplicateChannelException:
         print(_("You are already subscribed to '%r'") % name)
     except core.ChannelDoesNotExistException:
