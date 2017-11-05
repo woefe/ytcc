@@ -1,0 +1,20 @@
+name: ytcc
+version: git
+summary: ytcc - The YouTube channel checker
+description: |
+  Command Line tool to keep track of your favourite YouTube channels without
+  signing up for a Google account.
+
+grade: devel
+confinement: devmode
+
+parts:
+  ytcc:
+    source: .
+    plugin: python
+    python-version: python3
+    stage-packages: [mpv]
+
+apps:
+  ytcc:
+    command: bin/ytcc
