@@ -90,7 +90,7 @@ def interactive_prompt(video):
 
     while not executed_cmd:
         try:
-            question = _('Play video "%(title)s" by "%(channel)s?"') % {
+            question = _('Play video "%(title)s" by "%(channel)s"?') % {
                 "title": video.title,
                 "channel": video.channelname
             }
