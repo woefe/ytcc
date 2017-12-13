@@ -43,5 +43,5 @@ complete -c $cmd -x    -l cleanup              -d "cleanup and shrink database f
 complete -c $cmd -x    -l version         -s v -d "output version information and exit"
 
 complete -c $cmd -f -n '__ytcc_last_flag -r --delete-channel -f --channel-filter' -a "(ytcc --list-channels)"
-complete -c $cmd -f -n '__ytcc_last_flag -w --watch -d --download -m --mark' -a "(ytcc -nlo ID -s (date --date '-1 week') --no-header | tr -d ' ')"
+complete -c $cmd -f -n '__ytcc_last_flag -w --watch -d --download -m --mark' -a "(ytcc -lo ID --no-header | tr -d ' ')"
 complete -c $cmd -f -n '__ytcc_last_flag -o --columns' -a 'ID Date Channel Title URL'
