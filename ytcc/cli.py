@@ -22,10 +22,12 @@ import os
 import signal
 import textwrap as wrap
 import readline
+from collections import namedtuple
 from datetime import datetime
-from ytcc import core
 from dateutil import parser as date_parser
+from ytcc import core
 
+Command = namedtuple("Command", ["name", "shortcuts", "help", "action"])
 ytcc_core = core.Ytcc()
 interactive_enabled = True
 description_enabled = True
@@ -66,16 +68,30 @@ def maybe_print_description(description):
 
 def interactive_prompt(video):
     executed_cmd = False
+    RETURN_VAL_HELP = 0
+    RETURN_VAL_QUIT = 1
+
+    def print_help():
+        print()
+        print(_("Available commands:"))
+        for command in commands:
+            print("{:>20}  {:<2}  {}".format(command.name, command.shortcuts[0], command.help))
+        print()
+        return RETURN_VAL_HELP
+
     commands = [
-        ("help", _("print this help")),
-        ("play-video", _("play the video")),
-        ("play-audio", _("play only the audio track of the video")),
-        ("yes", _("an alias for 'play-video'")),
-        ("no", _("do not play the video")),
-        ("mark", _("mark the video watched without playing it")),
-        ("download-video", _("download the video")),
-        ("download-audio", _("download the audio track of the video")),
-        ("quit", _("exit ytcc")),
+        Command("help", ["h"], _("print this help"), print_help),
+        Command("yes", ["y", ""], _("play the video"), lambda: play(video, no_video)),
+        Command("no", ["n"], _("do not play the video"), lambda: None),
+        Command("mark", ["m"], _("mark the video watched without playing it"),
+                lambda: ytcc_core.mark_watched([video.id])),
+        Command("audio", ["a"], _("play only the audio track of the video"),
+                lambda: play(video, True)),
+        Command("download-video", ["dv"], _("download the video"),
+                lambda: download([video.id], False)),
+        Command("download-audio", ["da"], _("download the audio track of the video"),
+                lambda: download([video.id], True)),
+        Command("quit", ["q", "exit"], _("exit ytcc"), lambda: RETURN_VAL_QUIT),
     ]
 
     def completer(text, state):
@@ -94,36 +110,26 @@ def interactive_prompt(video):
                 "title": video.title,
                 "channel": video.channelname
             }
-            choice = input(question + '\n[y(es)/n(o)/m(ark)/q(uit)/h(elp)] (Default: y): ')
+            choice = input(question + '\n[y(es)/n(o)/a(udio)/m(ark)/q(uit)/h(elp)] (Default: y): ')
         except EOFError:
             print()
             return False
 
         executed_cmd = True
+        invalid_cmd = True
         choice = choice.lower()
 
-        if choice in ("h", "help"):
-            print()
-            print(_("Available commands:"))
-            for command in commands:
-                print("{:>20}  {}".format(command[0], command[1]))
-            print()
-            executed_cmd = False
-        elif choice in ("y", "", "yes", "play-video"):
-            play(video, no_video)
-        elif choice in ("a", "audio", "play-audio"):
-            play(video, True)
-        elif choice in ("m", "mark"):
-            ytcc_core.mark_watched([video.id])
-        elif choice in ("download-video", "dv"):
-            download([video.id], False)
-        elif choice in ("download-audio", "da"):
-            download([video.id], True)
-        elif choice in ("q", "quit", "exit"):
-            return False
-        elif choice in ("n", "no"):
-            pass
-        else:
+        for cmd in commands:
+            if choice in (cmd.name, *cmd.shortcuts):
+                result = cmd.action()
+                if result == RETURN_VAL_QUIT:
+                    return False
+                if result == RETURN_VAL_HELP:
+                    executed_cmd = False
+                invalid_cmd = False
+                break
+
+        if invalid_cmd:
             print()
             print(_("'%(cmd)s' is an invalid command. Type 'help' for more info.\n") % {
                 "cmd": choice
