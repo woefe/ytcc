@@ -29,6 +29,11 @@ sudo install -Dm644 zsh/_ytcc /usr/share/zsh/site-functions/_ytcc
 yaourt -S ytcc
 ```
 
+### Void Linux
+```shell
+sudo xbps-install -S ytcc
+```
+
 ## Usage
 
 Check for new videos and play them.
