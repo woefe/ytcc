@@ -11,7 +11,7 @@ Install [ytcc](https://aur.archlinux.org/packages/ytcc/) from the AUR.
 Install package `ytcc`.
 
 ### Other distros
-Install dependecies: `python3-lxml`, `python3-feedparser`, `python3-setuptools`, `mpv`, `youtube-dl`.
+Install dependencies: `python3-lxml`, `python3-feedparser`, `python3-setuptools`, `mpv`, `youtube-dl`.
 
 ```bash
 git clone https://github.com/woefe/ytcc.git
@@ -77,13 +77,13 @@ ytcc --yes --list --watch --no-video --include-watched --channel-filter NCS
 
 
 ## Configuration
-ytcc searches for a configuration file at following locations:
+Ytcc searches for a configuration file at following locations:
 
 1. `$XDG_CONFIG_HOME/ytcc/ytcc.conf`
 2. `~/.config/ytcc/ytcc.conf`
 3. `~/.ytcc.conf`
 
-If no config file is found in these three locations, a default config file is created at '~/.config/ytcc/ytcc.conf'.
+If no config file is found in these three locations, a default config file is created at `~/.config/ytcc/ytcc.conf`.
 
 ### Example config
 
