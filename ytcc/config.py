@@ -20,13 +20,22 @@ from pathlib import Path
 import configparser
 import os
 import re
+import io
 
 DEFAULTS = {
     "YTCC": {
         "DBPath": "~/.local/share/ytcc/ytcc.db",
         "DownloadDir": "~/Downloads",
-        "mpvFlags": "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best",
-        "ytdlOutputTemplate": "%(title)s.%(ext)s"
+        "mpvFlags": "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best"
+    },
+    "youtube-dl": {
+        "format": "bestvideo[height<=?1080]+bestaudio/best",
+        "outputTemplate": "%(title)s.%(ext)s",
+        "loglevel": "normal",
+        "ratelimit": 0,
+        "retries": 0,
+        "subtitles": "off",
+        "thumbnail": "on"
     },
     "TableFormat": {
         "ID": "on",
@@ -85,8 +94,30 @@ class Config(object):
     def __init__(self, override_cfg_file=None):
         super(Config, self).__init__()
         config = _get_config(override_cfg_file)
+        self._config = config
         self.download_dir = os.path.expanduser(config["YTCC"]["DownloadDir"])
         self.db_path = os.path.expanduser(config["YTCC"]["DBPath"])
         self.mpv_flags = re.compile("\\s+").split(config["YTCC"]["mpvFlags"])
-        self.ytdl_output_template = config["YTCC"]["ytdlOutputTemplate"]
         self.table_format = config["TableFormat"]
+        self.youtube_dl = _YTDLConf(config["youtube-dl"])
+
+    def __str__(self):
+        strio = io.StringIO()
+        self._config.write(strio)
+        return strio.getvalue()
+
+
+
+class _YTDLConf():
+    def __init__(self, subconf):
+        super(_YTDLConf, self).__init__()
+        self.format = subconf["format"]
+        self.output_template = subconf["outputTemplate"]
+        self.loglevel = subconf["loglevel"]
+        self.retries = float(subconf["retries"])  # float to set indefinetly many retires
+        self.subtitles = subconf["subtitles"]
+        self.thumbnail = subconf.getboolean("thumbnail")
+
+        limit = int(subconf["ratelimit"])
+        self.ratelimit = limit if limit > 0 else None
+

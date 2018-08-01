@@ -232,13 +232,34 @@ class Ytcc:
 
         videos = self.get_videos(video_ids)
         urls = list(map(lambda v: self.get_youtube_video_url(v.yt_videoid), videos))
+        conf = self.config.youtube_dl
 
         ydl_opts = {
-            "outtmpl": os.path.join(download_dir, self.config.ytdl_output_template),
+            "outtmpl": os.path.join(download_dir, conf.output_template),
+            "ratelimit": conf.ratelimit,
+            "retries": conf.retries,
+            "quiet": conf.loglevel == "quiet",
+            "verbose": conf.loglevel == "verbose"
         }
 
         if no_video:
             ydl_opts["format"] = "bestaudio/best"
+            if conf.thumbnail:
+                ydl_opts["writethumbnail"] = True
+                ydl_opts["postprocessors"] = [
+                    {
+                        'key': 'FFmpegExtractAudio',
+                        'preferredcodec': "m4a"
+                    },
+                    {"key": "EmbedThumbnail"}
+                ]
+        else:
+            ydl_opts["format"] = conf.format
+            if conf.subtitles != "off":
+                ydl_opts["subtitleslangs"] = list(map(str.strip, conf.subtitles.split(",")))
+                ydl_opts["writesubtitles"] = True
+                ydl_opts["writeautomaticsub"] = True
+                ydl_opts["postprocessors"] = [{"key": "FFmpegEmbedSubtitle"}]
 
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             if ydl.download(urls) == 0:
