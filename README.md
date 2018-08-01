@@ -113,9 +113,11 @@ outputtemplate = %(title)s.%(ext)s
 loglevel = normal
 
 # Limit download speed to the given bytes/second. Set 0 for no limit.
-ratelimit = 1000000
+# E.g. limit to one megabyte per second
+#ratelimit = 1000000
+ratelimit = 0
 
-# Set number of retries before giving up on a download .
+# Set number of retries before giving up on a download. Use `inf` for indefinitely many retries.
 retries = 0
 
 # Subtitles for videos. If enabled and available, automatic and manual subtitles for selected
