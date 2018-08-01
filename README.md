@@ -2,37 +2,24 @@
 
 Command Line tool to keep track of your favourite YouTube channels without signing up for a Google account.
 
+
 ## Installation
+### Arch Linux
+Install [ytcc](https://aur.archlinux.org/packages/ytcc/) from the AUR.
 
-<!--
-### Ubuntu
-```
-sudo apt-get install python3-lxml python3-feedparser python3-setuptools mpv youtube-dl
-git clone https://github.com/popeye123/ytcc.git
-cd ytcc
-sudo python3 setup.py install
-sudo install -Dm644 zsh/_ytcc /usr/local/share/zsh/site-functions/_ytcc
-```
--->
+### Void Linux
+Install package `ytcc`.
 
-### openSUSE (Tumbleweed)
-```
-sudo zypper in python3-lxml python3-feedparser python3-setuptools mpv youtube-dl
-git clone https://github.com/popeye123/ytcc.git
+### Other distros
+Install dependecies: `python3-lxml`, `python3-feedparser`, `python3-setuptools`, `mpv`, `youtube-dl`.
+
+```bash
+git clone https://github.com/woefe/ytcc.git
 cd ytcc
 sudo python3 setup.py install
 sudo install -Dm644 zsh/_ytcc /usr/share/zsh/site-functions/_ytcc
 ```
 
-### Arch Linux
-```shell
-yaourt -S ytcc
-```
-
-### Void Linux
-```shell
-sudo xbps-install -S ytcc
-```
 
 ## Usage
 
@@ -82,19 +69,76 @@ Search for Playthroughs, Let's Plays, ...
 ytcc --search "title:*play*" -l
 ```
 
-Listen to epic music
+Listen to some music without limitations.
 ```shell
-ytcc --add "Two Steps From Hell" https://www.youtube.com/channel/UC3swwxiALG5c0Tvom83tPGg --update
-ytcc --search "thomas bergersen" --yes --list --watch --no-video
+ytcc --add "NCS" https://www.youtube.com/user/NoCopyrightSounds --update
+ytcc --yes --list --watch --no-video --include-watched --channel-filter NCS
 ```
 
-## Video quality settings
-Quality settings can be adjusted via the youtube-dl config file. For more information see `man youtube-dl`.
-It is now also possible to pass the quality settings via a mpv flag in ytcc's config file.
 
-### Example (youtube-dl config)
-Play videos in best audio and video quality but don't use a resolution higher than 1080p.
-```shell
-mkdir -p ~/.config/youtube-dl
-echo "-f 'bestvideo[height<=?1080]+bestaudio/best'" >> ~/.config/youtube-dl/config
+## Configuration
+ytcc searches for a configuration file at following locations:
+
+1. `$XDG_CONFIG_HOME/ytcc/ytcc.conf`
+2. `~/.config/ytcc/ytcc.conf`
+3. `~/.ytcc.conf`
+
+If no config file is found in these three locations, a default config file is created at '~/.config/ytcc/ytcc.conf'.
+
+### Example config
+
+```conf
+# General options
+[YTCC]
+# Path to file where database is stored. Can be used to sync the database between multiple machines ;)
+dbpath = ~/.local/share/ytcc/ytcc.db
+
+# Directory where downloads are saved, when --path is not given
+downloaddir = ~/Downloads
+
+# Parameters passed to mpv. Adjusting these might break ytcc!
+mpvflags = --really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best
+
+
+# Options for downloads
+[youtube-dl]
+# Format (see FORMAT SELECTION in youtube-dl manpage). Make sure to use a video format here, if you
+# want to be able to download videos.
+format = bestvideo[height<=?1080]+bestaudio/best
+
+# Output template (see OUTPUT TEMPLATE in youtube-dl manpage)
+outputtemplate = %(title)s.%(ext)s
+
+# Loglevel options: quiet, normal, verbose
+loglevel = normal
+
+# Limit download speed to the given bytes/second. Set 0 for no limit.
+ratelimit = 1000000
+
+# Set number of retries before giving up on a download .
+retries = 0
+
+# Subtitles for videos. If enabled and available, automatic and manual subtitles for selected
+# languages are embedded in the video.
+#subtitles = en,de
+subtitles = off
+
+# Embed the youtube thumbnail in audio downloads. Transforms the resulting file to m4a, if
+# enabled.
+thumbnail = on
+
+
+# Columns printed by --list option, if --columns is not given as well.
+[TableFormat]
+id = on
+date = off
+channel = on
+title = on
+url = off
+watched = off
 ```
+
+
+## Reporting issues
+Create a new issue on the [github issue tracker](https://github.com/woefe/ytcc/issues/new). Describe the issue as
+detailed as possible. **Important**: do not forget to include the output of `ytcc --bug-report-info` in bug reports.
