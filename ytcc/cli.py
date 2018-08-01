@@ -16,16 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
+import itertools
 import shutil
-import argparse
-import os
 import signal
 import textwrap as wrap
 import readline
 from collections import namedtuple
 from datetime import datetime
-from dateutil import parser as date_parser
 from ytcc import core
+from ytcc import arguments
 
 Command = namedtuple("Command", ["name", "shortcuts", "help", "action"])
 ytcc_core = core.Ytcc()
@@ -197,7 +196,7 @@ def table_print(header, table):
 def print_videos(videos):
 
     def row_filter(row):
-        return list(map(lambda e: e[1], filter(lambda e: e[0], zip(column_filter, row))))
+        return list(itertools.compress(row, column_filter))
 
     def video_to_list(video):
         return [video.id, datetime.fromtimestamp(video.publish_date).strftime("%Y-%m-%d %H:%M"),
@@ -264,24 +263,6 @@ def import_channels(file):
         print(_("The given file is not valid YouTube export file"))
 
 
-def is_directory(string):
-    if not os.path.isdir(string):
-        msg = _("%r is not a directory") % string
-        raise argparse.ArgumentTypeError(msg)
-
-    return string
-
-
-def is_date(string):
-    try:
-        date_parser.parse(string)
-    except ValueError:
-        msg = _("%r is not a valid date") % string
-        raise argparse.ArgumentTypeError(msg)
-
-    return string
-
-
 def download(video_ids, no_video):
     try:
         ytcc_core.download_videos(video_ids=video_ids, path=download_path, no_video=no_video)
@@ -289,139 +270,9 @@ def download(video_ids, no_video):
         print(_("An Error occured while downloading the video"))
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description=_("ytcc is a commandline YouTube client that keeps track of your favorite "
-                      "channels. The --list, --watch, --download, --mark-watched options can be "
-                      "combined with filter options --channel-filter, --include-watched, --since,"
-                      " --to"))
+def run():
 
-    parser.add_argument("-a", "--add-channel",
-                        help=_("add a new channel. NAME is the name displayed by ytcc. URL is the "
-                               "url of the channel's front page"),
-                        nargs=2,
-                        metavar=("NAME", "URL"))
-
-    parser.add_argument("-c", "--list-channels",
-                        help=_("print a list of all subscribed channels"),
-                        action="store_true")
-
-    parser.add_argument("-r", "--delete-channel",
-                        help=_("unsubscribe from the channel identified by 'ID'"),
-                        metavar="ID",
-                        nargs='+',
-                        type=str)
-
-    parser.add_argument("-u", "--update",
-                        help=_("update the video list"),
-                        action="store_true")
-
-    parser.add_argument("-l", "--list",
-                        help=_("print a list of videos that match the criteria given by the "
-                               "filter options"),
-                        action="store_true")
-
-    parser.add_argument("-w", "--watch",
-                        help=_("play the videos identified by 'ID'. Omitting the ID will play all "
-                               "videos specified by the filter options"),
-                        nargs='*',
-                        type=int,
-                        metavar="ID")
-
-    parser.add_argument("-d", "--download",
-                        help=_("download the videos identified by 'ID'. The videos are saved "
-                               "in $HOME/Downloads by default. Omitting the ID will download "
-                               "all videos that match the criteria given by the filter options"),
-                        nargs="*",
-                        type=int,
-                        metavar="ID")
-
-    parser.add_argument("-m", "--mark-watched",
-                        help=_("mark videos identified by ID as watched. Omitting the ID will mark"
-                               " all videos that match the criteria given by the filter options as "
-                               "watched"),
-                        nargs='*',
-                        type=int,
-                        metavar="ID")
-
-    parser.add_argument("-f", "--channel-filter",
-                        help=_("plays, lists, marks, downloads only videos from channels defined "
-                               "in the filter"),
-                        nargs='+',
-                        type=str,
-                        metavar="NAME")
-
-    parser.add_argument("-n", "--include-watched",
-                        help=_("include already watched videos to filter rules"),
-                        action="store_true")
-
-    parser.add_argument("-s", "--since",
-                        help=_("includes only videos published after the given date"),
-                        metavar="YYYY-MM-DD",
-                        type=is_date)
-
-    parser.add_argument("-t", "--to",
-                        help=_("includes only videos published before the given date"),
-                        metavar="YYYY-MM-DD",
-                        type=is_date)
-
-    parser.add_argument("-q", "--search",
-                        help=_("searches for the given PATTERN. The pattern can specify one of the"
-                               " three columns 'channel', 'title', 'description'. If no column is "
-                               "specified, all columns are searched. The pattern can also specify "
-                               "'*' wildcards. Example: --search 'title:box*' will find all video "
-                               "that have a word that starts with 'box' in their title. If this "
-                               "flag is enabled, the -f, -n, " "-s, -t flags will be ignored."),
-                        metavar="PATTERN")
-
-    parser.add_argument("-p", "--path",
-                        help=_("set the download path to PATH"),
-                        metavar="PATH",
-                        type=is_directory)
-
-    parser.add_argument("-g", "--no-description",
-                        help=_("do not print the video description before playing the video"),
-                        action="store_true")
-
-    parser.add_argument("-o", "--columns",
-                        help=_("specifies which columns will be printed when listing videos. COL "
-                               "can be any of %(columns)s") % {"columns": str(table_header)},
-                        nargs='+',
-                        metavar="COL",
-                        choices=table_header)
-
-    parser.add_argument("--no-header",
-                        help=_("do not print the header of the table when listing videos"),
-                        action="store_true")
-
-    parser.add_argument("-x", "--no-video",
-                        help=_("plays or downloads only the audio part of a video"),
-                        action="store_true")
-
-    parser.add_argument("-y", "--yes",
-                        help=_("automatically answer all questions with yes"),
-                        action="store_true")
-
-    parser.add_argument("--import-from",
-                        help=_("import YouTube channels from YouTube's subscription export "
-                               "(available at https://www.youtube.com/subscription_manager)"),
-                        metavar="PATH",
-                        type=argparse.FileType("r"))
-
-    parser.add_argument("--cleanup",
-                        help=_("removes old videos from the database and shrinks the size of the "
-                               "database file"),
-                        action="store_true")
-
-    parser.add_argument("-v", "--version",
-                        help=_("output version information and exit"),
-                        action="store_true")
-
-    parser.add_argument("--bug-report-info",
-                        help=_("print info to include in a bug report"),
-                        action="store_true")
-
-    args = parser.parse_args()
+    args = arguments.get_args()
 
     option_executed = False
 
@@ -484,10 +335,10 @@ def parse_args():
         ytcc_core.set_channel_filter(args.channel_filter)
 
     if args.since:
-        ytcc_core.set_date_begin_filter(date_parser.parse(args.since))
+        ytcc_core.set_date_begin_filter(args.since)
 
     if args.to:
-        ytcc_core.set_date_end_filter(date_parser.parse(args.to))
+        ytcc_core.set_date_end_filter(args.to)
 
     if args.search:
         ytcc_core.set_search_filter(args.search)
@@ -561,4 +412,4 @@ def register_signal_handlers():
 
 def main():
     register_signal_handlers()
-    parse_args()
+    run()
