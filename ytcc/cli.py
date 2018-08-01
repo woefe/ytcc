@@ -417,6 +417,10 @@ def parse_args():
                         help=_("output version information and exit"),
                         action="store_true")
 
+    parser.add_argument("--bug-report-info",
+                        help=_("print info to include in a bug report"),
+                        action="store_true")
+
     args = parser.parse_args()
 
     option_executed = False
@@ -429,6 +433,23 @@ def parse_args():
         print("This program comes with ABSOLUTELY NO WARRANTY; This is free software, and you")
         print("are welcome to redistribute it under certain conditions.  See the GNU General ")
         print("Public Licence for details.")
+        return
+
+    if args.bug_report_info:
+        import ytcc
+        import youtube_dl
+        import subprocess
+        print("---ytcc version---")
+        print(ytcc.__version__)
+        print()
+        print("---youtube-dl version---")
+        print(youtube_dl.version.__version__)
+        print()
+        print("---mpv version---")
+        subprocess.run(["mpv", "--version"])
+        print()
+        print("---config dump---")
+        print(ytcc_core.config)
         return
 
     if args.yes:
