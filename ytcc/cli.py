@@ -22,7 +22,7 @@ import signal
 import sys
 import textwrap as wrap
 import readline
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from contextlib import AbstractContextManager
 from datetime import datetime
 from ytcc import core
@@ -169,10 +169,17 @@ class Unbuffered(AbstractContextManager):
 
 
 def prefix_codes(alphabet, count):
-    codes = list(alphabet)[:count]
-    first = codes.pop(0)
+    codes = list(alphabet)
 
+    if len(codes) < 2:
+        raise ValueError("alphabet must have at least two characters")
+
+    if len(codes) >= count:
+        return codes[:count]
+
+    first = codes.pop(0)
     it = iter(alphabet)
+
     while len(codes) < count:
         try:
             char = next(it)
@@ -185,20 +192,23 @@ def prefix_codes(alphabet, count):
 
 def match_quickselect(tags):
     def getch():
-        """Get a single character from stdin, Unix version"""
+        """Read a single character from stdin without the need to press enter."""
 
-        import sys, tty, termios
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
+        import tty
+        import termios
+
+        file_descriptor = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(file_descriptor)
         try:
             tty.setraw(sys.stdin.fileno())
-            ch = sys.stdin.read(1)
+            char = sys.stdin.read(1)
         finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return ch
+            termios.tcsetattr(file_descriptor, termios.TCSADRAIN, old_settings)
+        return char
 
     tag = ""
-    print("\nType a valid TAG. <Ctrl+d> to exit. <Enter> accepts first video.")
+    print()
+    print(_("Type a valid TAG. <Ctrl+d> to exit. <Enter> accepts first video."))
 
     with Unbuffered(sys.stdout) as sys.stdout:
         print("> ", end="")
@@ -244,18 +254,20 @@ def watch(video_ids=None):
             })
             play(video, no_video)
 
-    #settings for alphabet, enabled, default action
     elif quickselect.enabled:
         tags = prefix_codes(quickselect.alphabet, len(videos))
-        index = dict(zip(tags, videos))
+        index = OrderedDict(zip(tags, videos))
 
-        while videos:
+        while index:
+            remaining_tags = list(index.keys())
+            remaining_videos = index.values()
+
             # Clear display and set cursor to (1,1). Allows scrolling back (in contrast to "\033c",
             # which resets the display)
             print("\033[2J\033[1;1H")
-            print_videos(videos, quickselect_column=tags)
+            print_videos(remaining_videos, quickselect_column=remaining_tags)
 
-            tag = match_quickselect(tags)
+            tag = match_quickselect(remaining_tags)
             video = index.get(tag, None)
 
             if video is None:
@@ -268,8 +280,6 @@ def watch(video_ids=None):
                 play(video, False)
 
             del index[tag]
-            videos.pop(0)
-            tags.remove(tag)
 
     else:
         for video in videos:
