@@ -130,8 +130,8 @@ def get_args():
                         help=_("plays or downloads only the audio part of a video"),
                         action="store_true")
 
-    parser.add_argument("-y", "--yes",
-                        help=_("automatically answer all questions with yes"),
+    parser.add_argument("-y", "--disable-interactive",
+                        help=_("disables the interactive mode"),
                         action="store_true")
 
     parser.add_argument("--import-from",

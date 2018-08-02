@@ -72,7 +72,7 @@ ytcc --search "title:*play*" -l
 Listen to some music without limitations.
 ```shell
 ytcc --add "NCS" https://www.youtube.com/user/NoCopyrightSounds --update
-ytcc --yes --list --watch --no-video --include-watched --channel-filter NCS
+ytcc --disable-interactive --list --watch --no-video --include-watched --channel-filter NCS
 ```
 
 

@@ -406,7 +406,7 @@ def run():
         print(ytcc_core.config)
         return
 
-    if args.yes:
+    if args.disable_interactive:
         global interactive_enabled
         interactive_enabled = False
 

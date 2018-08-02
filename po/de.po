@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ytcc 1.6.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-08-02 12:11+0200\n"
-"PO-Revision-Date: 2018-08-02 12:30+0200\n"
+"POT-Creation-Date: 2018-08-02 14:22+0200\n"
+"PO-Revision-Date: 2018-08-02 14:23+0200\n"
 "Last-Translator: Wolfgang Popp <mail@wolfgang-popp.de>\n"
 "Language-Team: German <>\n"
 "Language: de\n"
@@ -92,13 +92,13 @@ msgstr "beendet ytcc"
 msgid "Play video \"%(title)s\" by \"%(channel)s\"?"
 msgstr "Soll das Video \"%(title)s\" von \"%(channel)s\" abgespielt werden?"
 
-#: ytcc/cli.py:135
+#: ytcc/cli.py:136
 #, python-format
 msgid "'%(cmd)s' is an invalid command. Type 'help' for more info.\n"
 msgstr ""
 "'%(cmd)s ist kein gültiger Befehl. Tippe 'help' für mehr Informationen\n"
 
-#: ytcc/cli.py:147
+#: ytcc/cli.py:148
 msgid ""
 "WARNING: The video player terminated with an error.\n"
 "         The last video is not marked as watched!"
@@ -106,83 +106,83 @@ msgstr ""
 "WARNUNG: Der Videoplayer wurde fehlerhaft beendet.\n"
 "         Das Video wurde nicht als gesehen markiert!"
 
-#: ytcc/cli.py:211
+#: ytcc/cli.py:192
 msgid "Type a valid TAG. <Ctrl+d> to exit. <Enter> accepts first video."
 msgstr "Tippe einen TAG! <Strg+d> beendet. <Enter> wählt das erste Video."
 
-#: ytcc/cli.py:248
+#: ytcc/cli.py:220
+#, python-format
+msgid "Playing \"%(video)s\" by \"%(channel)s\"..."
+msgstr "Spiele \"%(video)s\" von \"%(channel)s\" ab..."
+
+#: ytcc/cli.py:233
 msgid "No videos to watch. No videos match the given criteria."
 msgstr ""
 "Keine Videos zum abspielen gefunden. Die gegeben Suchkriterien treffen auf "
 "kein Video zu."
 
-#: ytcc/cli.py:251
-#, python-format
-msgid "Playing \"%(video)s\" by \"%(channel)s\"..."
-msgstr "Spiele \"%(video)s\" von \"%(channel)s\" ab..."
-
-#: ytcc/cli.py:317
+#: ytcc/cli.py:301
 msgid "Yes"
 msgstr "Ja"
 
-#: ytcc/cli.py:317
+#: ytcc/cli.py:301
 msgid "No"
 msgstr "Nein"
 
-#: ytcc/cli.py:332
+#: ytcc/cli.py:316
 msgid "No videos were marked as watched"
 msgstr "Keine Videos wurden als gesehen markiert"
 
-#: ytcc/cli.py:334
+#: ytcc/cli.py:318
 msgid "Following videos were marked as watched:"
 msgstr "Die Folgenden Videos wurden als gesehen markiert:"
 
-#: ytcc/cli.py:342
+#: ytcc/cli.py:326
 msgid "No videos to list. No videos match the given criteria."
 msgstr ""
 "Keine Videos zum auflisten gefunden. Die gegeben Suchkriterien treffen auf "
 "kein Video zu."
 
-#: ytcc/cli.py:350
+#: ytcc/cli.py:334
 msgid "No channels added, yet."
 msgstr "Bisher wurden noch keine Kanäle abboniert"
 
-#: ytcc/cli.py:360
+#: ytcc/cli.py:344
 #, python-format
 msgid "'%r' is not a valid YouTube URL"
 msgstr "%r ist keine gültige YouTube URL"
 
-#: ytcc/cli.py:362
+#: ytcc/cli.py:346
 #, python-format
 msgid "You are already subscribed to '%r'"
 msgstr "Der Kanal '%r' ist bereits abonniert"
 
-#: ytcc/cli.py:364
+#: ytcc/cli.py:348
 #, python-format
 msgid "The channel '%r' does not exist"
 msgstr "Der Kanal '%r' existiert nicht"
 
-#: ytcc/cli.py:368
+#: ytcc/cli.py:352
 msgid "Cleaning up database..."
 msgstr "Bereinige die Datenbank..."
 
-#: ytcc/cli.py:373
+#: ytcc/cli.py:357
 msgid "Importing..."
 msgstr "Importieren..."
 
-#: ytcc/cli.py:376
+#: ytcc/cli.py:360
 msgid "Subscriptions"
 msgstr "Abonnements"
 
-#: ytcc/cli.py:382
+#: ytcc/cli.py:366
 msgid "The given file is not valid YouTube export file"
 msgstr "Die gegebene Datei ist keine gültige YouTube Export Datei"
 
-#: ytcc/cli.py:389
+#: ytcc/cli.py:373
 msgid "An Error occured while downloading the video"
 msgstr "Während des Herunterladens ist ein Fehler aufgetreten"
 
-#: ytcc/cli.py:526
+#: ytcc/cli.py:510
 msgid "Bye..."
 msgstr "Tschüss..."
 
@@ -333,8 +333,8 @@ msgstr ""
 "spielt nur die Tonspur der Videos ab bzw. lädt nur die Tonspur herunter"
 
 #: ytcc/arguments.py:134
-msgid "automatically answer all questions with yes"
-msgstr "beantwortet alle Fragen automatisch mit 'yes'"
+msgid "disables the interactive mode"
+msgstr "deaktiviert den interaktiven Modus"
 
 #: ytcc/arguments.py:138
 msgid ""
@@ -359,6 +359,9 @@ msgstr "Versionsinformationen anzeigen und beenden"
 #: ytcc/arguments.py:153
 msgid "print info to include in a bug report"
 msgstr "zeigt Informationen für einen Bugreport"
+
+#~ msgid "automatically answer all questions with yes"
+#~ msgstr "beantwortet alle Fragen automatisch mit 'yes'"
 
 #~ msgid "an alias for 'play-video'"
 #~ msgstr "ein Alias für 'play-video'"
