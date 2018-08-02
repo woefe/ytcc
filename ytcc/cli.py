@@ -17,23 +17,25 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
+import readline
+import sys
+from collections import OrderedDict
+
 import shutil
 import signal
-import sys
 import textwrap as wrap
-import readline
-from collections import namedtuple, OrderedDict
-from contextlib import AbstractContextManager
 from datetime import datetime
-from ytcc import core
-from ytcc import arguments
+from gettext import gettext as _
+from typing import List, Iterable, Optional, TextIO, NamedTuple, Callable, Any
 
-Command = namedtuple("Command", ["name", "shortcuts", "help", "action"])
+from ytcc import core, arguments
+from ytcc.video import Video
+
 ytcc_core = core.Ytcc()
 interactive_enabled = True
 description_enabled = True
 no_video = False
-download_path = None
+download_path = ""
 
 header_enabled = True
 table_header = [_("ID"), _("Date"), _("Channel"), _("Title"), _("URL"), _("Watched")]
@@ -45,12 +47,19 @@ column_filter = [ytcc_core.config.table_format.getboolean("ID"),
                  ytcc_core.config.table_format.getboolean("Watched")]
 
 
-def update_all():
+class Command(NamedTuple):
+    name: str
+    shortcuts: List[str]
+    help: str
+    action: Callable[[], Any]
+
+
+def update_all() -> None:
     print(_("Updating channels..."))
     ytcc_core.update_all()
 
 
-def maybe_print_description(description):
+def maybe_print_description(description: str) -> None:
     global description_enabled
     if description_enabled:
         columns = shutil.get_terminal_size().columns
@@ -67,12 +76,12 @@ def maybe_print_description(description):
         print(delimiter, end="\n\n")
 
 
-def interactive_prompt(video):
+def interactive_prompt(video: Video) -> bool:
     executed_cmd = False
     RETURN_VAL_HELP = 0
     RETURN_VAL_QUIT = 1
 
-    def print_help():
+    def print_help() -> int:
         print()
         print(_("Available commands:"))
         for command in commands:
@@ -95,7 +104,7 @@ def interactive_prompt(video):
         Command("quit", ["q", "exit"], _("exit ytcc"), lambda: RETURN_VAL_QUIT),
     ]
 
-    def completer(text, state):
+    def completer(text: str, state: int) -> Optional[str]:
         options = [cmd[0] for cmd in commands if cmd[0].startswith(text)]
         if state < len(options):
             return options[state]
@@ -141,7 +150,7 @@ def interactive_prompt(video):
     return True
 
 
-def play(video, audio_only):
+def play(video: Video, audio_only: bool) -> None:
     maybe_print_description(video.description)
     if not ytcc_core.play_video(video.id, audio_only):
         print()
@@ -150,7 +159,7 @@ def play(video, audio_only):
         print()
 
 
-def prefix_codes(alphabet, count):
+def prefix_codes(alphabet: str, count: int) -> List[str]:
     codes = list(alphabet)
 
     if len(codes) < 2:
@@ -172,8 +181,8 @@ def prefix_codes(alphabet, count):
     return codes
 
 
-def match_quickselect(tags):
-    def getch():
+def match_quickselect(tags: List[str]) -> str:
+    def getch() -> str:
         """Read a single character from stdin without the need to press enter."""
 
         import tty
@@ -215,8 +224,8 @@ def match_quickselect(tags):
     return tag
 
 
-def watch(video_ids=None):
-    def print_title(video):
+def watch(video_ids: Optional[Iterable[int]] = None) -> None:
+    def print_title(video: Video) -> None:
         print(_('Playing "%(video)s" by "%(channel)s"...') % {
             "video": video.title,
             "channel": video.channelname
@@ -232,9 +241,9 @@ def watch(video_ids=None):
     if not videos:
         print(_("No videos to watch. No videos match the given criteria."))
     elif not interactive_enabled:
-        for video in videos:
-            print_title(video)
-            play(video, no_video)
+        for v in videos:
+            print_title(v)
+            play(v, no_video)
 
     elif quickselect.enabled:
         tags = prefix_codes(quickselect.alphabet, len(videos))
@@ -250,7 +259,7 @@ def watch(video_ids=None):
             print_videos(remaining_videos, quickselect_column=remaining_tags)
 
             tag = match_quickselect(remaining_tags)
-            video = index.get(tag, None)
+            video = index.get(tag)
 
             if video is None:
                 break
@@ -271,7 +280,7 @@ def watch(video_ids=None):
                 break
 
 
-def table_print(header, table):
+def table_print(header: List[str], table: List[List[str]]) -> None:
     transposed = zip(header, *table)
     col_widths = [max(map(len, column)) for column in transposed]
     table_format = "│".join(itertools.repeat(" {{:<{}}} ", len(header))).format(*col_widths)
@@ -285,20 +294,20 @@ def table_print(header, table):
         print(table_format.format(*row))
 
 
-def print_videos(videos, quickselect_column=None):
-
-    def row_filter(row):
+def print_videos(videos: Iterable[Video],
+                 quickselect_column: Optional[Iterable[str]] = None) -> None:
+    def row_filter(row: Iterable[str]) -> List[str]:
         return list(itertools.compress(row, column_filter))
 
-    def concat_row(tag, video):
+    def video_to_list(video: Video) -> List[str]:
+        return [str(video.id), datetime.fromtimestamp(video.publish_date).strftime("%Y-%m-%d %H:%M"),
+                video.channelname, video.title, ytcc_core.get_youtube_video_url(video.yt_videoid),
+                _("Yes") if video.watched else _("No")]
+
+    def concat_row(tag: str, video: Video) -> List[str]:
         row = row_filter(video_to_list(video))
         row.insert(0, tag)
         return row
-
-    def video_to_list(video):
-        return [video.id, datetime.fromtimestamp(video.publish_date).strftime("%Y-%m-%d %H:%M"),
-                video.channelname, video.title, ytcc_core.get_youtube_video_url(video.yt_videoid),
-                _("Yes") if video.watched else _("No")]
 
     if quickselect_column is None:
         table = [row_filter(video_to_list(v)) for v in videos]
@@ -310,7 +319,7 @@ def print_videos(videos, quickselect_column=None):
         table_print(header, table)
 
 
-def mark_watched(video_ids):
+def mark_watched(video_ids: Optional[List[int]]) -> None:
     marked_videos = ytcc_core.mark_watched(video_ids)
     if not marked_videos:
         print(_("No videos were marked as watched"))
@@ -320,7 +329,7 @@ def mark_watched(video_ids):
         print_videos(marked_videos)
 
 
-def list_videos():
+def list_videos() -> None:
     videos = ytcc_core.list_videos()
     if not videos:
         print(_("No videos to list. No videos match the given criteria."))
@@ -328,7 +337,7 @@ def list_videos():
         print_videos(videos)
 
 
-def print_channels():
+def print_channels() -> None:
     channels = ytcc_core.get_channels()
     if not channels:
         print(_("No channels added, yet."))
@@ -337,7 +346,7 @@ def print_channels():
             print(channel.displayname)
 
 
-def add_channel(name, channel_url):
+def add_channel(name: str, channel_url: str) -> None:
     try:
         ytcc_core.add_channel(name, channel_url)
     except core.BadURLException:
@@ -348,12 +357,12 @@ def add_channel(name, channel_url):
         print(_("The channel '%r' does not exist") % channel_url)
 
 
-def cleanup():
+def cleanup() -> None:
     print(_("Cleaning up database..."))
     ytcc_core.cleanup()
 
 
-def import_channels(file):
+def import_channels(file: TextIO) -> None:
     print(_("Importing..."))
     try:
         ytcc_core.import_channels(file)
@@ -366,17 +375,15 @@ def import_channels(file):
         print(_("The given file is not valid YouTube export file"))
 
 
-def download(video_ids, no_video):
+def download(video_ids: Optional[List[int]], no_video: bool) -> None:
     try:
         ytcc_core.download_videos(video_ids=video_ids, path=download_path, no_video=no_video)
     except core.DownloadError:
         print(_("An Error occured while downloading the video"))
 
 
-def run():
-
+def run() -> None:
     args = arguments.get_args()
-
     option_executed = False
 
     if args.version:
@@ -391,7 +398,7 @@ def run():
 
     if args.bug_report_info:
         import ytcc
-        import youtube_dl
+        import youtube_dl.version
         import subprocess
         print("---ytcc version---")
         print(ytcc.__version__)
@@ -481,7 +488,7 @@ def run():
     if args.download is not None:
         if option_executed:
             print()
-        download(args.download, no_video)
+        download(args.download if args.download else None, no_video)
         option_executed = True
 
     if args.watch is not None:
@@ -493,7 +500,7 @@ def run():
     if args.mark_watched is not None:
         if option_executed:
             print()
-        mark_watched(args.mark_watched)
+        mark_watched(args.mark_watched if args.mark_watched else None)
         option_executed = True
 
     if not option_executed:
@@ -504,8 +511,8 @@ def run():
         watch()
 
 
-def register_signal_handlers():
-    def handler(signum, frame):
+def register_signal_handlers() -> None:
+    def handler(signum: Any, frame: Any) -> None:
         print()
         print(_("Bye..."))
         exit(1)
@@ -513,6 +520,6 @@ def register_signal_handlers():
     signal.signal(signal.SIGINT, handler)
 
 
-def main():
+def main() -> None:
     register_signal_handlers()
     run()

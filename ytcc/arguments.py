@@ -1,9 +1,13 @@
+import datetime
 import os
 import argparse
 import ytcc
+import ytcc.cli
 from dateutil import parser as date_parser
+from gettext import gettext as _
 
-def is_directory(string):
+
+def is_directory(string: str) -> str:
     if not os.path.isdir(string):
         msg = _("%r is not a directory") % string
         raise argparse.ArgumentTypeError(msg)
@@ -11,7 +15,7 @@ def is_directory(string):
     return string
 
 
-def is_date(string):
+def is_date(string: str) -> datetime.datetime:
     try:
         return date_parser.parse(string)
     except ValueError:
@@ -19,7 +23,7 @@ def is_date(string):
         raise argparse.ArgumentTypeError(msg)
 
 
-def get_args():
+def get_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=_("ytcc is a commandline YouTube client that keeps track of your favorite "
                       "channels. The --list, --watch, --download, --mark-watched options can be "
@@ -116,8 +120,8 @@ def get_args():
     parser.add_argument("-o", "--columns",
                         help=_("specifies which columns will be printed when listing videos. COL "
                                "can be any of %(columns)s") % {
-                                   "columns": str(ytcc.cli.table_header)
-                                },
+                                 "columns": str(ytcc.cli.table_header)
+                             },
                         nargs='+',
                         metavar="COL",
                         choices=ytcc.cli.table_header)

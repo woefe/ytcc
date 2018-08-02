@@ -16,23 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import NamedTuple
 
-class Video:
 
-    def __init__(self, id, yt_videoid, title, description, publish_date, channelname, watched):
-        self.id = id
-        self.yt_videoid = yt_videoid
-        self.title = title
-        self.description = description
-        self.publish_date = publish_date
-        self.channelname = channelname
-        self.watched = bool(watched)
-
-    def __eq__(self, other):
-        return self.id == other.id and \
-            self.yt_videoid == other.yt_videoid and \
-            self.title == other.title and \
-            self.description == other.description and \
-            self.publish_date == other.publish_date and \
-            self.channelname == other.channelname and \
-            self.watched == other.watched
+class Video(NamedTuple):
+    id: int
+    yt_videoid: str
+    title: str
+    description: str
+    publish_date: float
+    channelname: str
+    watched: bool

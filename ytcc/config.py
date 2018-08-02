@@ -16,13 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
-from pathlib import Path
 import configparser
+import io
 import os
 import re
-import io
+from pathlib import Path
+from typing import Any, Dict, Optional
 
-DEFAULTS = {
+DEFAULTS: Dict[str, Dict[str, Any]] = {
     "YTCC": {
         "DBPath": "~/.local/share/ytcc/ytcc.db",
         "DownloadDir": "~/Downloads",
@@ -53,7 +54,7 @@ DEFAULTS = {
 }
 
 
-def _get_config(override_cfg_file=None):
+def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigParser:
     """Searches for the config file in
         0. override_cfg_file
         1. $XDG_CONFIG_HOME/ytcc/ytcc.conf
@@ -97,7 +98,7 @@ def _get_config(override_cfg_file=None):
 class Config(object):
     """Handles the ini-based configuration file"""
 
-    def __init__(self, override_cfg_file=None):
+    def __init__(self, override_cfg_file: Optional[str] = None) -> None:
         super(Config, self).__init__()
         config = _get_config(override_cfg_file)
         self._config = config
@@ -108,22 +109,22 @@ class Config(object):
         self.youtube_dl = _YTDLConf(config["youtube-dl"])
         self.quickselect = _QuickSelectConf(config["quickselect"])
 
-    def __str__(self):
+    def __str__(self) -> str:
         strio = io.StringIO()
         self._config.write(strio)
         return strio.getvalue()
 
 
 class _QuickSelectConf(object):
-    def __init__(self, subconf):
+    def __init__(self, subconf: Any) -> None:
         super(_QuickSelectConf, self).__init__()
         self.enabled = subconf.getboolean("enabled")
         self.ask = subconf.getboolean("ask")
         self.alphabet = subconf["alphabet"]
 
 
-class _YTDLConf():
-    def __init__(self, subconf):
+class _YTDLConf(object):
+    def __init__(self, subconf: Any) -> None:
         super(_YTDLConf, self).__init__()
         self.format = subconf["format"]
         self.output_template = subconf["outputTemplate"]

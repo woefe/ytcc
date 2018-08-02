@@ -21,6 +21,9 @@ from pathlib import Path
 import ytcc.updater as updater
 from ytcc.video import Video
 from ytcc.channel import Channel
+from typing import Tuple, Any, List, Iterable, Optional
+
+DBVideo = Tuple[str, str, str, str, float, bool]
 
 
 class Database:
@@ -28,7 +31,7 @@ class Database:
 
     VERSION = 1
 
-    def __init__(self, path=":memory:"):
+    def __init__(self, path: str = ":memory:") -> None:
         """Connects to the given sqlite3 database file or creates a new file, if it does not yet
         exist. If 'path' is not given, a new database is created in memory.
 
@@ -51,13 +54,13 @@ class Database:
         else:
             self._maybe_update()
 
-    def __enter__(self):
+    def __enter__(self) -> "Database":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Any:
         self.dbconn.close()
 
-    def _init_db(self):
+    def _init_db(self) -> None:
         """Creates all needed tables."""
 
         cursor = self.dbconn.cursor()
@@ -104,19 +107,19 @@ class Database:
         self.dbconn.commit()
         cursor.close()
 
-    def _maybe_update(self):
+    def _maybe_update(self) -> None:
         db_version = int(self._execute_query_with_result("PRAGMA USER_VERSION;")[0][0])
         if db_version < Database.VERSION:
             updater.update(db_version, Database.VERSION, self.dbconn)
 
-    def _execute_query(self, sql, args=()):
+    def _execute_query(self, sql: str, args: Tuple = ()) -> None:
         # Helper method to execute sql queries that do not have return values e.g. update, insert
         cursor = self.dbconn.cursor()
         cursor.execute(sql, args)
         self.dbconn.commit()
         cursor.close()
 
-    def _execute_query_with_result(self, sql, args=()):
+    def _execute_query_with_result(self, sql: str, args: Tuple = ()) -> List[Tuple]:
         # Helper method to execute sql queries that return values e.g. select,...
         cursor = self.dbconn.cursor()
         result = cursor.execute(sql, args).fetchall()
@@ -124,7 +127,7 @@ class Database:
         cursor.close()
         return result
 
-    def _execute_query_many(self, sql, args):
+    def _execute_query_many(self, sql: str, args: Iterable[Iterable[Any]]) -> None:
         # Helper method for cursor.executemany()
         cursor = self.dbconn.cursor()
         cursor.executemany(sql, args)
@@ -132,12 +135,12 @@ class Database:
         cursor.close()
 
     @staticmethod
-    def _make_place_holder(elements):
+    def _make_place_holder(elements: Optional[List[Any]] = None) -> str:
         if elements:
             return "(" + ("?," * (len(elements) - 1)) + "?)"
         return "()"
 
-    def add_channel(self, name, yt_channelid):
+    def add_channel(self, name: str, yt_channelid: str) -> None:
         """Adds a new channel to the database.
 
         Args:
@@ -148,7 +151,7 @@ class Database:
         sql = "insert into channel(displayname, yt_channelid) values (?, ?);"
         self._execute_query(sql, (name, yt_channelid))
 
-    def get_channels(self):
+    def get_channels(self) -> List[Channel]:
         """Returns a list of all subscribed channels.
 
         Returns ([Channel]):
@@ -159,12 +162,13 @@ class Database:
         result = self._execute_query_with_result(sql)
         return [Channel(*x) for x in result]
 
-    def get_videos(self, channel_filter=None, begin_timestamp=0, end_timestamp=0, include_watched=True):
+    def get_videos(self, channel_filter: Optional[List[str]] = None, begin_timestamp: float = 0,
+                   end_timestamp: float = 0, include_watched: bool = True) -> List[Video]:
         """Returns a list of videos that were published after and before the given timestamps. The
         videos are published by the channels in channelFilter.
 
         Args:
-            channel_filter (list): the list of channel names
+            channel_filter (list): the list of channel names. None or [] match all channels.
             begin_timestamp (int): timestamp in seconds
             end_timestamp (int): timestamp in seconds
             include_watched (bool): true, if watched videos should be included in the result
@@ -188,19 +192,22 @@ class Database:
                 and v.publish_date < @end_timestamp
                 and (@include_watched or v.watched = 0)
                 and (@all_channels or c.displayname in """ + \
-                        self._make_place_holder(channel_filter) + """)
+              self._make_place_holder(channel_filter) + """)
             order by c.id, v.publish_date asc;
             """
 
-        sql_args = channel_filter.copy() if channel_filter is not None else []
-        sql_args.insert(0, begin_timestamp)
-        sql_args.insert(1, end_timestamp)
-        sql_args.insert(2, include_watched)
-        sql_args.insert(3, channel_filter is None or len(channel_filter) < 1)
-        result = self._execute_query_with_result(sql, tuple(sql_args))
+        channel_names = channel_filter.copy() if channel_filter is not None else []
+        sql_args = (
+            begin_timestamp,
+            end_timestamp,
+            include_watched,
+            channel_filter is None or len(channel_filter) < 1,
+            *channel_names
+        )
+        result = self._execute_query_with_result(sql, sql_args)
         return [Video(*x) for x in result]
 
-    def search(self, searchterm):
+    def search(self, searchterm: str) -> List[Video]:
         """Performs a full-text search.
 
         Returns(list):
@@ -225,7 +232,7 @@ class Database:
         result = self._execute_query_with_result(sql, (searchterm,))
         return [Video(*x) for x in result]
 
-    def resolve_video_id(self, video_id):
+    def resolve_video_id(self, video_id: int) -> Optional[Video]:
         """Queries and returns the video object for the given video ID.
 
         Args:
@@ -253,7 +260,7 @@ class Database:
 
         return None
 
-    def mark_watched(self, video_ids):
+    def mark_watched(self, video_ids: Iterable[int]) -> None:
         """Marks the videos identified by the given video IDs as watched without playing them.
 
         Args:
@@ -263,7 +270,7 @@ class Database:
         sql = "update video set watched = 1 where id = ?"
         self._execute_query_many(sql, [(vid,) for vid in video_ids])
 
-    def delete_channels(self, displaynames):
+    def delete_channels(self, displaynames: List[str]) -> None:
         """Delete (or unsubscribe) channels.
 
         Args:
@@ -271,10 +278,10 @@ class Database:
         """
 
         sql = "delete from channel where displayname in " + self._make_place_holder(displaynames) \
-                + ";"
+              + ";"
         self._execute_query(sql, tuple(displaynames))
 
-    def add_videos(self, videos):
+    def add_videos(self, videos: Iterable[DBVideo]) -> None:
         """Adds new videos to the database.
 
         Args:
@@ -289,7 +296,7 @@ class Database:
             """
         self._execute_query_many(sql, videos)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Deletes all videos from all channels, but keeps the 30 latest videos of every channel.
         """
 

@@ -11,7 +11,8 @@ Install [ytcc](https://aur.archlinux.org/packages/ytcc/) from the AUR.
 Install package `ytcc`.
 
 ### Other distros
-Install dependencies: `python3-lxml`, `python3-feedparser`, `python3-setuptools`, `mpv`, `youtube-dl`.
+Ytcc requires python 3.6 or later. Install dependencies: `python3-lxml`, `python3-feedparser`, `python3-setuptools`,
+`mpv`, `youtube-dl`.
 
 ```bash
 git clone https://github.com/woefe/ytcc.git

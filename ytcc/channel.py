@@ -16,9 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import NamedTuple
 
-class Channel:
-    def __init__(self, id, displayname, yt_channelid):
-        self.id = id
-        self.displayname = displayname
-        self.yt_channelid = yt_channelid
+
+class Channel(NamedTuple):
+    id: int
+    displayname: str
+    yt_channelid: str

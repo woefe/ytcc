@@ -15,6 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
+import sqlite3
 
 FROM_0_TO_1 = '''
     CREATE VIRTUAL TABLE user_search USING fts4(id, channel, title, description, tokenize = unicode61);
@@ -54,7 +55,7 @@ FROM_0_TO_1 = '''
 UPDATES = [FROM_0_TO_1]
 
 
-def update(old_version, new_version, dbconn):
+def update(old_version: int, new_version: int, dbconn: sqlite3.Connection) -> None:
     """Updates the database from the old_version to the new_version
 
     Args:
