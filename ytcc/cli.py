@@ -288,23 +288,12 @@ def watch(video_ids=None):
 
 
 def table_print(header, table):
-    col_widths = []
-    header_line = ""
-
-    for h in header:
-        col_widths.append(len(h))
-
-    for i in range(0, len(header)):
-        col_widths[i] = max(col_widths[i], max(map(lambda h: len(str(h[i])), table)))
-
-    for width in col_widths:
-        header_line += "─" * (width + 2)
-        header_line += "┼"
-
-    header_line = header_line[:-1]
-    table_format = (" {{:<{}}} │" * len(header))[:-2].format(*col_widths)
+    transposed = zip(header, *table)
+    col_widths = [max(map(len, column)) for column in transposed]
+    table_format = "│".join(itertools.repeat(" {{:<{}}} ", len(header))).format(*col_widths)
 
     if header_enabled:
+        header_line = "┼".join("─" * (width + 2) for width in col_widths)
         print(table_format.format(*header))
         print(header_line)
 
