@@ -119,12 +119,13 @@ def get_args() -> argparse.Namespace:
 
     parser.add_argument("-o", "--columns",
                         help=_("specifies which columns will be printed when listing videos. COL "
-                               "can be any of %(columns)s") % {
+                               "can be any of %(columns)s. All columns can be enabled with "
+                               "'all'") % {
                                  "columns": str(ytcc.cli.table_header)
                              },
                         nargs='+',
                         metavar="COL",
-                        choices=ytcc.cli.table_header)
+                        choices=["all", *ytcc.cli.table_header])
 
     parser.add_argument("--no-header",
                         help=_("do not print the header of the table when listing videos"),

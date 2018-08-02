@@ -439,7 +439,10 @@ def run() -> None:
         column_filter[5] = True
 
     if args.columns:
-        column_filter = [True if f in args.columns else False for f in table_header]
+        if args.columns == ["all"]:
+            column_filter = [True] * len(table_header)
+        else:
+            column_filter = [True if f in args.columns else False for f in table_header]
 
     if args.channel_filter:
         ytcc_core.set_channel_filter(args.channel_filter)
