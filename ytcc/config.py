@@ -37,6 +37,11 @@ DEFAULTS = {
         "subtitles": "off",
         "thumbnail": "on"
     },
+    "quickselect": {
+        "enabled": "no",
+        "ask": "yes",
+        "alphabet": "sdfervghnuiojkl"
+    },
     "TableFormat": {
         "ID": "on",
         "Date": "off",
@@ -46,6 +51,7 @@ DEFAULTS = {
         "Watched": "off"
     }
 }
+
 
 def _get_config(override_cfg_file=None):
     """Searches for the config file in
@@ -100,12 +106,20 @@ class Config(object):
         self.mpv_flags = re.compile("\\s+").split(config["YTCC"]["mpvFlags"])
         self.table_format = config["TableFormat"]
         self.youtube_dl = _YTDLConf(config["youtube-dl"])
+        self.quickselect = _QuickSelectConf(config["quickselect"])
 
     def __str__(self):
         strio = io.StringIO()
         self._config.write(strio)
         return strio.getvalue()
 
+
+class _QuickSelectConf(object):
+    def __init__(self, subconf):
+        super(_QuickSelectConf, self).__init__()
+        self.enabled = subconf.getboolean("enabled")
+        self.ask = subconf.getboolean("ask")
+        self.alphabet = subconf["alphabet"]
 
 
 class _YTDLConf():
@@ -120,4 +134,3 @@ class _YTDLConf():
 
         limit = int(subconf["ratelimit"])
         self.ratelimit = limit if limit > 0 else None
-

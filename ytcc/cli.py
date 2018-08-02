@@ -19,9 +19,11 @@
 import itertools
 import shutil
 import signal
+import sys
 import textwrap as wrap
 import readline
 from collections import namedtuple
+from contextlib import AbstractContextManager
 from datetime import datetime
 from ytcc import core
 from ytcc import arguments
@@ -147,25 +149,132 @@ def play(video, audio_only):
         print()
 
 
+class Unbuffered(AbstractContextManager):
+    def __init__(self, stream):
+        self.stream = stream
+
+    def write(self, data):
+        self.stream.write(data)
+        self.stream.flush()
+
+    def writelines(self, datas):
+        self.stream.writelines(datas)
+        self.stream.flush()
+
+    def __getattr__(self, attr):
+        return getattr(self.stream, attr)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+
+def prefix_codes(alphabet, count):
+    codes = list(alphabet)[:count]
+    first = codes.pop(0)
+
+    it = iter(alphabet)
+    while len(codes) < count:
+        try:
+            char = next(it)
+            codes.append(first + char)
+        except StopIteration:
+            it = iter(alphabet)
+            first = codes.pop(0)
+    return codes
+
+
+def match_quickselect(tags):
+    def getch():
+        """Get a single character from stdin, Unix version"""
+
+        import sys, tty, termios
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
+
+    tag = ""
+    print("\nType a valid TAG. <Ctrl+d> to exit. <Enter> accepts first video.")
+
+    with Unbuffered(sys.stdout) as sys.stdout:
+        print("> ", end="")
+
+        while tag not in tags:
+            char = getch()
+
+            if char in {"\x04", "\x03"}:  # Ctrl+d, Ctrl+d
+                break
+
+            if char == "\r":
+                tag = tags[0]
+                break
+
+            if char == "\x7f":  # DEL
+                tag = tag[:-1]
+            else:
+                tag += char
+
+            print("\033[2K", end="")
+            print("\r", end="")
+            print(">", tag, end="")
+
+    print()
+    return tag
+
+
 def watch(video_ids=None):
     if not video_ids:
         videos = ytcc_core.list_videos()
     else:
         videos = ytcc_core.get_videos(video_ids)
 
+    quickselect = ytcc_core.config.quickselect
+
     if not videos:
         print(_("No videos to watch. No videos match the given criteria."))
-    else:
+    elif not interactive_enabled:
         for video in videos:
-            if interactive_enabled:
+            print(_('Playing "%(video)s" by "%(channel)s"...') % {
+                "video": video.title,
+                "channel": video.channelname
+            })
+            play(video, no_video)
+
+    #settings for alphabet, enabled, default action
+    elif quickselect.enabled:
+        tags = prefix_codes(quickselect.alphabet, len(videos))
+        index = dict(zip(tags, videos))
+
+        while videos:
+            # Clear display and set cursor to (1,1). Allows scrolling back (in contrast to "\033c",
+            # which resets the display)
+            print("\033[2J\033[1;1H")
+            print_videos(videos, quickselect_column=tags)
+
+            tag = match_quickselect(tags)
+            video = index.get(tag, None)
+
+            if video is None:
+                break
+            if quickselect.ask:
+                print()
                 if not interactive_prompt(video):
                     break
             else:
-                print(_('Playing "%(video)s" by "%(channel)s"...') % {
-                    "video": video.title,
-                    "channel": video.channelname
-                })
-                play(video, no_video)
+                play(video, False)
+
+            del index[tag]
+            videos.pop(0)
+            tags.remove(tag)
+
+    else:
+        for video in videos:
+            if not interactive_prompt(video):
+                break
 
 
 def table_print(header, table):
@@ -193,18 +302,29 @@ def table_print(header, table):
         print(table_format.format(*row))
 
 
-def print_videos(videos):
+def print_videos(videos, quickselect_column=None):
 
     def row_filter(row):
         return list(itertools.compress(row, column_filter))
+
+    def concat_row(tag, video):
+        row = row_filter(video_to_list(video))
+        row.insert(0, tag)
+        return row
 
     def video_to_list(video):
         return [video.id, datetime.fromtimestamp(video.publish_date).strftime("%Y-%m-%d %H:%M"),
                 video.channelname, video.title, ytcc_core.get_youtube_video_url(video.yt_videoid),
                 _("Yes") if video.watched else _("No")]
 
-    table = [row_filter(video_to_list(v)) for v in videos]
-    table_print(row_filter(table_header), table)
+    if quickselect_column is None:
+        table = [row_filter(video_to_list(v)) for v in videos]
+        table_print(row_filter(table_header), table)
+    else:
+        table = [concat_row(k, v) for k, v in zip(quickselect_column, videos)]
+        header = row_filter(table_header)
+        header.insert(0, "TAG")
+        table_print(header, table)
 
 
 def mark_watched(video_ids):
