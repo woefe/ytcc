@@ -38,7 +38,7 @@ DEFAULTS = {
         "thumbnail": "on"
     },
     "quickselect": {
-        "enabled": "no",
+        "enabled": "yes",
         "ask": "yes",
         "alphabet": "sdfervghnuiojkl"
     },

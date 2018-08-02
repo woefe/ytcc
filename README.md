@@ -100,6 +100,19 @@ downloaddir = ~/Downloads
 mpvflags = --really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best
 
 
+# Alternative interactive mode. Select videos with short tags instead of playing them in a pre-defined
+# order
+[quickselect]
+# Enables or disables quickselect mode.
+enabled = yes
+
+# Plays the selected video instantly, if disabled. Otherwise it shows the interactive prompt
+ask = yes
+
+# The character to use for the quickselect tags.
+alphabet = sdfervghnuiojkl
+
+
 # Options for downloads
 [youtube-dl]
 # Format (see FORMAT SELECTION in youtube-dl manpage). Make sure to use a video format here, if you

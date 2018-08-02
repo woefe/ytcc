@@ -111,7 +111,8 @@ def interactive_prompt(video):
                 "title": video.title,
                 "channel": video.channelname
             }
-            choice = input(question + '\n[y(es)/n(o)/a(udio)/m(ark)/q(uit)/h(elp)] (Default: y): ')
+            choice = input(question +
+                           '\n[y(es)/n(o)/a(udio)/m(ark)/q(uit)/h(elp)] (Default: y) > ')
         except EOFError:
             print()
             return False
@@ -237,6 +238,12 @@ def match_quickselect(tags):
 
 
 def watch(video_ids=None):
+    def print_title(video):
+        print(_('Playing "%(video)s" by "%(channel)s"...') % {
+            "video": video.title,
+            "channel": video.channelname
+        })
+
     if not video_ids:
         videos = ytcc_core.list_videos()
     else:
@@ -248,10 +255,7 @@ def watch(video_ids=None):
         print(_("No videos to watch. No videos match the given criteria."))
     elif not interactive_enabled:
         for video in videos:
-            print(_('Playing "%(video)s" by "%(channel)s"...') % {
-                "video": video.title,
-                "channel": video.channelname
-            })
+            print_title(video)
             play(video, no_video)
 
     elif quickselect.enabled:
@@ -272,11 +276,13 @@ def watch(video_ids=None):
 
             if video is None:
                 break
+
+            print()
             if quickselect.ask:
-                print()
                 if not interactive_prompt(video):
                     break
             else:
+                print_title(video)
                 play(video, False)
 
             del index[tag]
