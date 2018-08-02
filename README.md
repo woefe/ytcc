@@ -144,3 +144,39 @@ watched = off
 ## Reporting issues
 Create a new issue on the [github issue tracker](https://github.com/woefe/ytcc/issues/new). Describe the issue as
 detailed as possible. **Important**: do not forget to include the output of `ytcc --bug-report-info` in bug reports.
+
+
+## Translations
+Ytcc uses the GNU gettext utilities to manage localization.
+
+### Managing locales
+Create a new locale with `msginit`. The example below creates a new locale for Polish.
+```bash
+cd po
+msginit --locale pl
+```
+
+Every time the PO template is changed, the locales have to be updated with `msgmerge`.
+```bash
+cd po
+msgmerge --update de.po ytcc.pot
+```
+
+Every time a PO file is created or updated, new strings have to be translated. There are multiple tools available, see
+the [GNU gettext manual](https://www.gnu.org/software/gettext/manual/gettext.html#Editing). I prefer GTranslator, e.g:
+
+```bash
+cd po
+gtranslator de.po
+```
+
+### Updating the PO tempate
+```bash
+xgettext --output=po/ytcc.pot \
+    --language=Python \
+    --from-code=utf-8 \
+    --copyright-holder="Wolfgang Popp" \
+    --package-name="ytcc" \
+    --package-version=$(python -c "import ytcc; print(ytcc.__version__)") \
+    ytcc/{cli,arguments}.py
+```
