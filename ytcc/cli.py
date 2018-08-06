@@ -406,11 +406,26 @@ def run() -> None:
         import ytcc
         import youtube_dl.version
         import subprocess
+        import feedparser
+        import lxml.etree
+        import dateutil
         print("---ytcc version---")
         print(ytcc.__version__)
         print()
         print("---youtube-dl version---")
         print(youtube_dl.version.__version__)
+        print()
+        print("---feedparser version---")
+        print(feedparser.__version__)
+        print()
+        print("---lxml version---")
+        print(lxml.etree.__version__)
+        print()
+        print("---dateutil version---")
+        print(dateutil.__version__)
+        print()
+        print("---python version---")
+        print(sys.version)
         print()
         print("---mpv version---")
         subprocess.run(["mpv", "--version"])
