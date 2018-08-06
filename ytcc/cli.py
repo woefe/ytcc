@@ -26,7 +26,7 @@ import signal
 import textwrap as wrap
 from datetime import datetime
 from gettext import gettext as _
-from typing import List, Iterable, Optional, TextIO, NamedTuple, Callable, Any
+from typing import List, Iterable, Optional, TextIO, NamedTuple, Callable, Any, Set
 
 from ytcc import core, arguments
 from ytcc.video import Video
@@ -159,11 +159,14 @@ def play(video: Video, audio_only: bool) -> None:
         print()
 
 
-def prefix_codes(alphabet: str, count: int) -> List[str]:
+def prefix_codes(alphabet: Set[str], count: int) -> List[str]:
     codes = list(alphabet)
 
     if len(codes) < 2:
         raise ValueError("alphabet must have at least two characters")
+
+    if count <= 0:
+        raise ValueError("count must not be negative")
 
     if len(codes) >= count:
         return codes[:count]
@@ -249,7 +252,7 @@ def watch(video_ids: Optional[Iterable[int]] = None) -> None:
             play(v, no_video)
 
     elif quickselect.enabled:
-        tags = prefix_codes(quickselect.alphabet, len(videos))
+        tags = prefix_codes(set(quickselect.alphabet), len(videos))
         index = OrderedDict(zip(tags, videos))
 
         while index:
