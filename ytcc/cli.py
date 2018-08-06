@@ -185,6 +185,9 @@ def match_quickselect(tags: List[str]) -> str:
     def getch() -> str:
         """Read a single character from stdin without the need to press enter."""
 
+        if not sys.stdin.isatty():
+            return ""
+
         import tty
         import termios
 
@@ -208,7 +211,7 @@ def match_quickselect(tags: List[str]) -> str:
         if char in {"\x04", "\x03"}:  # Ctrl+d, Ctrl+d
             break
 
-        if char == "\r":
+        if char in {"\r", ""}:
             tag = tags[0]
             break
 
