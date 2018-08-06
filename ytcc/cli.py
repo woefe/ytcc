@@ -261,7 +261,7 @@ def watch(video_ids: Optional[Iterable[int]] = None) -> None:
 
             # Clear display and set cursor to (1,1). Allows scrolling back (in contrast to "\033c",
             # which resets the display)
-            print("\033[2J\033[1;1H")
+            print("\033[2J\033[1;1H", end="")
             print_videos(remaining_videos, quickselect_column=remaining_tags)
 
             tag = match_quickselect(remaining_tags)
@@ -515,8 +515,9 @@ def run() -> None:
     if not option_executed:
         update_all()
         print()
-        list_videos()
-        print()
+        if not ytcc_core.config.quickselect.enabled:
+            list_videos()
+            print()
         watch()
 
 
