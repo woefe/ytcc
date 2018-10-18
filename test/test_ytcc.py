@@ -106,7 +106,7 @@ class TestYtccPreparedVideos(TestCase):
         videos = ytcc.list_videos()
         self.assertEqual(len(videos), 5)
         titles = set([v.title for v in videos])
-        expected = set(["tmpiM62pN", "tmpIXBgjd", "tmpwA0TjG", "tmpc5Y2pd", "tmpn1M1Oa"])
+        expected = {"tmpiM62pN", "tmpIXBgjd", "tmpwA0TjG", "tmpc5Y2pd", "tmpn1M1Oa"}
         self.assertSetEqual(set(titles), expected)
 
     def test_list_videos_search_filter(self):
@@ -146,7 +146,7 @@ class TestYtccPreparedVideos(TestCase):
         ytcc.set_include_watched_filter()
         ytcc.set_channel_filter(["Webdriver Torso"])
         videos = ytcc.list_videos()
-        expected = set(["tmppfXKp6", "tmpiM62pN", "tmpIXBgjd"])
+        expected = {"tmppfXKp6", "tmpiM62pN", "tmpIXBgjd"}
         titles = set([v.title for v in videos])
         self.assertEqual(len(videos), 3)
         self.assertSetEqual(titles, expected)
@@ -164,7 +164,8 @@ class TestYtccPreparedVideos(TestCase):
 
     def test_download_videos(self):
         ytcc = self.ytcc
-        ytcc.download_videos([self.video_id])
+        success_ids = map(lambda a: a[0], filter(lambda a: a[1], ytcc.download_videos([self.video_id])))
+        ytcc.mark_watched(list(success_ids))
         self.assertTrue(ytcc.get_videos([self.video_id])[0].watched)
         self.assertTrue(os.path.isfile(os.path.join(ytcc.config.download_dir, "tmpIXBgjd.webm")))
 
