@@ -23,7 +23,7 @@ from multiprocessing import Pool
 from urllib.error import URLError
 from urllib.parse import urlparse
 from urllib.request import urlopen
-from typing import Iterable, List, TextIO, Optional, Any, Dict
+from typing import Iterable, List, TextIO, Optional, Any, Dict, Tuple
 import os
 import re
 import sqlite3
@@ -43,11 +43,6 @@ from ytcc.video import Video
 
 class YtccException(Exception):
     """A general parent class of all Exceptions that are used in Ytcc"""
-    pass
-
-
-class DownloadError(YtccException):
-    """Raised when the download via youtube-dl fails"""
     pass
 
 
@@ -216,14 +211,16 @@ class Ytcc:
         return False
 
     def download_videos(self, video_ids: Optional[List[int]] = None, path: str = "",
-                        no_video: bool = False) -> None:
-        """Downloads the videos identified by the given video IDs with youtube-dl and marks the
-        videos watched.
+                        no_video: bool = False) -> Iterable[Tuple[int, bool]]:
+        """Downloads the videos identified by the given video IDs with youtube-dl.
 
         Args:
             video_ids ([int]): The (local) video IDs.
             path (str): The directory where the download is saved.
             no_video (bool): If True only the audio is downloaded
+
+        Returns:
+            Generator of tuples indicating whether the a download was successful.
         """
 
         if path:
@@ -234,7 +231,6 @@ class Ytcc:
             download_dir = ""
 
         videos = self.get_videos(unpack_optional(video_ids, self._get_filtered_video_ids))
-        urls = list(map(lambda v: self.get_youtube_video_url(v.yt_videoid), videos))
         conf = self.config.youtube_dl
 
         ydl_opts: Dict[str, Any] = {
@@ -243,7 +239,7 @@ class Ytcc:
             "retries": conf.retries,
             "quiet": conf.loglevel == "quiet",
             "verbose": conf.loglevel == "verbose",
-            "ignoreerrors": True
+            "ignoreerrors": False
         }
 
         if no_video:
@@ -266,13 +262,14 @@ class Ytcc:
                 ydl_opts["postprocessors"] = [{"key": "FFmpegEmbedSubtitle"}]
 
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            try:
-                if ydl.download(urls) == 0:
-                    self.db.mark_watched(map(lambda v: v.id, videos))
-                else:
-                    raise DownloadError("youtube-dl returned with an error")
-            except youtube_dl.utils.DownloadError:
-                raise DownloadError("youtube-dl returned with an error")
+            for video in videos:
+                url = self.get_youtube_video_url(video.yt_videoid)
+                try:
+                    # will raise exception on error and not yield video.id
+                    ydl.download([url])
+                    yield video.id, True
+                except youtube_dl.utils.DownloadError:
+                    yield video.id, False
 
     def add_channel(self, displayname: str, channel_url: str) -> None:
         """Subscribes to a channel.

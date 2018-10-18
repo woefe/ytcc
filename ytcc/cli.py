@@ -382,10 +382,13 @@ def import_channels(file: TextIO) -> None:
 
 
 def download(video_ids: Optional[List[int]], no_video: bool) -> None:
-    try:
-        ytcc_core.download_videos(video_ids=video_ids, path=download_path, no_video=no_video)
-    except core.DownloadError:
-        print(_("An Error occured while downloading the video"))
+    stats = ytcc_core.download_videos(video_ids=video_ids, path=download_path,
+                                      no_video=no_video)
+    for id, success in stats:
+        if success:
+            ytcc_core.mark_watched([id])
+        else:
+            print(_("An Error occured while downloading the video"))
 
 
 def run() -> None:
