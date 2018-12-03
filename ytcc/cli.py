@@ -276,7 +276,7 @@ def watch(video_ids: Optional[Iterable[int]] = None) -> None:
                     break
             else:
                 print_title(video)
-                play(video, False)
+                play(video, no_video)
 
             del index[tag]
 
