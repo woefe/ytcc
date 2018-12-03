@@ -184,7 +184,7 @@ def prefix_codes(alphabet: Set[str], count: int) -> List[str]:
     return codes
 
 
-def match_quickselect(tags: List[str]) -> str:
+def match_quickselect(tags: List[str], alphabet: Set[str]) -> str:
     def getch() -> str:
         """Read a single character from stdin without the need to press enter."""
 
@@ -220,7 +220,7 @@ def match_quickselect(tags: List[str]) -> str:
 
         if char == "\x7f":  # DEL
             tag = tag[:-1]
-        else:
+        elif char in alphabet:
             tag += char
 
         # Clear line, reset cursor, print prompt and tag
@@ -252,7 +252,8 @@ def watch(video_ids: Optional[Iterable[int]] = None) -> None:
             play(v, no_video)
 
     elif quickselect.enabled:
-        tags = prefix_codes(set(quickselect.alphabet), len(videos))
+        alphabet = set(quickselect.alphabet)
+        tags = prefix_codes(alphabet, len(videos))
         index = OrderedDict(zip(tags, videos))
 
         while index:
@@ -264,7 +265,7 @@ def watch(video_ids: Optional[Iterable[int]] = None) -> None:
             print("\033[2J\033[1;1H", end="")
             print_videos(remaining_videos, quickselect_column=remaining_tags)
 
-            tag = match_quickselect(remaining_tags)
+            tag = match_quickselect(remaining_tags, alphabet)
             video = index.get(tag)
 
             if video is None:
