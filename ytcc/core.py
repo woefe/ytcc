@@ -173,8 +173,11 @@ class Ytcc:
 
         channels = map(lambda channel: channel.yt_channelid, self.db.get_channels())
 
-        with Pool(unpack_optional(os.cpu_count(), lambda: 1) * 2) as pool:
-            videos = chain.from_iterable(pool.map(self._update_channel, channels))
+        try:
+            with Pool(unpack_optional(os.cpu_count(), lambda: 1) * 2) as pool:
+                videos = chain.from_iterable(pool.map(self._update_channel, channels))
+        except ImportError:
+            videos = chain.from_iterable(map(self._update_channel, channels))
 
         self.db.add_videos(videos)
 
