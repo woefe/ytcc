@@ -200,8 +200,7 @@ class Ytcc:
         if video:
             try:
                 mpv_result = subprocess.run(["mpv", *no_video_flag, *self.config.mpv_flags,
-                                             self.get_youtube_video_url(video.yt_videoid)],
-                                            stderr=subprocess.DEVNULL)
+                                             self.get_youtube_video_url(video.yt_videoid)])
             except FileNotFoundError:
                 raise YtccException("Could not locate the mpv video player!")
 
