@@ -17,9 +17,9 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
+from concurrent.futures import ThreadPoolExecutor
 from io import StringIO
 from itertools import chain
-from multiprocessing import Pool
 from urllib.error import URLError
 from urllib.parse import urlparse
 from urllib.request import urlopen
@@ -172,8 +172,9 @@ class Ytcc:
         """Checks every channel for new videos"""
 
         channels = map(lambda channel: channel.yt_channelid, self.db.get_channels())
+        num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 3
 
-        with Pool(unpack_optional(os.cpu_count(), lambda: 1) * 2) as pool:
+        with ThreadPoolExecutor(num_workers) as pool:
             videos = chain.from_iterable(pool.map(self._update_channel, channels))
 
         self.db.add_videos(videos)
