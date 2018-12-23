@@ -12,7 +12,7 @@ Install package `ytcc`.
 
 ### Other distros
 Ytcc requires python 3.6 or later. Install dependencies: `python3-lxml`, `python3-feedparser`, `python3-setuptools`,
-`mpv`, `youtube-dl`.
+`mpv`, `youtube-dl`, `gettext`.
 
 ```bash
 git clone https://github.com/woefe/ytcc.git
