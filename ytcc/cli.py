@@ -85,7 +85,7 @@ def interactive_prompt(video: Video) -> bool:
         print()
         print(_("Available commands:"))
         for command in commands:
-            print("{:>20}  {:<2}  {}".format(command.name, command.shortcuts[0], command.help))
+            print(f"{command.name:>20}  {command.shortcuts[0]:<2}  {command.help}")
         print()
         return RETURN_VAL_HELP
 
@@ -229,8 +229,7 @@ def match_quickselect(tags: List[str], alphabet: Set[str]) -> str:
 
 def watch(video_ids: Optional[Iterable[int]] = None) -> None:
     def print_title(video: Video) -> None:
-        print(_('Playing "{video.title}" by "{video.channelname}"...')
-              .format(video=video))
+        print(_('Playing "{video.title}" by "{video.channelname}"...').format(video=video))
 
     if not video_ids:
         videos = ytcc_core.list_videos()
@@ -255,8 +254,7 @@ def watch(video_ids: Optional[Iterable[int]] = None) -> None:
             remaining_tags = list(index.keys())
             remaining_videos = index.values()
 
-            # Clear display and set cursor to (1,1). Allows scrolling back (in contrast to "\033c",
-            # which resets the display)
+            # Clear display and set cursor to (1,1). Allows scrolling back in some terminals
             print("\033[2J\033[1;1H", end="")
             print_videos(remaining_videos, quickselect_column=remaining_tags)
 
@@ -352,11 +350,11 @@ def add_channel(name: str, channel_url: str) -> None:
     try:
         ytcc_core.add_channel(name, channel_url)
     except core.BadURLException:
-        print(_("'{!r}' is not a valid YouTube URL").format(channel_url))
+        print(_("{!r} is not a valid YouTube URL").format(channel_url))
     except core.DuplicateChannelException:
-        print(_("You are already subscribed to '{!r}'").format(name))
+        print(_("You are already subscribed to {!r}").format(name))
     except core.ChannelDoesNotExistException:
-        print(_("The channel '{!r}' does not exist").format(channel_url))
+        print(_("The channel {!r} does not exist").format(channel_url))
 
 
 def cleanup() -> None:

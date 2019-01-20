@@ -64,7 +64,7 @@ class Database:
         """Creates all needed tables."""
 
         cursor = self.dbconn.cursor()
-        cursor.executescript('''
+        cursor.executescript(f"""
             CREATE TABLE channel (
                 id           INTEGER NOT NULL PRIMARY KEY,
                 displayname  VARCHAR UNIQUE,
@@ -103,7 +103,7 @@ class Database:
                 DELETE FROM user_search WHERE id = OLD.id;
             END;
 
-            PRAGMA USER_VERSION = ''' + str(Database.VERSION) + ";")
+            PRAGMA USER_VERSION = {Database.VERSION};""")
         self.dbconn.commit()
         cursor.close()
 
@@ -277,8 +277,7 @@ class Database:
             displaynames (list): A list of channels' displaynames.
         """
 
-        sql = "delete from channel where displayname in " + self._make_place_holder(displaynames) \
-              + ";"
+        sql = f"delete from channel where displayname in {self._make_place_holder(displaynames)};"
         self._execute_query(sql, tuple(displaynames))
 
     def add_videos(self, videos: Iterable[DBVideo]) -> None:

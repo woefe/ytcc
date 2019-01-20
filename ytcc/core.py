@@ -24,7 +24,6 @@ import datetime
 import feedparser
 import os
 import subprocess
-import urllib
 import youtube_dl
 from concurrent.futures import ThreadPoolExecutor
 from io import StringIO
@@ -106,7 +105,7 @@ class Ytcc:
             the YouTube URL for the given youtube video ID
         """
 
-        return "https://www.youtube.com/watch?v=" + yt_videoid
+        return f"https://www.youtube.com/watch?v={yt_videoid}"
 
     def set_channel_filter(self, channel_filter: List[str]) -> None:
         """Sets the channel filter. The results when listing videos will only include videos by
@@ -158,8 +157,7 @@ class Ytcc:
 
     @staticmethod
     def _update_channel(yt_channel_id: str) -> List[DBVideo]:
-        feed = feedparser.parse("https://www.youtube.com/feeds/videos.xml?channel_id="
-                                + yt_channel_id)
+        feed = feedparser.parse(f"https://www.youtube.com/feeds/videos.xml?channel_id={yt_channel_id}")
         return [(str(entry.yt_videoid),
                  str(entry.title),
                  str(entry.description),
@@ -324,7 +322,7 @@ class Ytcc:
         try:
             self.db.add_channel(displayname, yt_channelid)
         except sqlite3.IntegrityError:
-            raise DuplicateChannelException("Channel already subscribed: " + displayname)
+            raise DuplicateChannelException(f"Channel already subscribed: {displayname}")
 
     def import_channels(self, file: TextIO) -> None:
         """Imports all channels from YouTube's subsciption export file.
