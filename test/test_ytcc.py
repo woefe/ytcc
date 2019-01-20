@@ -34,7 +34,7 @@ class TestYtcc(TestCase):
     def test_add_and_get_channels(self):
         ytcc = self.ytcc
         ytcc.add_channel("Webdriver Torso", "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw")
-        ytcc.add_channel("Webdriver YPP", "https://www.youtube.com/channel/UCxexYYtOetqikZqriLuTS-g")
+        ytcc.add_channel("Webdriver YPP", "youtube.com/channel/UCxexYYtOetqikZqriLuTS-g")
         channels = ytcc.get_channels()
         self.assertEqual(len(channels), 2)
         self.assertEqual(channels[0].displayname, "Webdriver Torso")

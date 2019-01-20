@@ -287,31 +287,44 @@ class Ytcc:
                                        time.
             BadURLException: when a given URL does not refer to a YouTube channel.
         """
+        known_yt_domains = ["youtu.be", "youtube.com", "youtubeeducation.com", "youtubekids.com",
+                            "youtube-nocookie.com", "yt.be", "ytimg.com"]
 
-        regex = r"^(https?://)?(www\.)?youtube\.com/(?P<type>user|channel)/(?P<channel>[^/?=]+)$"
-        match = re.search(regex, channel_url)
+        url_parts = urlparse(channel_url, scheme="https")
+        if not url_parts.netloc:
+            url_parts = urlparse("https://" + channel_url)
 
-        if match:
-            channel = match.group("channel")
-            url = "https://www.youtube.com/" + match.group("type") + "/" + channel + "/videos"
+        domain = url_parts.netloc.split(":")[0]
+        domain = ".".join(domain.split(".")[-2:])
 
-            try:
-                response = urlopen(url).read().decode('utf-8')
-            except URLError:
-                raise ChannelDoesNotExistException("Channel does not exist: " + channel)
+        if domain not in known_yt_domains:
+            raise BadURLException(f"{channel_url} is not a valid URL")
 
-            parser = etree.HTMLParser()
-            root = etree.parse(StringIO(response), parser).getroot()
-            result = root.xpath('/html/head/meta[@itemprop="channelId"]')
-            yt_channelid = result[0].attrib.get("content")
+        url = urlunparse(("https", url_parts.netloc, url_parts.path, url_parts.params,
+                          url_parts.query, url_parts.fragment))
 
-            try:
-                self.db.add_channel(displayname, yt_channelid)
-            except sqlite3.IntegrityError:
-                raise DuplicateChannelException("Channel already subscribed: " + channel)
+        try:
+            response = urlopen(url).read().decode('utf-8')
+        except URLError:
+            raise BadURLException(f"{channel_url} is not a valid URL")
 
-        else:
-            raise BadURLException("'" + channel_url + "' is not a valid URL")
+        parser = etree.HTMLParser()
+        root = etree.parse(StringIO(response), parser).getroot()
+        site_name_node = root.xpath('/html/head/meta[@property="og:site_name"]')
+        channel_id_node = root.xpath('//meta[@itemprop="channelId"]')
+
+        if not site_name_node or site_name_node[0].attrib.get("content", "") != "YouTube":
+            raise BadURLException(f"{channel_url} does not seem to be a YouTube URL")
+
+        if not channel_id_node:
+            raise ChannelDoesNotExistException(f"{channel_url} does not seem to be a YouTube URL")
+
+        yt_channelid = channel_id_node[0].attrib.get("content")
+
+        try:
+            self.db.add_channel(displayname, yt_channelid)
+        except sqlite3.IntegrityError:
+            raise DuplicateChannelException("Channel already subscribed: " + displayname)
 
     def import_channels(self, file: TextIO) -> None:
         """Imports all channels from YouTube's subsciption export file.

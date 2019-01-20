@@ -50,7 +50,8 @@ def get_args() -> argparse.Namespace:
 
     parser.add_argument("-a", "--add-channel",
                         help=_("add a new channel. NAME is the name displayed by ytcc. URL is the "
-                               "url of the channel's front page"),
+                               "url of the channel's front page or the URL of any video published "
+                               "by the channel"),
                         nargs=2,
                         metavar=("NAME", "URL"))
 
