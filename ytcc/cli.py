@@ -116,10 +116,8 @@ def interactive_prompt(video: Video) -> bool:
 
     while not executed_cmd:
         try:
-            question = _('Play video "%(title)s" by "%(channel)s"?') % {
-                "title": video.title,
-                "channel": video.channelname
-            }
+            question = (_('Play video "{video.title}" by "{video.channelname}"?')
+                        .format(video=video))
             choice = input(question +
                            '\n[y(es)/n(o)/a(udio)/m(ark)/q(uit)/h(elp)] (Default: y) > ')
         except EOFError:
@@ -142,9 +140,8 @@ def interactive_prompt(video: Video) -> bool:
 
         if invalid_cmd:
             print()
-            print(_("'%(cmd)s' is an invalid command. Type 'help' for more info.\n") % {
-                "cmd": choice
-            })
+            print(_("'{cmd}' is an invalid command. Type 'help' for more info.\n")
+                  .format(cmd=choice))
             executed_cmd = False
 
     return True
@@ -232,10 +229,8 @@ def match_quickselect(tags: List[str], alphabet: Set[str]) -> str:
 
 def watch(video_ids: Optional[Iterable[int]] = None) -> None:
     def print_title(video: Video) -> None:
-        print(_('Playing "%(video)s" by "%(channel)s"...') % {
-            "video": video.title,
-            "channel": video.channelname
-        })
+        print(_('Playing "{video.title}" by "{video.channelname}"...')
+              .format(video=video))
 
     if not video_ids:
         videos = ytcc_core.list_videos()
@@ -357,11 +352,11 @@ def add_channel(name: str, channel_url: str) -> None:
     try:
         ytcc_core.add_channel(name, channel_url)
     except core.BadURLException:
-        print(_("'%r' is not a valid YouTube URL") % channel_url)
+        print(_("'{!r}' is not a valid YouTube URL").format(channel_url))
     except core.DuplicateChannelException:
-        print(_("You are already subscribed to '%r'") % name)
+        print(_("You are already subscribed to '{!r}'").format(name))
     except core.ChannelDoesNotExistException:
-        print(_("The channel '%r' does not exist") % channel_url)
+        print(_("The channel '{!r}' does not exist").format(channel_url))
 
 
 def cleanup() -> None:
