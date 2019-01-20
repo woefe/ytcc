@@ -36,7 +36,8 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
         "ratelimit": 0,
         "retries": 0,
         "subtitles": "off",
-        "thumbnail": "on"
+        "thumbnail": "on",
+        "skipLiveStream": "yes"
     },
     "quickselect": {
         "enabled": "yes",
@@ -132,6 +133,7 @@ class _YTDLConf(object):
         self.retries = float(subconf["retries"])  # float to set indefinetly many retires
         self.subtitles = subconf["subtitles"]
         self.thumbnail = subconf.getboolean("thumbnail")
+        self.skip_live_stream = subconf.getboolean("skipLiveStream")
 
         limit = int(subconf["ratelimit"])
         self.ratelimit = limit if limit > 0 else None

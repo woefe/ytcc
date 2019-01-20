@@ -143,6 +143,9 @@ subtitles = off
 # enabled.
 thumbnail = on
 
+# Skips livestreams in download mode
+skiplivestream = yes
+
 
 # Columns printed by --list option, if --columns is not given as well.
 [TableFormat]

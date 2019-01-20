@@ -265,10 +265,13 @@ class Ytcc:
             for video in videos:
                 url = self.get_youtube_video_url(video.yt_videoid)
                 try:
-                    # will raise exception on error and not yield video.id
-                    ydl.download([url])
+                    info = ydl.extract_info(url, download=False, process=False)
+                    if info.get("is_live", False) and conf.skip_live_stream:
+                        yield video.id, False
+
+                    ydl.process_ie_result(info, download=True)
                     yield video.id, True
-                except youtube_dl.utils.DownloadError:
+                except youtube_dl.utils.YoutubeDLError:
                     yield video.id, False
 
     def add_channel(self, displayname: str, channel_url: str) -> None:
@@ -391,6 +394,7 @@ class Ytcc:
         Returns (list)
             A list of ytcc.video.Video objects
         """
+
         def resolve_ids():
             for video_id in video_ids:
                 video = self.db.resolve_video_id(video_id)
