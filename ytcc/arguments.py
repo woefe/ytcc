@@ -27,7 +27,7 @@ from gettext import gettext as _
 
 def is_directory(string: str) -> str:
     if not os.path.isdir(string):
-        msg = _("%r is not a directory") % string
+        msg = _("{!r} is not a directory").format(string)
         raise argparse.ArgumentTypeError(msg)
 
     return string
@@ -37,7 +37,7 @@ def is_date(string: str) -> datetime.datetime:
     try:
         return date_parser.parse(string)
     except ValueError:
-        msg = _("%r is not a valid date") % string
+        msg = _("{!r} is not a valid date").format(string)
         raise argparse.ArgumentTypeError(msg)
 
 
@@ -137,10 +137,8 @@ def get_args() -> argparse.Namespace:
 
     parser.add_argument("-o", "--columns",
                         help=_("specifies which columns will be printed when listing videos. COL "
-                               "can be any of %(columns)s. All columns can be enabled with "
-                               "'all'") % {
-                                 "columns": str(ytcc.cli.table_header)
-                             },
+                               "can be any of {columns}. All columns can be enabled with "
+                               "'all'").format(columns=str(ytcc.cli.table_header)),
                         nargs='+',
                         metavar="COL",
                         choices=["all", *ytcc.cli.table_header])
