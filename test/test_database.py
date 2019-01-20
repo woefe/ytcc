@@ -4,11 +4,11 @@ from nose.tools import raises
 from ytcc.database import Database
 from ytcc.video import Video
 
-insert_list = [("0", "title1", "description1", "id_publisher1", 1488286166, 0),
-               ("0", "title1", "description1", "id_publisher1", 1488286167, 0),
-               ("0", "title2", "description1", "id_publisher1", 1488286168, 0),
-               ("1", "title2", "description2", "id_publisher2", 1488286170, 0),
-               ("2", "title3", "description3", "id_publisher2", 1488286171, 0)]
+insert_list = [("0", "title1", "description1", "id_publisher1", 1488286166, False),
+               ("0", "title1", "description1", "id_publisher1", 1488286167, False),
+               ("0", "title2", "description1", "id_publisher1", 1488286168, False),
+               ("1", "title2", "description2", "id_publisher2", 1488286170, False),
+               ("2", "title3", "description3", "id_publisher2", 1488286171, False)]
 
 
 def init_db():
