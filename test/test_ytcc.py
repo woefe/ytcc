@@ -1,10 +1,12 @@
+from unittest import TestCase
+
 import os
 from datetime import datetime
-from unittest import TestCase
-from nose.tools import raises
-from ytcc.core import Ytcc
-from ytcc.core import DuplicateChannelException
+
 from ytcc.core import BadURLException
+from ytcc.core import DuplicateChannelException
+from ytcc.core import Ytcc
+
 
 class TestYtcc(TestCase):
 
@@ -22,12 +24,12 @@ class TestYtcc(TestCase):
         ytcc.add_channel("Webdriver Torso",
                          "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw")
         self.assertRaises(DuplicateChannelException, ytcc.add_channel,
-                "Fail", "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw")
+                          "Fail", "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw")
 
     def test_add_channel_bad_url(self):
         ytcc = self.ytcc
         self.assertRaises(BadURLException, ytcc.add_channel,
-                "Fail", "yotube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw")
+                          "Fail", "yotube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw")
 
     def test_add_and_get_channels(self):
         ytcc = self.ytcc
@@ -40,9 +42,9 @@ class TestYtcc(TestCase):
 
     def test_import_channels(self):
         ytcc = self.ytcc
-        ytcc.import_channels(open(os.path.join(self.current_dir, "data/subscriptions")))
+        with open(os.path.join(self.current_dir, "data/subscriptions")) as f:
+            ytcc.import_channels(f)
         self.assertEqual(len(ytcc.get_channels()), 58)
-
 
 
 class TestYtccPreparedChannels(TestCase):
@@ -174,4 +176,3 @@ class TestYtccPreparedVideos(TestCase):
         ytcc.mark_watched()
         videos = ytcc.list_videos()
         self.assertEqual(len(videos), 0)
-

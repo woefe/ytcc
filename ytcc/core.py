@@ -16,23 +16,23 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
+import sqlite3
+import time
+from itertools import chain
+
 import datetime
+import feedparser
+import os
+import subprocess
+import urllib
+import youtube_dl
 from concurrent.futures import ThreadPoolExecutor
 from io import StringIO
-from itertools import chain
-from urllib.error import URLError
-from urllib.parse import urlparse
-from urllib.request import urlopen
-from typing import Iterable, List, TextIO, Optional, Any, Dict, Tuple
-import os
-import re
-import sqlite3
-import subprocess
-import time
-
 from lxml import etree
-import feedparser
-import youtube_dl
+from typing import Iterable, List, TextIO, Optional, Any, Dict, Tuple
+from urllib.error import URLError
+from urllib.parse import urlparse, urlunparse, parse_qs
+from urllib.request import urlopen
 
 from ytcc.channel import Channel
 from ytcc.config import Config
@@ -320,15 +320,21 @@ class Ytcc:
             file (TextIOWrapper): the opened file
         """
 
+        def _create_channel_tuple(elem: etree.Element) -> Tuple[str, str]:
+            rss_url = urlparse(elem.attrib["xmlUrl"])
+            query_dict = parse_qs(rss_url.query, keep_blank_values=False)
+            channel_id = query_dict.get("channel_id", [])
+            if len(channel_id) != 1:
+                raise InvalidSubscriptionFileError(f"'{file.name}' is not a valid YouTube export file")
+            return elem.attrib["title"], channel_id[0]
+
         try:
             root = etree.parse(file)
         except Exception:
-            raise InvalidSubscriptionFileError(
-                "'" + file.name + "' is not a valid YouTube export file"
-            )
+            raise InvalidSubscriptionFileError(f"'{file.name}' is not a valid YouTube export file")
 
         elements = root.xpath('//outline[@type="rss"]')
-        channels = [(e.attrib["title"], urlparse(e.attrib["xmlUrl"]).query[11:]) for e in elements]
+        channels = (_create_channel_tuple(e) for e in elements)
 
         for channel in channels:
             try:
