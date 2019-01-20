@@ -11,6 +11,7 @@ sed -i -e "s/^__version__ = .*$/__version__ = \"$tagname\"/" ytcc/__init__.py
 git commit ytcc/__init__.py -m "Release version $tagname"
 git tag -a "v$tagname" -m "Version $tagname"
 
+git show HEAD
 read -rp "Push changes? Ctrl+c to cancel, Enter to push"
 git push origin master
 git push origin "v$tagname"
