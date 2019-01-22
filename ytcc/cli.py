@@ -233,6 +233,7 @@ def watch(video_ids: Optional[Iterable[int]] = None) -> None:
 
     if not video_ids:
         videos = ytcc_core.list_videos()
+        sorted(videos, key=lambda v: v.publish_date)
     else:
         videos = ytcc_core.get_videos(video_ids)
 
