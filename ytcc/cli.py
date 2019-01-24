@@ -233,7 +233,6 @@ def watch(video_ids: Optional[Iterable[int]] = None) -> None:
 
     if not video_ids:
         videos = ytcc_core.list_videos()
-        videos = sorted(videos, key=lambda v: v.publish_date)
     else:
         videos = ytcc_core.get_videos(video_ids)
 
@@ -332,7 +331,6 @@ def mark_watched(video_ids: Optional[List[int]]) -> None:
 
 def list_videos() -> None:
     videos = ytcc_core.list_videos()
-    videos = sorted(videos, key=lambda v: v.publish_date)
     if not videos:
         print(_("No videos to list. No videos match the given criteria."))
     else:

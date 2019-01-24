@@ -27,7 +27,8 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
     "YTCC": {
         "DBPath": "~/.local/share/ytcc/ytcc.db",
         "DownloadDir": "~/Downloads",
-        "mpvFlags": "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best"
+        "mpvFlags": "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best",
+        "orderBy": "channel_id,publish_date"
     },
     "youtube-dl": {
         "format": "bestvideo[height<=?1080]+bestaudio/best",
@@ -106,6 +107,7 @@ class Config(object):
         self.download_dir = os.path.expanduser(config["YTCC"]["DownloadDir"])
         self.db_path = os.path.expanduser(config["YTCC"]["DBPath"])
         self.mpv_flags = re.compile("\\s+").split(config["YTCC"]["mpvFlags"])
+        self.orderby = config["YTCC"]["orderBy"].split(",")
         self.table_format = config["TableFormat"]
         self.youtube_dl = _YTDLConf(config["youtube-dl"])
         self.quickselect = _QuickSelectConf(config["quickselect"])

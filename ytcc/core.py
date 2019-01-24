@@ -364,7 +364,8 @@ class Ytcc:
             return self.db.search(self.search_filter)
 
         return self.db.get_videos(self.channel_filter, self.date_begin_filter,
-                                  self.date_end_filter, self.include_watched_filter)
+                                  self.date_end_filter, self.include_watched_filter,
+                                  self.config.orderby)
 
     def _get_filtered_video_ids(self) -> List[int]:
         return list(map(lambda video: video.id, self.list_videos()))
