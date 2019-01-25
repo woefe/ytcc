@@ -330,8 +330,4 @@ class Database:
         """
         self._execute_query(delete_dangling_sql)
 
-        # Workaround for https://bugs.python.org/issue28518
-        # self._execute_query("vacuum;")
-        self.dbconn.isolation_level = None
-        self.dbconn.execute('VACUUM')
-        self.dbconn.isolation_level = ''  # note that '' is the default value of isolation_level
+        self._execute_query("vacuum;")
