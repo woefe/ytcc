@@ -47,8 +47,7 @@ class Database:
             path = str(p)
 
         self.dbconn = sqlite3.connect(path)
-        # TODO Enable foreign key support on next major release
-        # self._execute_query("PRAGMA foreign_keys = ON;")
+        self._execute_query("PRAGMA foreign_keys = ON;")
         if is_new_db:
             self._init_db()
         else:
@@ -315,9 +314,24 @@ class Database:
             )
             """
         self._execute_query_many(sql, [(e.displayname,) for e in self.get_channels()])
-        # self._execute_query("vacuum;")
+
+        # Delete videos without channels.
+        # This happend in older versions, because foreign keys were not enabled.
+        # Also happens if foreign keys cannot be enabled due to missing compile flags.
+        delete_dangling_sql = """
+            delete
+            from video
+            where id in (
+              select v.id
+              from video v
+                     left join channel c on v.publisher = c.yt_channelid
+              where c.yt_channelid is null
+            );
+        """
+        self._execute_query(delete_dangling_sql)
 
         # Workaround for https://bugs.python.org/issue28518
+        # self._execute_query("vacuum;")
         self.dbconn.isolation_level = None
         self.dbconn.execute('VACUUM')
         self.dbconn.isolation_level = ''  # note that '' is the default value of isolation_level
