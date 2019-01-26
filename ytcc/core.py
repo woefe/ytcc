@@ -362,10 +362,34 @@ class Ytcc:
 
         if self.search_filter:
             return self.db.search(self.search_filter)
+        
+        unsorted = self.db.get_videos(self.channel_filter, self.date_begin_filter,
+                                      self.date_end_filter, self.include_watched_filter)
+        
+        return self.sort_videos(unsorted)
+        
+    def sort_videos(self, videos: Iterable[Video]) -> List[Video]:
+        """Sorts videos using the sorting parameters defined in the config.
+            
+        Args:
+            videos (iterable): the list of videos to be sorted
 
-        return self.db.get_videos(self.channel_filter, self.date_begin_filter,
-                                  self.date_end_filter, self.include_watched_filter,
-                                  self.config.orderby)
+        Returns(list):
+            A sorted list of videos
+        """
+        if len(self.config.orderby)==0:
+            return videos
+                
+        fields: List[str] = list()
+        for i in self.config.orderby:
+            if not(i in vars(Video)['_fields']):
+                print(_("Ignoring unknown orderBy option: {col}").format(col=i))
+            else:
+                fields.append(i)
+        
+        # Create a function that takes a video and returns a list of attributes
+        key = lambda v: [getattr(v, field) for field in fields]
+        return sorted(videos, key=key)
 
     def _get_filtered_video_ids(self) -> List[int]:
         return list(map(lambda video: video.id, self.list_videos()))

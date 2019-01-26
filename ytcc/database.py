@@ -23,6 +23,7 @@ from ytcc.video import Video
 from ytcc.channel import Channel
 from typing import Tuple, Any, List, Iterable, Optional
 
+
 DBVideo = Tuple[str, str, str, str, float, bool]
 
 
@@ -163,8 +164,7 @@ class Database:
         return [Channel(*x) for x in result]
 
     def get_videos(self, channel_filter: Optional[List[str]] = None, begin_timestamp: float = 0,
-                   end_timestamp: float = 0, include_watched: bool = True, 
-                   orderby: Optional[List[str]]=None) -> List[Video]:
+                   end_timestamp: float = 0, include_watched: bool = True) -> List[Video]:
         """Returns a list of videos that were published after and before the given timestamps. The
         videos are published by the channels in channelFilter.
 
@@ -173,35 +173,10 @@ class Database:
             begin_timestamp (int): timestamp in seconds
             end_timestamp (int): timestamp in seconds
             include_watched (bool): true, if watched videos should be included in the result
-            orderby (list): the list of parameters by which to sort the results, highest priority first
 
         Returns (list):
             A list of ytcc.video.Video
         """
-        
-        # Convert options from config file to the strings used in the database.
-        config_to_query_param : Dict[str, str] = {
-                "id"          : "v.id",
-                "title"       : "v.title",
-                "description" : "v.description",
-                "publish_date": "v.publish_date",
-                "watched"     : "v.watched",
-                "channel_id"  : "c.id",
-                "channel_name": "c.displayname",
-            }
-        
-        # If no argument is passed, use a default.
-        sort_params : str = "c.id, v.publish_date"
-        if orderby:
-            sort_list : List[str] = list()
-            for col in orderby:
-                # Take care of extra whitespace
-                col=col.strip()
-                if not col in config_to_query_param.keys():
-                    print(_("Ignoring unknown orderBy option: {col}").format(col=col))
-                else:
-                    sort_list.append(config_to_query_param[col])
-            sort_params = ", ".join(sort_list)
         
         sql = """
             select
@@ -219,7 +194,7 @@ class Database:
                 and (@include_watched or v.watched = 0)
                 and (@all_channels or c.displayname in """ + \
               self._make_place_holder(channel_filter) + f""")
-            order by {sort_params} asc;
+            order by c.id, v.publish_date asc;
             """
 
         channel_names = channel_filter.copy() if channel_filter is not None else []
