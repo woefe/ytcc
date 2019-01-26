@@ -107,7 +107,7 @@ class Config(object):
         self.download_dir = os.path.expanduser(config["YTCC"]["DownloadDir"])
         self.db_path = os.path.expanduser(config["YTCC"]["DBPath"])
         self.mpv_flags = re.compile("\\s+").split(config["YTCC"]["mpvFlags"])
-        self.orderby = config["YTCC"]["orderBy"].split(",")
+        self.orderby = [col.strip() for col in config["YTCC"]["orderBy"].split(",")]
         self.table_format = config["TableFormat"]
         self.youtube_dl = _YTDLConf(config["youtube-dl"])
         self.quickselect = _QuickSelectConf(config["quickselect"])

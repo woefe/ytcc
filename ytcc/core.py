@@ -49,6 +49,10 @@ class BadURLException(YtccException):
     """Raised when a given URL does not refer to a YouTube channel."""
     pass
 
+class BadConfigException(YtccException):
+    """Raised when a configuration option is invalid or unknown."""
+    pass
+
 
 class DuplicateChannelException(YtccException):
     """Raised when trying to subscribe to a channel the second (or more) time."""
@@ -381,11 +385,11 @@ class Ytcc:
             return videos
                 
         fields: List[str] = list()
-        for i in self.config.orderby:
-            if not(i in vars(Video)['_fields']):
-                print(_("Ignoring unknown orderBy option: {col}").format(col=i))
+        for col in self.config.orderby:
+            if not(col in vars(Video)['_fields']):
+                raise BadConfigException("Unknown orderBy option: {col}".format(col=col))
             else:
-                fields.append(i)
+                fields.append(col)
         
         # Create a function that takes a video and returns a list of attributes
         key = lambda v: [getattr(v, field) for field in fields]

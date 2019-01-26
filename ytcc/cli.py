@@ -230,12 +230,16 @@ def match_quickselect(tags: List[str], alphabet: Set[str]) -> str:
 def watch(video_ids: Optional[Iterable[int]] = None) -> None:
     def print_title(video: Video) -> None:
         print(_('Playing "{video.title}" by "{video.channelname}"...').format(video=video))
-
-    if not video_ids:
-        videos = ytcc_core.list_videos()
-    else:
-        videos = ytcc_core.get_videos(video_ids)
-
+        
+    videos = list()
+    try:
+        if not video_ids:
+            videos = ytcc_core.list_videos()
+        else:
+            videos = ytcc_core.get_videos(video_ids)
+    except core.BadConfigException as e:
+        print(e)
+    
     quickselect = ytcc_core.config.quickselect
 
     if not videos:
@@ -330,7 +334,11 @@ def mark_watched(video_ids: Optional[List[int]]) -> None:
 
 
 def list_videos() -> None:
-    videos = ytcc_core.list_videos()
+    videos = list()
+    try:
+        videos = ytcc_core.list_videos()
+    except core.BadConfigException as e:
+        print(e)
     if not videos:
         print(_("No videos to list. No videos match the given criteria."))
     else:
