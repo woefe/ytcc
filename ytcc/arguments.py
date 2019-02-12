@@ -118,15 +118,6 @@ def get_args() -> argparse.Namespace:
                         metavar="YYYY-MM-DD",
                         type=is_date)
 
-    parser.add_argument("-q", "--search",
-                        help=_("searches for the given PATTERN. The pattern can specify one of the"
-                               " three columns 'channel', 'title', 'description'. If no column is "
-                               "specified, all columns are searched. The pattern can also specify "
-                               "'*' wildcards. Example: --search 'title:box*' will find all video "
-                               "that have a word that starts with 'box' in their title. If this "
-                               "flag is enabled, the -f, -n, " "-s, -t flags will be ignored."),
-                        metavar="PATTERN")
-
     parser.add_argument("-p", "--path",
                         help=_("set the download path to PATH"),
                         metavar="PATH",

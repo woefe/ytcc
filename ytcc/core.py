@@ -33,11 +33,11 @@ from urllib.error import URLError
 from urllib.parse import urlparse, urlunparse, parse_qs
 from urllib.request import urlopen
 
-from ytcc.channel import Channel
+from ytcc.db import Channel
+from ytcc.db import Video
+from ytcc.db import Database
 from ytcc.config import Config
-from ytcc.database import Database, DBVideo
 from ytcc.utils import unpack_optional
-from ytcc.video import Video
 
 
 class YtccException(Exception):
@@ -86,13 +86,15 @@ class Ytcc:
         self.date_begin_filter = 0.0
         self.date_end_filter = time.mktime(time.gmtime()) + 20
         self.include_watched_filter = False
-        self.search_filter = ""
 
     def __enter__(self) -> "Ytcc":
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Any:
         self.db.__exit__(exc_type, exc_val, exc_tb)
+
+    def close(self) -> None:
+        self.db.close()
 
     @staticmethod
     def get_youtube_video_url(yt_videoid: str) -> str:
@@ -145,35 +147,26 @@ class Ytcc:
 
         self.include_watched_filter = True
 
-    def set_search_filter(self, searchterm: str) -> None:
-        """Sets a search filter. When this filter is set, all other filters are ignored
-
-        Args:
-            searchterm (str): only videos whose title, channel or description match this term will
-                be included
-        """
-
-        self.search_filter = searchterm
-
-    @staticmethod
-    def _update_channel(yt_channel_id: str) -> List[DBVideo]:
-        feed = feedparser.parse(f"https://www.youtube.com/feeds/videos.xml?channel_id={yt_channel_id}")
-        return [(str(entry.yt_videoid),
-                 str(entry.title),
-                 str(entry.description),
-                 yt_channel_id,
-                 time.mktime(entry.published_parsed),
-                 False)
-                for entry in feed.entries]
-
     def update_all(self) -> None:
         """Checks every channel for new videos"""
 
-        channels = map(lambda channel: channel.yt_channelid, self.db.get_channels())
-        num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 3
+        def _update_channel(yt_channel_id: str) -> Dict[str, Any]:
+            feed = feedparser.parse(f"https://www.youtube.com/feeds/videos.xml?channel_id={yt_channel_id}")
+            for entry in feed.entries:
+                yield dict(
+                    yt_videoid=str(entry.yt_videoid),
+                    title=str(entry.title),
+                    description=str(entry.description),
+                    publisher=yt_channel_id,
+                    publish_date=time.mktime(entry.published_parsed),
+                    watched=False
+                )
+
+        channel_ids = list(map(lambda c: str(c.yt_channelid), self.db.get_channels()))
+        num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 4
 
         with ThreadPoolExecutor(num_workers) as pool:
-            videos = chain.from_iterable(pool.map(self._update_channel, channels))
+            videos = chain.from_iterable(pool.map(_update_channel, channel_ids))
 
         self.db.add_videos(videos)
 
@@ -203,7 +196,7 @@ class Ytcc:
                 raise YtccException("Could not locate the mpv video player!")
 
             if mpv_result.returncode == 0:
-                self.db.mark_watched([video.id])
+                video.watched = True
                 return True
 
         return False
@@ -228,7 +221,11 @@ class Ytcc:
         else:
             download_dir = ""
 
-        videos = self.get_videos(unpack_optional(video_ids, self._get_filtered_video_ids))
+        if video_ids is None:
+            videos = self.list_videos()
+        else:
+            videos = self.get_videos(video_ids)
+
         conf = self.config.youtube_dl
 
         ydl_opts: Dict[str, Any] = {
@@ -320,7 +317,7 @@ class Ytcc:
         yt_channelid = channel_id_node[0].attrib.get("content")
 
         try:
-            self.db.add_channel(displayname, yt_channelid)
+            self.db.add_channel(Channel(displayname=displayname, yt_channelid=yt_channelid))
         except sqlite3.IntegrityError:
             raise DuplicateChannelException(f"Channel already subscribed: {displayname}")
 
@@ -331,13 +328,13 @@ class Ytcc:
             file (TextIOWrapper): the opened file
         """
 
-        def _create_channel_tuple(elem: etree.Element) -> Tuple[str, str]:
+        def _create_channel(elem: etree.Element) -> Channel:
             rss_url = urlparse(elem.attrib["xmlUrl"])
             query_dict = parse_qs(rss_url.query, keep_blank_values=False)
             channel_id = query_dict.get("channel_id", [])
             if len(channel_id) != 1:
                 raise InvalidSubscriptionFileError(f"'{file.name}' is not a valid YouTube export file")
-            return elem.attrib["title"], channel_id[0]
+            return Channel(displayname=elem.attrib["title"], yt_channelid=channel_id[0])
 
         try:
             root = etree.parse(file)
@@ -345,13 +342,7 @@ class Ytcc:
             raise InvalidSubscriptionFileError(f"'{file.name}' is not a valid YouTube export file")
 
         elements = root.xpath('//outline[@type="rss"]')
-        channels = (_create_channel_tuple(e) for e in elements)
-
-        for channel in channels:
-            try:
-                self.db.add_channel(*channel)
-            except sqlite3.IntegrityError:
-                pass
+        self.db.add_channels((_create_channel(e) for e in elements))
 
     def list_videos(self) -> List[Video]:
         """Returns a list of videos that match the filters set by the set_*_filter methods.
@@ -360,14 +351,19 @@ class Ytcc:
             A list of ytcc.video.Video objects
         """
 
-        if self.search_filter:
-            return self.db.search(self.search_filter)
+        q = self.db.session.query(Video) \
+            .join(Channel, Channel.yt_channelid == Video.publisher) \
+            .filter(Video.publish_date > self.date_begin_filter) \
+            .filter(Video.publish_date < self.date_end_filter)
 
-        return self.db.get_videos(self.channel_filter, self.date_begin_filter,
-                                  self.date_end_filter, self.include_watched_filter)
+        if self.channel_filter:
+            q = q.filter(Channel.displayname.in_(self.channel_filter))
 
-    def _get_filtered_video_ids(self) -> List[int]:
-        return list(map(lambda video: video.id, self.list_videos()))
+        if not self.include_watched_filter:
+            q = q.filter(Video.watched == False)
+
+        q = q.order_by(Channel.id, Video.publish_date)
+        return q.all()
 
     def mark_watched(self, video_ids: Optional[List[int]] = None) -> List[Video]:
         """Marks the videos of channels specified in the filter as watched without playing them.
@@ -379,10 +375,15 @@ class Ytcc:
         Returns (list):
             A list of ytcc.video.Video objects. Contains the videos that were marked watched.
         """
+        if video_ids is None:
+            videos = self.list_videos()
+        else:
+            videos = self.get_videos(video_ids)
 
-        mark_ids = unpack_optional(video_ids, self._get_filtered_video_ids)
-        self.db.mark_watched(mark_ids)
-        return self.get_videos(mark_ids)
+        for v in videos:
+            v.watched = True
+
+        return videos
 
     def delete_channels(self, displaynames: List[str]) -> None:
         """Delete (or unsubscribe) channels.
@@ -412,13 +413,7 @@ class Ytcc:
             A list of ytcc.video.Video objects
         """
 
-        def resolve_ids():
-            for video_id in video_ids:
-                video = self.db.resolve_video_id(video_id)
-                if video:
-                    yield video
-
-        return list(resolve_ids())
+        return list(self.db.resolve_video_ids(video_ids))
 
     def cleanup(self) -> None:
         """Deletes old videos from the database."""

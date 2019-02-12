@@ -29,7 +29,7 @@ from gettext import gettext as _
 from typing import List, Iterable, Optional, TextIO, NamedTuple, Callable, Any, Set
 
 from ytcc import core, arguments
-from ytcc.video import Video
+from ytcc.db import Video
 
 ytcc_core = core.Ytcc()
 interactive_enabled = True
@@ -116,7 +116,7 @@ def interactive_prompt(video: Video) -> bool:
 
     while not executed_cmd:
         try:
-            question = (_('Play video "{video.title}" by "{video.channelname}"?')
+            question = (_('Play video "{video.title}" by "{video.channel.displayname}"?')
                         .format(video=video))
             choice = input(question +
                            '\n[y(es)/n(o)/a(udio)/m(ark)/q(uit)/h(elp)] (Default: y) > ')
@@ -229,7 +229,7 @@ def match_quickselect(tags: List[str], alphabet: Set[str]) -> str:
 
 def watch(video_ids: Optional[Iterable[int]] = None) -> None:
     def print_title(video: Video) -> None:
-        print(_('Playing "{video.title}" by "{video.channelname}"...').format(video=video))
+        print(_('Playing "{video.title}" by "{video.channel.displayname}"...').format(video=video))
 
     if not video_ids:
         videos = ytcc_core.list_videos()
@@ -301,7 +301,7 @@ def print_videos(videos: Iterable[Video],
 
     def video_to_list(video: Video) -> List[str]:
         return [str(video.id), datetime.fromtimestamp(video.publish_date).strftime("%Y-%m-%d %H:%M"),
-                video.channelname, video.title, ytcc_core.get_youtube_video_url(video.yt_videoid),
+                video.channel.displayname, video.title, ytcc_core.get_youtube_video_url(video.yt_videoid),
                 _("Yes") if video.watched else _("No")]
 
     def concat_row(tag: str, video: Video) -> List[str]:
@@ -471,9 +471,6 @@ def run() -> None:
     if args.to:
         ytcc_core.set_date_end_filter(args.to)
 
-    if args.search:
-        ytcc_core.set_search_filter(args.search)
-
     if args.import_from:
         import_channels(args.import_from)
         option_executed = True
@@ -535,6 +532,7 @@ def run() -> None:
 
 def register_signal_handlers() -> None:
     def handler(signum: Any, frame: Any) -> None:
+        ytcc_core.close()
         print()
         print(_("Bye..."))
         exit(1)
@@ -545,3 +543,4 @@ def register_signal_handlers() -> None:
 def main() -> None:
     register_signal_handlers()
     run()
+    ytcc_core.close()
