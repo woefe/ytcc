@@ -47,13 +47,6 @@ column_filter = [ytcc_core.config.table_format.getboolean("ID"),
                  ytcc_core.config.table_format.getboolean("Watched")]
 
 
-class Command(NamedTuple):
-    name: str
-    shortcuts: List[str]
-    help: str
-    action: Callable[[], Any]
-
-
 def update_all() -> None:
     print(_("Updating channels..."))
     ytcc_core.update_all()
@@ -74,77 +67,6 @@ def maybe_print_description(description: str) -> None:
             print(wrap.fill(line, width=columns))
 
         print(delimiter, end="\n\n")
-
-
-def interactive_prompt(video: Video) -> bool:
-    executed_cmd = False
-    RETURN_VAL_HELP = 0
-    RETURN_VAL_QUIT = 1
-
-    def print_help() -> int:
-        print()
-        print(_("Available commands:"))
-        for command in commands:
-            print(f"{command.name:>20}  {command.shortcuts[0]:<2}  {command.help}")
-        print()
-        return RETURN_VAL_HELP
-
-    commands = [
-        Command("help", ["h"], _("print this help"), print_help),
-        Command("yes", ["y", ""], _("play the video"), lambda: play(video, no_video)),
-        Command("no", ["n"], _("do not play the video"), lambda: None),
-        Command("mark", ["m"], _("mark the video watched without playing it"),
-                lambda: ytcc_core.mark_watched([video.id])),
-        Command("audio", ["a"], _("play only the audio track of the video"),
-                lambda: play(video, True)),
-        Command("download-video", ["dv"], _("download the video"),
-                lambda: download([video.id], False)),
-        Command("download-audio", ["da"], _("download the audio track of the video"),
-                lambda: download([video.id], True)),
-        Command("quit", ["q", "exit"], _("exit ytcc"), lambda: RETURN_VAL_QUIT),
-    ]
-
-    def completer(text: str, state: int) -> Optional[str]:
-        options = [cmd[0] for cmd in commands if cmd[0].startswith(text)]
-        if state < len(options):
-            return options[state]
-        return None
-
-    readline.parse_and_bind("tab: complete")
-    readline.set_completer_delims(" ")
-    readline.set_completer(completer)
-
-    while not executed_cmd:
-        try:
-            question = (_('Play video "{video.title}" by "{video.channel.displayname}"?')
-                        .format(video=video))
-            choice = input(question +
-                           '\n[y(es)/n(o)/a(udio)/m(ark)/q(uit)/h(elp)] (Default: y) > ')
-        except EOFError:
-            print()
-            return False
-
-        executed_cmd = True
-        invalid_cmd = True
-        choice = choice.lower()
-
-        for cmd in commands:
-            if choice in (cmd.name, *cmd.shortcuts):
-                result = cmd.action()
-                if result == RETURN_VAL_QUIT:
-                    return False
-                if result == RETURN_VAL_HELP:
-                    executed_cmd = False
-                invalid_cmd = False
-                break
-
-        if invalid_cmd:
-            print()
-            print(_("'{cmd}' is an invalid command. Type 'help' for more info.\n")
-                  .format(cmd=choice))
-            executed_cmd = False
-
-    return True
 
 
 def play(video: Video, audio_only: bool) -> None:
@@ -245,7 +167,7 @@ def watch(video_ids: Optional[Iterable[int]] = None) -> None:
             print_title(v)
             play(v, no_video)
 
-    elif quickselect.enabled:
+    else:
         alphabet = set(quickselect.alphabet)
         tags = prefix_codes(alphabet, len(videos))
         index = OrderedDict(zip(tags, videos))
@@ -265,19 +187,10 @@ def watch(video_ids: Optional[Iterable[int]] = None) -> None:
                 break
 
             print()
-            if quickselect.ask:
-                if not interactive_prompt(video):
-                    break
-            else:
-                print_title(video)
-                play(video, no_video)
+            print_title(video)
+            play(video, no_video)
 
             del index[tag]
-
-    else:
-        for video in videos:
-            if not interactive_prompt(video):
-                break
 
 
 def table_print(header: List[str], table: List[List[str]]) -> None:

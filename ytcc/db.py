@@ -120,5 +120,10 @@ class Database:
         """
         self.engine.execute(delete_dangling_sql)
 
+        # Delete old full text search tables and triggers
+        self.engine.execute("drop table if exists user_search;")
+        self.engine.execute("drop trigger if exists populate_search;")
+        self.engine.execute("drop trigger if exists delete_from_search;")
+
         self.engine.execute("vacuum;")
         self.session.commit()

@@ -40,8 +40,6 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
         "skipLiveStream": "yes"
     },
     "quickselect": {
-        "enabled": "yes",
-        "ask": "yes",
         "alphabet": "sdfervghnuiojkl"
     },
     "TableFormat": {
@@ -119,8 +117,6 @@ class Config(object):
 class _QuickSelectConf(object):
     def __init__(self, subconf: Any) -> None:
         super(_QuickSelectConf, self).__init__()
-        self.enabled = subconf.getboolean("enabled")
-        self.ask = subconf.getboolean("ask")
         self.alphabet = subconf["alphabet"]
 
 
