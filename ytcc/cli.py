@@ -30,6 +30,7 @@ from typing import List, Iterable, Optional, TextIO, Any, Set, Tuple
 
 from ytcc import core, arguments
 from ytcc.db import Video
+from ytcc.utils import unpack_optional
 
 ytcc_core = core.Ytcc()
 interactive_enabled = True
@@ -159,6 +160,8 @@ class Interactive:
         if self.action == Action.PLAY_VIDEO:
             return _("Play video")
 
+        return ""
+
     def command_line(self, tags: List[str], alphabet: Set[str]) -> Tuple[str, bool]:
         prompt_format = "{prompt_text} >"
         prompt = prompt_format.format(prompt_text=self.get_prompt_text())
@@ -214,25 +217,26 @@ class Interactive:
             if video is None and not hook_triggered:
                 break
 
-            if self.action == Action.MARK_WATCHED:
-                video.watched = True
-                del index[tag]
-            elif self.action == Action.DOWNLOAD_AUDIO:
-                print()
-                download_video(video, True)
-                del index[tag]
-            elif self.action == Action.DOWNLOAD_VIDEO:
-                print()
-                download_video(video, False)
-                del index[tag]
-            elif self.action == Action.PLAY_AUDIO:
-                print()
-                play(video, True)
-                del index[tag]
-            elif self.action == Action.PLAY_VIDEO:
-                print()
-                play(video, False)
-                del index[tag]
+            if video is not None:
+                if self.action == Action.MARK_WATCHED:
+                    video.watched = True
+                    del index[tag]
+                elif self.action == Action.DOWNLOAD_AUDIO:
+                    print()
+                    download_video(video, True)
+                    del index[tag]
+                elif self.action == Action.DOWNLOAD_VIDEO:
+                    print()
+                    download_video(video, False)
+                    del index[tag]
+                elif self.action == Action.PLAY_AUDIO:
+                    print()
+                    play(video, True)
+                    del index[tag]
+                elif self.action == Action.PLAY_VIDEO:
+                    print()
+                    play(video, False)
+                    del index[tag]
             elif self.action == Action.SHOW_HELP:
                 self.action = self.previous_action
                 print("\033[2J\033[1;1H", end="")
@@ -262,9 +266,9 @@ def update_all() -> None:
     ytcc_core.update_all()
 
 
-def maybe_print_description(description: str) -> None:
+def maybe_print_description(description: Optional[str]) -> None:
     global description_enabled
-    if description_enabled:
+    if description_enabled and description is not None:
         columns = shutil.get_terminal_size().columns
         delimiter = "=" * columns
         lines = description.splitlines()
@@ -322,9 +326,15 @@ def print_videos(videos: Iterable[Video],
         return list(itertools.compress(row, column_filter))
 
     def video_to_list(video: Video) -> List[str]:
-        return [str(video.id), datetime.fromtimestamp(video.publish_date).strftime("%Y-%m-%d %H:%M"),
-                video.channel.displayname, video.title, ytcc_core.get_youtube_video_url(video.yt_videoid),
-                _("Yes") if video.watched else _("No")]
+        timestamp = unpack_optional(video.publish_date, lambda: 0)
+        return [
+            str(video.id),
+            datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M"),
+            str(video.channel.displayname),
+            str(video.title),
+            ytcc_core.get_youtube_video_url(video.yt_videoid),
+            _("Yes") if video.watched else _("No")
+        ]
 
     def concat_row(tag: str, video: Video) -> List[str]:
         row = row_filter(video_to_list(video))

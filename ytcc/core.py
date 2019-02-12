@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
-import sqlite3
 import time
 from itertools import chain
 
@@ -29,15 +28,15 @@ import youtube_dl
 from concurrent.futures import ThreadPoolExecutor as Pool
 from io import StringIO
 from lxml import etree
-from typing import Iterable, List, TextIO, Optional, Any, Dict, Tuple
+from typing import Iterable, List, TextIO, Optional, Any, Dict
 from urllib.error import URLError
 from urllib.parse import urlparse, urlunparse, parse_qs
 from urllib.request import urlopen
 
-from ytcc.db import Channel
-from ytcc.db import Video
-from ytcc.db import Database
 from ytcc.config import Config
+from ytcc.db import Channel
+from ytcc.db import Database
+from ytcc.db import Video
 from ytcc.utils import unpack_optional
 
 
@@ -78,7 +77,7 @@ class Ytcc:
     def __init__(self, override_cfg_file: Optional[str] = None) -> None:
         self.config = Config(override_cfg_file)
         self.db = Database(self.config.db_path)
-        self.video_id_filter = []
+        self.video_id_filter: List[int] = []
         self.channel_filter: List[str] = []
         self.date_begin_filter = 0.0
         self.date_end_filter = time.mktime(time.gmtime()) + 20
@@ -94,7 +93,7 @@ class Ytcc:
         self.db.close()
 
     @staticmethod
-    def get_youtube_video_url(yt_videoid: str) -> str:
+    def get_youtube_video_url(yt_videoid: Optional[str]) -> str:
         """Returns the YouTube URL for the given youtube video ID
 
         Args:
@@ -103,6 +102,8 @@ class Ytcc:
         Returns (str):
             the YouTube URL for the given youtube video ID
         """
+        if yt_videoid is None:
+            raise YtccException("Video id is none!")
 
         return f"https://www.youtube.com/watch?v={yt_videoid}"
 
@@ -144,7 +145,7 @@ class Ytcc:
 
         self.include_watched_filter = True
 
-    def set_video_id_filter(self, ids: Optional[List[int]] = None) -> None:
+    def set_video_id_filter(self, ids: Optional[Iterable[int]] = None) -> None:
         """
         Set the id filter.
 
@@ -158,7 +159,8 @@ class Ytcc:
     @staticmethod
     def _update_channel(channel: Channel) -> List[Dict[str, Any]]:
         yt_channel_id = channel.yt_channelid
-        feed = feedparser.parse(f"https://www.youtube.com/feeds/videos.xml?channel_id={yt_channel_id}")
+        url = f"https://www.youtube.com/feeds/videos.xml?channel_id={yt_channel_id}"
+        feed = feedparser.parse(url)
         return [
             dict(
                 yt_videoid=str(entry.yt_videoid),
