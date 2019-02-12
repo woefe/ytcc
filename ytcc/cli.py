@@ -17,7 +17,6 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import itertools
-import readline
 import sys
 from collections import OrderedDict
 
@@ -25,8 +24,9 @@ import shutil
 import signal
 import textwrap as wrap
 from datetime import datetime
+from enum import Enum
 from gettext import gettext as _
-from typing import List, Iterable, Optional, TextIO, NamedTuple, Callable, Any, Set
+from typing import List, Iterable, Optional, TextIO, Any, Set, Tuple
 
 from ytcc import core, arguments
 from ytcc.db import Video
@@ -45,6 +45,217 @@ column_filter = [ytcc_core.config.table_format.getboolean("ID"),
                  ytcc_core.config.table_format.getboolean("Title"),
                  ytcc_core.config.table_format.getboolean("URL"),
                  ytcc_core.config.table_format.getboolean("Watched")]
+
+
+class Action(Enum):
+    PLAY_VIDEO = 1
+    PLAY_AUDIO = 2
+    DOWNLOAD_VIDEO = 3
+    DOWNLOAD_AUDIO = 4
+    MARK_WATCHED = 5
+    SHOW_HELP = 6
+    REFRESH = 7
+
+
+class Interactive:
+
+    def __init__(self, videos: List[Video]):
+        self.videos = videos
+        self.previous_action = Action.PLAY_VIDEO
+        self.action = Action.PLAY_VIDEO
+        self.hooks = {
+            "<F1>": lambda: self.set_action(Action.SHOW_HELP),
+            "<F2>": lambda: self.set_action(Action.PLAY_VIDEO),
+            "<F3>": lambda: self.set_action(Action.PLAY_AUDIO),
+            "<F4>": lambda: self.set_action(Action.MARK_WATCHED),
+            "<F5>": lambda: self.set_action(Action.REFRESH),
+            "<F6>": lambda: self.set_action(Action.DOWNLOAD_VIDEO),
+            "<F7>": lambda: self.set_action(Action.DOWNLOAD_AUDIO),
+        }
+
+    def set_action(self, action: Action) -> bool:
+        self.previous_action = self.action
+        self.action = action
+        return action in (Action.SHOW_HELP, Action.REFRESH)
+
+    @staticmethod
+    def _prefix_codes(alphabet: Set[str], count: int) -> List[str]:
+        codes = list(alphabet)
+
+        if len(codes) < 2:
+            raise ValueError("alphabet must have at least two characters")
+
+        if count <= 0:
+            raise ValueError("count must not be negative")
+
+        if len(codes) >= count:
+            return codes[:count]
+
+        first = codes.pop(0)
+        it = iter(alphabet)
+
+        while len(codes) < count:
+            try:
+                char = next(it)
+                codes.append(first + char)
+            except StopIteration:
+                it = iter(alphabet)
+                first = codes.pop(0)
+        return codes
+
+    @staticmethod
+    def read_sequence(fd) -> str:
+        f_keys = {
+            "\x1bOP": "<F1>",
+            "\x1bOQ": "<F2>",
+            "\x1bOR": "<F3>",
+            "\x1bOS": "<F4>",
+            "\x1b[15~": "<F5>",
+            "\x1b[17~": "<F6>",
+            "\x1b[18~": "<F7>",
+        }
+        seq = fd.read(1)
+        if seq == "\x1b":
+            seq += fd.read(1)
+            if seq == "\x1bO":
+                seq += sys.stdin.read(1)
+            elif seq == "\x1b[":
+                b = sys.stdin.read(1)
+                while b != "~":
+                    seq += b
+                    b = sys.stdin.read(1)
+                seq += b
+            return f_keys.get(seq, "Unknown Sequence")
+        else:
+            return seq
+
+    def getch(self) -> str:
+        """Read a single character from stdin without the need to press enter."""
+
+        if not sys.stdin.isatty():
+            return ""
+
+        import tty
+        import termios
+
+        file_descriptor = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(file_descriptor)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            char = self.read_sequence(sys.stdin)
+        finally:
+            termios.tcsetattr(file_descriptor, termios.TCSADRAIN, old_settings)
+        return char
+
+    def get_prompt_text(self) -> str:
+        if self.action == Action.MARK_WATCHED:
+            return _("Mark as watched")
+        if self.action == Action.DOWNLOAD_AUDIO:
+            return _("Download audio")
+        if self.action == Action.DOWNLOAD_VIDEO:
+            return _("Download video")
+        if self.action == Action.PLAY_AUDIO:
+            return _("Play audio")
+        if self.action == Action.PLAY_VIDEO:
+            return _("Play video")
+
+    def command_line(self, tags: List[str], alphabet: Set[str]) -> Tuple[str, bool]:
+        prompt_format = "{prompt_text} >"
+        prompt = prompt_format.format(prompt_text=self.get_prompt_text())
+        print()
+        print(_("Type a valid TAG. <F1> for help."))
+        print(prompt, end=" ", flush=True)
+
+        tag = ""
+        hook_triggered = False
+        while tag not in tags:
+            char = self.getch()
+
+            if char in self.hooks:
+                hook_triggered = True
+                if self.hooks[char]():
+                    break
+
+            if char in {"\x04", "\x03"}:  # Ctrl+d, Ctrl+d
+                break
+
+            if char in {"\r", ""}:
+                tag = tags[0]
+                break
+
+            if char == "\x7f":  # DEL
+                tag = tag[:-1]
+            elif char in alphabet:
+                tag += char
+
+            prompt = prompt_format.format(prompt_text=self.get_prompt_text())
+            # Clear line, reset cursor, print prompt and tag
+            print(f"\033[2K\r{prompt}", tag, end="", flush=True)
+
+        print()
+        return tag, hook_triggered
+
+    def run(self) -> None:
+        quickselect = ytcc_core.config.quickselect
+        alphabet = set(quickselect.alphabet)
+        tags = self._prefix_codes(alphabet, len(self.videos))
+        index = OrderedDict(zip(tags, self.videos))
+
+        while index:
+            remaining_tags = list(index.keys())
+            remaining_videos = index.values()
+
+            # Clear display and set cursor to (1,1). Allows scrolling back in some terminals
+            print("\033[2J\033[1;1H", end="")
+            print_videos(remaining_videos, quickselect_column=remaining_tags)
+
+            tag, hook_triggered = self.command_line(remaining_tags, alphabet)
+            video = index.get(tag)
+
+            if video is None and not hook_triggered:
+                break
+
+            if self.action == Action.MARK_WATCHED:
+                mark_watched([video.id])
+                del index[tag]
+            elif self.action == Action.DOWNLOAD_AUDIO:
+                print()
+                download([video.id], True)
+                del index[tag]
+            elif self.action == Action.DOWNLOAD_VIDEO:
+                print()
+                download([video.id], False)
+                del index[tag]
+            elif self.action == Action.PLAY_AUDIO:
+                print()
+                play(video, True)
+                del index[tag]
+            elif self.action == Action.PLAY_VIDEO:
+                print()
+                play(video, False)
+                del index[tag]
+            elif self.action == Action.SHOW_HELP:
+                self.action = self.previous_action
+                print("\033[2J\033[1;1H", end="")
+                print(_(
+                    "    <F1> Display this help text.\n"
+                    "    <F2> Set action: Play video.\n"
+                    "    <F3> Set action: Play audio.\n"
+                    "    <F4> Set action: Mark as watched.\n"
+                    "    <F5> Refresh video list.\n"
+                    "    <F6> Set action: Download video.\n"
+                    "    <F7> Set action: Download audio.\n"
+                    " <Enter> Accept first video.\n"
+                    "<CTRL+D> Exit.\n"
+                ))
+                input("Press Enter to continue")
+            elif self.action == Action.REFRESH:
+                self.action = self.previous_action
+                print("\033[2J\033[1;1H", end="")
+                update_all()
+                self.videos = ytcc_core.list_videos()
+                self.run()
+                break
 
 
 def update_all() -> None:
@@ -70,6 +281,7 @@ def maybe_print_description(description: str) -> None:
 
 
 def play(video: Video, audio_only: bool) -> None:
+    print(_('Playing "{video.title}" by "{video.channel.displayname}"...').format(video=video))
     maybe_print_description(video.description)
     if not ytcc_core.play_video(video.id, audio_only):
         print()
@@ -78,119 +290,19 @@ def play(video: Video, audio_only: bool) -> None:
         print()
 
 
-def prefix_codes(alphabet: Set[str], count: int) -> List[str]:
-    codes = list(alphabet)
-
-    if len(codes) < 2:
-        raise ValueError("alphabet must have at least two characters")
-
-    if count <= 0:
-        raise ValueError("count must not be negative")
-
-    if len(codes) >= count:
-        return codes[:count]
-
-    first = codes.pop(0)
-    it = iter(alphabet)
-
-    while len(codes) < count:
-        try:
-            char = next(it)
-            codes.append(first + char)
-        except StopIteration:
-            it = iter(alphabet)
-            first = codes.pop(0)
-    return codes
-
-
-def match_quickselect(tags: List[str], alphabet: Set[str]) -> str:
-    def getch() -> str:
-        """Read a single character from stdin without the need to press enter."""
-
-        if not sys.stdin.isatty():
-            return ""
-
-        import tty
-        import termios
-
-        file_descriptor = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(file_descriptor)
-        try:
-            tty.setraw(sys.stdin.fileno())
-            char = sys.stdin.read(1)
-        finally:
-            termios.tcsetattr(file_descriptor, termios.TCSADRAIN, old_settings)
-        return char
-
-    print()
-    print(_("Type a valid TAG. <Ctrl+d> to exit. <Enter> accepts first video."))
-    print("> ", end="", flush=True)
-
-    tag = ""
-    while tag not in tags:
-        char = getch()
-
-        if char in {"\x04", "\x03"}:  # Ctrl+d, Ctrl+d
-            break
-
-        if char in {"\r", ""}:
-            tag = tags[0]
-            break
-
-        if char == "\x7f":  # DEL
-            tag = tag[:-1]
-        elif char in alphabet:
-            tag += char
-
-        # Clear line, reset cursor, print prompt and tag
-        print("\033[2K\r>", tag, end="", flush=True)
-
-    print()
-    return tag
-
-
 def watch(video_ids: Optional[Iterable[int]] = None) -> None:
-    def print_title(video: Video) -> None:
-        print(_('Playing "{video.title}" by "{video.channel.displayname}"...').format(video=video))
-
     if not video_ids:
         videos = ytcc_core.list_videos()
     else:
         videos = ytcc_core.get_videos(video_ids)
 
-    quickselect = ytcc_core.config.quickselect
-
     if not videos:
         print(_("No videos to watch. No videos match the given criteria."))
     elif not interactive_enabled:
         for v in videos:
-            print_title(v)
             play(v, no_video)
-
     else:
-        alphabet = set(quickselect.alphabet)
-        tags = prefix_codes(alphabet, len(videos))
-        index = OrderedDict(zip(tags, videos))
-
-        while index:
-            remaining_tags = list(index.keys())
-            remaining_videos = index.values()
-
-            # Clear display and set cursor to (1,1). Allows scrolling back in some terminals
-            print("\033[2J\033[1;1H", end="")
-            print_videos(remaining_videos, quickselect_column=remaining_tags)
-
-            tag = match_quickselect(remaining_tags, alphabet)
-            video = index.get(tag)
-
-            if video is None:
-                break
-
-            print()
-            print_title(video)
-            play(video, no_video)
-
-            del index[tag]
+        Interactive(videos).run()
 
 
 def table_print(header: List[str], table: List[List[str]]) -> None:
@@ -437,7 +549,7 @@ def run() -> None:
     if not option_executed:
         update_all()
         print()
-        if not ytcc_core.config.quickselect.enabled:
+        if not interactive_enabled:
             list_videos()
             print()
         watch()
