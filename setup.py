@@ -27,7 +27,7 @@ setup(
     description='A YouTube subscription tool',
     long_description=ytcc.__doc__,
     version=ytcc.__version__,
-    url='https://github.com/popeye123/ytcc',
+    url='https://github.com/woefe/ytcc',
     author=ytcc.__author__,
     author_email=ytcc.__email__,
     license=ytcc.__license__,
