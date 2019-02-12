@@ -213,7 +213,7 @@ class Ytcc:
         return False
 
     def download_video(self, video: Video, path: str = "", audio_only: bool = False) -> bool:
-        """Downloads the videos identified by the given video IDs with youtube-dl.
+        """Downloads the videos identified by the given video IDs with youtube-dl and marks it watched
 
         Args:
             video_ids ([int]): The (local) video IDs.
@@ -269,6 +269,7 @@ class Ytcc:
                     return False
 
                 ydl.process_ie_result(info, download=True)
+                video.watched = True
                 return True
             except youtube_dl.utils.YoutubeDLError:
                 return False

@@ -405,9 +405,7 @@ def import_channels(file: TextIO) -> None:
 def download_video(video: Video, audio_only: bool = False) -> None:
     print(_('Downloading "{video.title}" by "{video.channel.displayname}"...').format(video=video))
     success = ytcc_core.download_video(video=video, path=download_path, audio_only=audio_only)
-    if success:
-        video.watched = True
-    else:
+    if not success:
         print(_("An Error occured while downloading the video"))
 
 

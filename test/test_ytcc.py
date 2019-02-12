@@ -112,9 +112,11 @@ class TestYtccPreparedVideos(TestCase):
         self.db_conn.add_channel(Channel(displayname="Webdriver Torso", yt_channelid="UCsLiV4WJfkTEHH0b9PmRklw"))
         self.db_conn.add_channel(Channel(displayname="Webdriver YPP", yt_channelid="UCxexYYtOetqikZqriLuTS-g"))
         self.db_conn.add_videos(insert_list)
-        self.video_id = self.db_conn.session.query(Video).filter(Video.title == "tmpIXBgjd").one().id
+        self.video = self.db_conn.session.query(Video).filter(Video.title == "tmpIXBgjd").one()
+        self.video_id = self.video.id
 
     def tearDown(self):
+        self.db_conn.session.commit()
         self.db_conn.session.execute("delete from video")
         self.db_conn.session.execute("delete from channel")
         self.db_conn.session.commit()
@@ -164,25 +166,28 @@ class TestYtccPreparedVideos(TestCase):
 
     def test_resolve_video_ids(self):
         ytcc = self.ytcc
-        videos = ytcc.get_videos([self.video_id])
+        ytcc.set_video_id_filter([self.video_id])
+        videos = ytcc.list_videos()
         self.assertEqual(len(videos), 1)
         self.assertEqual(videos[0].title, "tmpIXBgjd")
 
     def test_play_video(self):
         ytcc = self.ytcc
-        videos = ytcc.get_videos([self.video_id])
+        ytcc.set_video_id_filter([self.video_id])
+        videos = ytcc.list_videos()
         ytcc.play_video(videos[0])
-        self.assertTrue(ytcc.get_videos([self.video_id])[0].watched)
+        self.assertTrue(videos[0].watched)
 
     def test_download_videos(self):
         ytcc = self.ytcc
-        success_ids = map(lambda a: a[0], filter(lambda a: a[1], ytcc.download_video([self.video_id])))
-        ytcc.mark_watched(list(success_ids))
-        self.assertTrue(ytcc.get_videos([self.video_id])[0].watched)
+        self.assertTrue(ytcc.download_video(self.video))
+        self.assertTrue(self.video.watched)
         self.assertTrue(os.path.isfile(os.path.join(ytcc.config.download_dir, "tmpIXBgjd.webm")))
 
     def test_mark_all_watched(self):
         ytcc = self.ytcc
-        ytcc.mark_watched()
+        videos = ytcc.list_videos()
+        for v in videos:
+            v.watched = True
         videos = ytcc.list_videos()
         self.assertEqual(len(videos), 0)
