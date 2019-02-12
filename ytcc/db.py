@@ -68,7 +68,7 @@ class Database:
         channels = self.session.query(Channel).filter(Channel.displayname.in_(display_names))
         for channel in channels:
             self.session.delete(channel)
-        self.session.flush()
+        self.session.commit()
 
     def add_videos(self, videos: Iterable[Dict[str, Any]]) -> None:
         videos = list(videos)
@@ -82,3 +82,43 @@ class Database:
 
     def resolve_video_id(self, video_id: int) -> Video:
         return self.session.query(Video).get(video_id)
+
+    def cleanup(self) -> None:
+        """Deletes all videos from all channels, but keeps the 30 latest videos of every channel.
+        """
+
+        sql = """
+            delete from video
+            where id in (
+                select v.id
+                from video v, channel c
+                where v.publisher = c.yt_channelid and c.displayname = :displayname
+                    and v.publish_date <= (
+                        select v.publish_date
+                        from video v, channel chan
+                        where v.publisher = chan.yt_channelid and chan.displayname = c.displayname
+                        order by v.publish_date desc
+                        limit 30,1
+                    )
+            )
+            """
+        self.session.commit()
+        self.engine.execute(sql, [{"displayname": e.displayname} for e in self.get_channels()])
+
+        # Delete videos without channels.
+        # This happend in older versions, because foreign keys were not enabled.
+        # Also happens if foreign keys cannot be enabled due to missing compile flags.
+        delete_dangling_sql = """
+            delete
+            from video
+            where id in (
+              select v.id
+              from video v
+                     left join channel c on v.publisher = c.yt_channelid
+              where c.yt_channelid is null
+            );
+        """
+        self.engine.execute(delete_dangling_sql)
+
+        self.engine.execute("vacuum;")
+        self.session.commit()

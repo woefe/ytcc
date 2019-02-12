@@ -60,11 +60,6 @@ class ChannelDoesNotExistException(YtccException):
     pass
 
 
-class InvalidIDException(YtccException):
-    """Raised when a given video ID or channel ID does not exist."""
-    pass
-
-
 class InvalidSubscriptionFileError(YtccException):
     """Raised when the given file is not a valid XML file."""
     pass
