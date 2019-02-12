@@ -21,7 +21,11 @@ import io
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, Optional
+from sqlalchemy import Column
+from typing import Any, Dict, Optional, List
+
+import ytcc
+from ytcc.db import Video, Channel
 
 DEFAULTS: Dict[str, Dict[str, Any]] = {
     "YTCC": {
@@ -29,6 +33,7 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
         "DownloadDir": "~/Downloads",
         "mpvFlags": "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best",
         "alphabet": "sdfervghnuiojkl",
+        "orderBy": "channel, date"
     },
     "youtube-dl": {
         "format": "bestvideo[height<=?1080]+bestaudio/best",
@@ -102,9 +107,26 @@ class Config(object):
         self.download_dir = os.path.expanduser(config["YTCC"]["DownloadDir"])
         self.db_path = os.path.expanduser(config["YTCC"]["DBPath"])
         self.mpv_flags = re.compile("\\s+").split(config["YTCC"]["mpvFlags"])
-        self.quickselect_alphabet = config["YTCC"]["alphabet"]
+        self.quickselect_alphabet = set(config["YTCC"]["alphabet"])
         self.table_format = config["TableFormat"]
         self.youtube_dl = _YTDLConf(config["youtube-dl"])
+        self.order_by = list(self.init_order())
+
+    def init_order(self) -> List[Column]:
+        col_mapping = {
+            "id": Video.id,
+            "date": Video.publish_date,
+            "channel": Channel.displayname,
+            "title": Video.title,
+            "url": Video.yt_videoid,
+            "watched": Video.watched
+        }
+        for c in self._config["YTCC"]["orderBy"].split(","):
+            column = col_mapping.get(c.strip().lower())
+            if column is not None:
+                yield column
+            else:
+                raise ytcc.core.BadConfigException(f"Cannot order by {c.strip()}")
 
     def __str__(self) -> str:
         strio = io.StringIO()

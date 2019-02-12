@@ -32,20 +32,14 @@ from ytcc import core, arguments
 from ytcc.db import Video
 from ytcc.utils import unpack_optional
 
-ytcc_core = core.Ytcc()
+ytcc_core = None
 interactive_enabled = True
 description_enabled = True
 no_video = False
 download_path = ""
-
 header_enabled = True
 table_header = [_("ID"), _("Date"), _("Channel"), _("Title"), _("URL"), _("Watched")]
-column_filter = [ytcc_core.config.table_format.getboolean("ID"),
-                 ytcc_core.config.table_format.getboolean("Date"),
-                 ytcc_core.config.table_format.getboolean("Channel"),
-                 ytcc_core.config.table_format.getboolean("Title"),
-                 ytcc_core.config.table_format.getboolean("URL"),
-                 ytcc_core.config.table_format.getboolean("Watched")]
+column_filter = None
 
 
 class Action(Enum):
@@ -199,7 +193,7 @@ class Interactive:
         return tag, hook_triggered
 
     def run(self) -> None:
-        alphabet = set(ytcc_core.config.quickselect_alphabet)
+        alphabet = ytcc_core.config.quickselect_alphabet
         tags = self._prefix_codes(alphabet, len(self.videos))
         index = OrderedDict(zip(tags, self.videos))
 
@@ -581,6 +575,20 @@ def register_signal_handlers() -> None:
 
 
 def main() -> None:
+    global ytcc_core, column_filter
+
+    try:
+        ytcc_core = core.Ytcc()
+        column_filter = [ytcc_core.config.table_format.getboolean("ID"),
+                         ytcc_core.config.table_format.getboolean("Date"),
+                         ytcc_core.config.table_format.getboolean("Channel"),
+                         ytcc_core.config.table_format.getboolean("Title"),
+                         ytcc_core.config.table_format.getboolean("URL"),
+                         ytcc_core.config.table_format.getboolean("Watched")]
+    except core.BadConfigException:
+        print(_("The configuration file has errors!"))
+        exit(1)
+
     register_signal_handlers()
     run()
     ytcc_core.close()

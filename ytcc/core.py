@@ -65,6 +65,10 @@ class InvalidSubscriptionFileError(YtccException):
     pass
 
 
+class BadConfigException(YtccException):
+    pass
+
+
 class Ytcc:
     """The Ytcc class handles updating the YouTube RSS feed and playing and listing/filtering
     videos. Filters can be set with with following methods:
@@ -358,7 +362,10 @@ class Ytcc:
             A list of ytcc.video.Video objects
         """
         if self.video_id_filter:
-            return self.db.session.query(Video).filter(Video.id.in_(self.video_id_filter)).all()
+            return self.db.session.query(Video) \
+                .join(Channel, Channel.yt_channelid == Video.publisher) \
+                .filter(Video.id.in_(self.video_id_filter))\
+                .order_by(*self.config.order_by).all()
 
         q = self.db.session.query(Video) \
             .join(Channel, Channel.yt_channelid == Video.publisher) \
@@ -371,7 +378,7 @@ class Ytcc:
         if not self.include_watched_filter:
             q = q.filter(Video.watched == False)
 
-        q = q.order_by(Channel.id, Video.publish_date)
+        q = q.order_by(*self.config.order_by)
         return q.all()
 
     def delete_channels(self, displaynames: List[str]) -> None:
