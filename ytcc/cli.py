@@ -28,7 +28,7 @@ from enum import Enum
 from gettext import gettext as _
 from typing import List, Iterable, Optional, TextIO, Any, Set, Tuple
 
-from ytcc import core, arguments
+from ytcc import core, arguments, getkey
 from ytcc.db import Video
 from ytcc.utils import unpack_optional
 
@@ -39,7 +39,7 @@ no_video = False
 download_path = ""
 header_enabled = True
 table_header = [_("ID"), _("Date"), _("Channel"), _("Title"), _("URL"), _("Watched")]
-column_filter = None
+column_filter = []
 
 
 class Action(Enum):
@@ -59,13 +59,13 @@ class Interactive:
         self.previous_action = Action.PLAY_VIDEO
         self.action = Action.PLAY_VIDEO
         self.hooks = {
-            "<F1>": lambda: self.set_action(Action.SHOW_HELP),
-            "<F2>": lambda: self.set_action(Action.PLAY_VIDEO),
-            "<F3>": lambda: self.set_action(Action.PLAY_AUDIO),
-            "<F4>": lambda: self.set_action(Action.MARK_WATCHED),
-            "<F5>": lambda: self.set_action(Action.REFRESH),
-            "<F6>": lambda: self.set_action(Action.DOWNLOAD_VIDEO),
-            "<F7>": lambda: self.set_action(Action.DOWNLOAD_AUDIO),
+            getkey.Keys.F1: lambda: self.set_action(Action.SHOW_HELP),
+            getkey.Keys.F2: lambda: self.set_action(Action.PLAY_VIDEO),
+            getkey.Keys.F3: lambda: self.set_action(Action.PLAY_AUDIO),
+            getkey.Keys.F4: lambda: self.set_action(Action.MARK_WATCHED),
+            getkey.Keys.F5: lambda: self.set_action(Action.REFRESH),
+            getkey.Keys.F6: lambda: self.set_action(Action.DOWNLOAD_VIDEO),
+            getkey.Keys.F7: lambda: self.set_action(Action.DOWNLOAD_AUDIO),
         }
 
     def set_action(self, action: Action) -> bool:
@@ -98,50 +98,6 @@ class Interactive:
                 first = codes.pop(0)
         return codes
 
-    @staticmethod
-    def read_sequence(fd) -> str:
-        f_keys = {
-            "\x1bOP": "<F1>",
-            "\x1bOQ": "<F2>",
-            "\x1bOR": "<F3>",
-            "\x1bOS": "<F4>",
-            "\x1b[15~": "<F5>",
-            "\x1b[17~": "<F6>",
-            "\x1b[18~": "<F7>",
-        }
-        seq = fd.read(1)
-        if seq == "\x1b":
-            seq += fd.read(1)
-            if seq == "\x1bO":
-                seq += sys.stdin.read(1)
-            elif seq == "\x1b[":
-                b = sys.stdin.read(1)
-                while b != "~":
-                    seq += b
-                    b = sys.stdin.read(1)
-                seq += b
-            return f_keys.get(seq, "Unknown Sequence")
-        else:
-            return seq
-
-    def getch(self) -> str:
-        """Read a single character from stdin without the need to press enter."""
-
-        if not sys.stdin.isatty():
-            return ""
-
-        import tty
-        import termios
-
-        file_descriptor = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(file_descriptor)
-        try:
-            tty.setraw(sys.stdin.fileno())
-            char = self.read_sequence(sys.stdin)
-        finally:
-            termios.tcsetattr(file_descriptor, termios.TCSADRAIN, old_settings)
-        return char
-
     def get_prompt_text(self) -> str:
         if self.action == Action.MARK_WATCHED:
             return _("Mark as watched")
@@ -166,7 +122,7 @@ class Interactive:
         tag = ""
         hook_triggered = False
         while tag not in tags:
-            char = self.getch()
+            char = getkey.getkey()
 
             if char in self.hooks:
                 hook_triggered = True
