@@ -54,7 +54,7 @@ class Database:
         self.session.close()
 
     def add_channels(self, channels: Iterable[Channel]) -> None:
-        self.session.add(channels)
+        self.session.add_all(channels)
         self.session.commit()
 
     def add_channel(self, channel: Channel) -> None:

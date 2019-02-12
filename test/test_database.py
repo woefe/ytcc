@@ -1,37 +1,44 @@
-import sqlite3
 from unittest import TestCase
-from nose.tools import raises
-from ytcc.database import Database
-from ytcc.video import Video
 
-insert_list = [("0", "title1", "description1", "id_publisher1", 1488286166, False),
-               ("0", "title1", "description1", "id_publisher1", 1488286167, False),
-               ("0", "title2", "description1", "id_publisher1", 1488286168, False),
-               ("1", "title2", "description2", "id_publisher2", 1488286170, False),
-               ("2", "title3", "description3", "id_publisher2", 1488286171, False)]
+import sqlalchemy
+from nose.tools import raises
+from ytcc.db import Database, Video, Channel
+
+insert_list = [
+    dict(yt_videoid="0", title="title1", description="description1", publisher="id_publisher1", publish_date=1488286166,
+         watched=False),
+    dict(yt_videoid="0", title="title1", description="description1", publisher="id_publisher1", publish_date=1488286167,
+         watched=False),
+    dict(yt_videoid="0", title="title2", description="description1", publisher="id_publisher1", publish_date=1488286168,
+         watched=False),
+    dict(yt_videoid="1", title="title2", description="description2", publisher="id_publisher2", publish_date=1488286170,
+         watched=False),
+    dict(yt_videoid="2", title="title3", description="description3", publisher="id_publisher2", publish_date=1488286171,
+         watched=False)
+]
 
 
 def init_db():
     db = Database(":memory:")
-    db.add_channel("publisher1", "id_publisher1")
-    db.add_channel("publisher2", "id_publisher2")
-    db.add_channel("publisher3", "id_publisher3")
+    db.add_channel(Channel(displayname="publisher1", yt_channelid="id_publisher1"))
+    db.add_channel(Channel(displayname="publisher2", yt_channelid="id_publisher2"))
+    db.add_channel(Channel(displayname="publisher3", yt_channelid="id_publisher3"))
     db.add_videos(insert_list)
     return db
 
 
 class DatabaseTest(TestCase):
 
-    @raises(sqlite3.IntegrityError)
+    @raises(sqlalchemy.exc.IntegrityError)
     def test_add_channel_duplicate(self):
         db = Database(":memory:")
-        db.add_channel("Webdriver Torso", "UCsLiV4WJfkTEHH0b9PmRklw")
-        db.add_channel("Webdriver Torso2", "UCsLiV4WJfkTEHH0b9PmRklw")
+        db.add_channel(Channel(displayname="Webdriver Torso", yt_channelid="UCsLiV4WJfkTEHH0b9PmRklw"))
+        db.add_channel(Channel(displayname="Webdriver Torso2", yt_channelid="UCsLiV4WJfkTEHH0b9PmRklw"))
 
     def test_add_and_get_channels(self):
         db = Database(":memory:")
-        db.add_channel("Webdriver Torso", "UCsLiV4WJfkTEHH0b9PmRklw")
-        db.add_channel("Webdriver YPP", "UCxexYYtOetqikZqriLuTS-g")
+        db.add_channel(Channel(displayname="Webdriver Torso", yt_channelid="UCsLiV4WJfkTEHH0b9PmRklw"))
+        db.add_channel(Channel(displayname="Webdriver YPP", yt_channelid="UCxexYYtOetqikZqriLuTS-g"))
         channels = db.get_channels()
         self.assertEqual(len(channels), 2)
         self.assertEqual(channels[0].displayname, "Webdriver Torso")
@@ -42,16 +49,11 @@ class DatabaseTest(TestCase):
     def test_add_and_get_videos(self):
         db = init_db()
         db.add_videos(insert_list)
-        videos = db.get_videos(end_timestamp=1488286171, include_watched=True)
-        self.assertEqual(len(videos), 2)
+        videos = db.session.query(Video).all()
+        self.assertEqual(len(videos), 3)
         self.assertEqual(videos[0].yt_videoid, "0")
         self.assertEqual(videos[1].yt_videoid, "1")
-
-    def test_search(self):
-        db = init_db()
-        result = db.search("title2")
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].yt_videoid, "1")
+        self.assertEqual(videos[2].yt_videoid, "2")
 
     def test_delete_channels(self):
         db = init_db()
@@ -63,13 +65,26 @@ class DatabaseTest(TestCase):
     def test_resolve_video_id(self):
         db = init_db()
         video = db.resolve_video_id(1)
-        expected = Video(1, "0", "title1", "description1", 1488286166, "publisher1", False)
-        self.assertEqual(video, expected)
+        expected = Video(id=1, yt_videoid="0", title="title1", description="description1", publisher="id_publisher1",
+                         publish_date=1488286166.0, watched=False)
+
+        self.eq_video(video, expected)
 
     def test_mark_watched(self):
         db = init_db()
-        db.mark_watched([2, 3])
-        videos = db.get_videos(end_timestamp=1488286172, include_watched=False)
-        expected = Video(1, "0", "title1", "description1", 1488286166, "publisher1", False)
+        for video in db.resolve_video_ids([2, 3]):
+            video.watched = True
+        videos = db.session.query(Video).filter(Video.watched == False).all()
+        expected = Video(id=1, yt_videoid="0", title="title1", description="description1", publisher="id_publisher1",
+                         publish_date=1488286166.0, watched=False)
         self.assertEqual(len(videos), 1)
-        self.assertEqual(videos[0], expected)
+        self.eq_video(videos[0], expected)
+
+    def eq_video(self, video: Video, expected: Video) -> None:
+        self.assertEqual(video.id, expected.id)
+        self.assertEqual(video.yt_videoid, expected.yt_videoid)
+        self.assertEqual(video.title, expected.title)
+        self.assertEqual(video.description, expected.description)
+        self.assertEqual(video.publish_date, expected.publish_date)
+        self.assertEqual(video.publisher, expected.publisher)
+        self.assertEqual(video.watched, expected.watched)

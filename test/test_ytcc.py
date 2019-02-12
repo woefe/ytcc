@@ -6,6 +6,7 @@ from datetime import datetime
 from ytcc.core import BadURLException
 from ytcc.core import DuplicateChannelException
 from ytcc.core import Ytcc
+from ytcc.db import Channel, Video
 
 
 class TestYtcc(TestCase):
@@ -16,8 +17,8 @@ class TestYtcc(TestCase):
         self.db_conn = self.ytcc.db
 
     def tearDown(self):
-        self.db_conn._execute_query("delete from video")
-        self.db_conn._execute_query("delete from channel")
+        self.db_conn.engine.execute("delete from video")
+        self.db_conn.engine.execute("delete from channel")
 
     def test_add_channel_duplicate(self):
         ytcc = self.ytcc
@@ -53,12 +54,14 @@ class TestYtccPreparedChannels(TestCase):
         self.current_dir = os.path.dirname(__file__)
         self.ytcc = Ytcc(os.path.join(self.current_dir, "data/ytcc_test.conf"))
         self.db_conn = self.ytcc.db
-        self.db_conn.add_channel("Webdriver Torso", "UCsLiV4WJfkTEHH0b9PmRklw")
-        self.db_conn.add_channel("Webdriver YPP", "UCxexYYtOetqikZqriLuTS-g")
+        self.db_conn.engine.execute("delete from video")
+        self.db_conn.engine.execute("delete from channel")
+        self.db_conn.add_channel(Channel(displayname="Webdriver Torso", yt_channelid="UCsLiV4WJfkTEHH0b9PmRklw"))
+        self.db_conn.add_channel(Channel(displayname="Webdriver YPP", yt_channelid="UCxexYYtOetqikZqriLuTS-g"))
 
     def tearDown(self):
-        self.db_conn._execute_query("delete from video")
-        self.db_conn._execute_query("delete from channel")
+        self.db_conn.engine.execute("delete from video")
+        self.db_conn.engine.execute("delete from channel")
 
     def test_update_all(self):
         ytcc = self.ytcc
@@ -81,27 +84,40 @@ class TestYtccPreparedVideos(TestCase):
         self.db_conn = self.ytcc.db
 
         insert_list = [
-            ("V-ozGFl3Jks", "tmptYnCut", "", "UCsLiV4WJfkTEHH0b9PmRklw", 1488348731.0, 1),
-            ("a1gOeiyIqPs", "tmp99Yc1l", "", "UCsLiV4WJfkTEHH0b9PmRklw", 1488348519.0, 1),
-            ("0ounUgOrcqo", "tmppfXKp6", "", "UCsLiV4WJfkTEHH0b9PmRklw", 1488345630.0, 1),
-            ("7mckB-NdKWY", "tmpiM62pN", "", "UCsLiV4WJfkTEHH0b9PmRklw", 1488345565.0, 0),
-            ("RmRPt93uAsQ", "tmpIXBgjd", "", "UCsLiV4WJfkTEHH0b9PmRklw", 1488344217.0, 0),
-            ("nDPy3RyKdrg", "tmpwA0TjG", "", "UCsLiV4WJfkTEHH0b9PmRklw", 1488343000.0, 0),
-            ("L0_F805qUIM", "tmpKDOkro", "", "UCxexYYtOetqikZqriLuTS-g", 1488344253.0, 1),
-            ("lXWrdlDEzQs", "tmpEvCR4s", "", "UCxexYYtOetqikZqriLuTS-g", 1488343152.0, 1),
-            ("cCnXsCQNkr8", "tmp1rpsWK", "", "UCxexYYtOetqikZqriLuTS-g", 1488343046.0, 1),
-            ("rSxVs0XeQa4", "tmpc5Y2pd", "", "UCxexYYtOetqikZqriLuTS-g", 1488342015.0, 0),
-            ("gQAsWrGfsrw", "tmpn1M1Oa", "", "UCxexYYtOetqikZqriLuTS-g", 1488341324.0, 0),
+            dict(yt_videoid="V-ozGFl3Jks", title="tmptYnCut", description="",
+                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488348731.0, watched=1),
+            dict(yt_videoid="a1gOeiyIqPs", title="tmp99Yc1l", description="",
+                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488348519.0, watched=1),
+            dict(yt_videoid="0ounUgOrcqo", title="tmppfXKp6", description="",
+                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488345630.0, watched=1),
+            dict(yt_videoid="7mckB-NdKWY", title="tmpiM62pN", description="",
+                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488345565.0, watched=0),
+            dict(yt_videoid="RmRPt93uAsQ", title="tmpIXBgjd", description="",
+                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488344217.0, watched=0),
+            dict(yt_videoid="nDPy3RyKdrg", title="tmpwA0TjG", description="",
+                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488343000.0, watched=0),
+            dict(yt_videoid="L0_F805qUIM", title="tmpKDOkro", description="",
+                 publisher="UCxexYYtOetqikZqriLuTS-g", publish_date=1488344253.0, watched=1),
+            dict(yt_videoid="lXWrdlDEzQs", title="tmpEvCR4s", description="",
+                 publisher="UCxexYYtOetqikZqriLuTS-g", publish_date=1488343152.0, watched=1),
+            dict(yt_videoid="cCnXsCQNkr8", title="tmp1rpsWK", description="",
+                 publisher="UCxexYYtOetqikZqriLuTS-g", publish_date=1488343046.0, watched=1),
+            dict(yt_videoid="rSxVs0XeQa4", title="tmpc5Y2pd", description="",
+                 publisher="UCxexYYtOetqikZqriLuTS-g", publish_date=1488342015.0, watched=0),
+            dict(yt_videoid="gQAsWrGfsrw", title="tmpn1M1Oa", description="",
+                 publisher="UCxexYYtOetqikZqriLuTS-g", publish_date=1488341324.0, watched=0),
         ]
-        self.db_conn.add_channel("Webdriver Torso", "UCsLiV4WJfkTEHH0b9PmRklw")
-        self.db_conn.add_channel("Webdriver YPP", "UCxexYYtOetqikZqriLuTS-g")
+        self.db_conn.session.execute("delete from video")
+        self.db_conn.session.execute("delete from channel")
+        self.db_conn.add_channel(Channel(displayname="Webdriver Torso", yt_channelid="UCsLiV4WJfkTEHH0b9PmRklw"))
+        self.db_conn.add_channel(Channel(displayname="Webdriver YPP", yt_channelid="UCxexYYtOetqikZqriLuTS-g"))
         self.db_conn.add_videos(insert_list)
-        self.video_id = self.db_conn._execute_query_with_result(
-            "select id from video where title = 'tmpIXBgjd';")[0][0]
+        self.video_id = self.db_conn.session.query(Video).filter(Video.title == "tmpIXBgjd").one().id
 
     def tearDown(self):
-        self.db_conn._execute_query("delete from video")
-        self.db_conn._execute_query("delete from channel")
+        self.db_conn.session.execute("delete from video")
+        self.db_conn.session.execute("delete from channel")
+        self.db_conn.session.commit()
 
     def test_list_videos_no_filter(self):
         ytcc = self.ytcc
@@ -111,21 +127,14 @@ class TestYtccPreparedVideos(TestCase):
         expected = {"tmpiM62pN", "tmpIXBgjd", "tmpwA0TjG", "tmpc5Y2pd", "tmpn1M1Oa"}
         self.assertSetEqual(set(titles), expected)
 
-    def test_list_videos_search_filter(self):
-        ytcc = self.ytcc
-        ytcc.set_search_filter("title:tmpIXBgjd")
-        videos = ytcc.list_videos()
-        self.assertEqual(len(videos), 1)
-        self.assertEqual(videos[0].title, "tmpIXBgjd")
-
     def test_list_videos_channel_filter(self):
         ytcc = self.ytcc
         ytcc.set_channel_filter(["Webdriver Torso"])
         videos = ytcc.list_videos()
         self.assertEqual(len(videos), 3)
-        self.assertEqual(videos[0].channelname, "Webdriver Torso")
-        self.assertEqual(videos[1].channelname, "Webdriver Torso")
-        self.assertEqual(videos[2].channelname, "Webdriver Torso")
+        self.assertEqual(videos[0].channel.displayname, "Webdriver Torso")
+        self.assertEqual(videos[1].channel.displayname, "Webdriver Torso")
+        self.assertEqual(videos[2].channel.displayname, "Webdriver Torso")
 
     def test_list_videos_watched_filter(self):
         ytcc = self.ytcc

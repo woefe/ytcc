@@ -23,6 +23,7 @@ from itertools import chain
 import datetime
 import feedparser
 import os
+import sqlalchemy
 import subprocess
 import youtube_dl
 from concurrent.futures import ThreadPoolExecutor as Pool
@@ -317,7 +318,7 @@ class Ytcc:
 
         try:
             self.db.add_channel(Channel(displayname=displayname, yt_channelid=yt_channelid))
-        except sqlite3.IntegrityError:
+        except sqlalchemy.exc.IntegrityError:
             raise DuplicateChannelException(f"Channel already subscribed: {displayname}")
 
     def import_channels(self, file: TextIO) -> None:
