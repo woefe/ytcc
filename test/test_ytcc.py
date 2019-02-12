@@ -170,12 +170,13 @@ class TestYtccPreparedVideos(TestCase):
 
     def test_play_video(self):
         ytcc = self.ytcc
-        ytcc.play_video(self.video_id)
+        videos = ytcc.get_videos([self.video_id])
+        ytcc.play_video(videos[0])
         self.assertTrue(ytcc.get_videos([self.video_id])[0].watched)
 
     def test_download_videos(self):
         ytcc = self.ytcc
-        success_ids = map(lambda a: a[0], filter(lambda a: a[1], ytcc.download_videos([self.video_id])))
+        success_ids = map(lambda a: a[0], filter(lambda a: a[1], ytcc.download_video([self.video_id])))
         ytcc.mark_watched(list(success_ids))
         self.assertTrue(ytcc.get_videos([self.video_id])[0].watched)
         self.assertTrue(os.path.isfile(os.path.join(ytcc.config.download_dir, "tmpIXBgjd.webm")))

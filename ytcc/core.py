@@ -78,6 +78,7 @@ class Ytcc:
     def __init__(self, override_cfg_file: Optional[str] = None) -> None:
         self.config = Config(override_cfg_file)
         self.db = Database(self.config.db_path)
+        self.video_id_filter = []
         self.channel_filter: List[str] = []
         self.date_begin_filter = 0.0
         self.date_end_filter = time.mktime(time.gmtime()) + 20
@@ -143,6 +144,17 @@ class Ytcc:
 
         self.include_watched_filter = True
 
+    def set_video_id_filter(self, ids: Optional[List[int]] = None) -> None:
+        """
+        Set the id filter.
+
+        This filter overrides all other filters.
+        :param ids: IDs to filter for
+        """
+        self.video_id_filter.clear()
+        if ids is not None:
+            self.video_id_filter.extend(ids)
+
     @staticmethod
     def _update_channel(channel: Channel) -> List[Dict[str, Any]]:
         yt_channel_id = channel.yt_channelid
@@ -170,13 +182,13 @@ class Ytcc:
 
         self.db.add_videos(videos)
 
-    def play_video(self, video_id: int, no_video: bool = False) -> bool:
+    def play_video(self, video: Video, audio_only: bool = False) -> bool:
         """Plays the video identified by the given video ID with the mpv video player and marks the
         video watched, if the player exits with an exit code of zero.
 
         Args:
-            video_id (int): The (local) video ID.
-            no_video (bool): If True only the audio is played
+            video (Video): The Video to play.
+            audio_only (bool): If True only the audio is played
 
         Returns (bool):
             False if the given video_id does not exist or the player closed with a non zero exit
@@ -184,10 +196,9 @@ class Ytcc:
         """
 
         no_video_flag = []
-        if no_video:
+        if audio_only:
             no_video_flag.append("--no-video")
 
-        video = self.db.resolve_video_id(video_id)
         if video:
             try:
                 mpv_result = subprocess.run(["mpv", *no_video_flag, *self.config.mpv_flags,
@@ -201,14 +212,13 @@ class Ytcc:
 
         return False
 
-    def download_videos(self, video_ids: Optional[List[int]] = None, path: str = "",
-                        no_video: bool = False) -> Iterable[Tuple[int, bool]]:
+    def download_video(self, video: Video, path: str = "", audio_only: bool = False) -> bool:
         """Downloads the videos identified by the given video IDs with youtube-dl.
 
         Args:
             video_ids ([int]): The (local) video IDs.
             path (str): The directory where the download is saved.
-            no_video (bool): If True only the audio is downloaded
+            audio_only (bool): If True only the audio is downloaded
 
         Returns:
             Generator of tuples indicating whether the a download was successful.
@@ -221,11 +231,6 @@ class Ytcc:
         else:
             download_dir = ""
 
-        if video_ids is None:
-            videos = self.list_videos()
-        else:
-            videos = self.get_videos(video_ids)
-
         conf = self.config.youtube_dl
 
         ydl_opts: Dict[str, Any] = {
@@ -237,7 +242,7 @@ class Ytcc:
             "ignoreerrors": False
         }
 
-        if no_video:
+        if audio_only:
             ydl_opts["format"] = "bestaudio/best"
             if conf.thumbnail:
                 ydl_opts["writethumbnail"] = True
@@ -257,17 +262,16 @@ class Ytcc:
                 ydl_opts["postprocessors"] = [{"key": "FFmpegEmbedSubtitle"}]
 
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            for video in videos:
-                url = self.get_youtube_video_url(video.yt_videoid)
-                try:
-                    info = ydl.extract_info(url, download=False, process=False)
-                    if info.get("is_live", False) and conf.skip_live_stream:
-                        yield video.id, False
+            url = self.get_youtube_video_url(video.yt_videoid)
+            try:
+                info = ydl.extract_info(url, download=False, process=False)
+                if info.get("is_live", False) and conf.skip_live_stream:
+                    return False
 
-                    ydl.process_ie_result(info, download=True)
-                    yield video.id, True
-                except youtube_dl.utils.YoutubeDLError:
-                    yield video.id, False
+                ydl.process_ie_result(info, download=True)
+                return True
+            except youtube_dl.utils.YoutubeDLError:
+                return False
 
     def add_channel(self, displayname: str, channel_url: str) -> None:
         """Subscribes to a channel.
@@ -350,6 +354,8 @@ class Ytcc:
         Returns (list):
             A list of ytcc.video.Video objects
         """
+        if self.video_id_filter:
+            return self.db.session.query(Video).filter(Video.id.in_(self.video_id_filter)).all()
 
         q = self.db.session.query(Video) \
             .join(Channel, Channel.yt_channelid == Video.publisher) \
@@ -364,26 +370,6 @@ class Ytcc:
 
         q = q.order_by(Channel.id, Video.publish_date)
         return q.all()
-
-    def mark_watched(self, video_ids: Optional[List[int]] = None) -> List[Video]:
-        """Marks the videos of channels specified in the filter as watched without playing them.
-        The filters are set by the set_*_filter methods.
-
-        Args:
-            video_ids ([int]): The video IDs to mark as watched.
-
-        Returns (list):
-            A list of ytcc.video.Video objects. Contains the videos that were marked watched.
-        """
-        if video_ids is None:
-            videos = self.list_videos()
-        else:
-            videos = self.get_videos(video_ids)
-
-        for v in videos:
-            v.watched = True
-
-        return videos
 
     def delete_channels(self, displaynames: List[str]) -> None:
         """Delete (or unsubscribe) channels.
@@ -402,18 +388,6 @@ class Ytcc:
         """
 
         return self.db.get_channels()
-
-    def get_videos(self, video_ids: Iterable[int]) -> List[Video]:
-        """Returns the ytcc.video.Video object for the given video IDs.
-
-        Args:
-            video_ids ([int]): the video IDs.
-
-        Returns (list)
-            A list of ytcc.video.Video objects
-        """
-
-        return list(self.db.resolve_video_ids(video_ids))
 
     def cleanup(self) -> None:
         """Deletes old videos from the database."""

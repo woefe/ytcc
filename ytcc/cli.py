@@ -196,8 +196,7 @@ class Interactive:
         return tag, hook_triggered
 
     def run(self) -> None:
-        quickselect = ytcc_core.config.quickselect
-        alphabet = set(quickselect.alphabet)
+        alphabet = set(ytcc_core.config.quickselect.alphabet)
         tags = self._prefix_codes(alphabet, len(self.videos))
         index = OrderedDict(zip(tags, self.videos))
 
@@ -216,15 +215,15 @@ class Interactive:
                 break
 
             if self.action == Action.MARK_WATCHED:
-                mark_watched([video.id])
+                video.watched = True
                 del index[tag]
             elif self.action == Action.DOWNLOAD_AUDIO:
                 print()
-                download([video.id], True)
+                download_video(video, True)
                 del index[tag]
             elif self.action == Action.DOWNLOAD_VIDEO:
                 print()
-                download([video.id], False)
+                download_video(video, False)
                 del index[tag]
             elif self.action == Action.PLAY_AUDIO:
                 print()
@@ -283,7 +282,7 @@ def maybe_print_description(description: str) -> None:
 def play(video: Video, audio_only: bool) -> None:
     print(_('Playing "{video.title}" by "{video.channel.displayname}"...').format(video=video))
     maybe_print_description(video.description)
-    if not ytcc_core.play_video(video.id, audio_only):
+    if not ytcc_core.play_video(video, audio_only):
         print()
         print(_("WARNING: The video player terminated with an error.\n"
                 "         The last video is not marked as watched!"))
@@ -291,10 +290,8 @@ def play(video: Video, audio_only: bool) -> None:
 
 
 def watch(video_ids: Optional[Iterable[int]] = None) -> None:
-    if not video_ids:
-        videos = ytcc_core.list_videos()
-    else:
-        videos = ytcc_core.get_videos(video_ids)
+    ytcc_core.set_video_id_filter(video_ids)
+    videos = ytcc_core.list_videos()
 
     if not videos:
         print(_("No videos to watch. No videos match the given criteria."))
@@ -345,13 +342,18 @@ def print_videos(videos: Iterable[Video],
 
 
 def mark_watched(video_ids: Optional[List[int]]) -> None:
-    marked_videos = ytcc_core.mark_watched(video_ids)
-    if not marked_videos:
+    ytcc_core.set_video_id_filter(video_ids)
+    videos = ytcc_core.list_videos()
+    if not videos:
         print(_("No videos were marked as watched"))
-    else:
-        print(_("Following videos were marked as watched:"))
-        print()
-        print_videos(marked_videos)
+        return
+
+    for v in videos:
+        v.watched = True
+
+    print(_("Following videos were marked as watched:"))
+    print()
+    print_videos(videos)
 
 
 def list_videos() -> None:
@@ -400,14 +402,19 @@ def import_channels(file: TextIO) -> None:
         print(_("The given file is not valid YouTube export file"))
 
 
-def download(video_ids: Optional[List[int]], no_video: bool) -> None:
-    stats = ytcc_core.download_videos(video_ids=video_ids, path=download_path,
-                                      no_video=no_video)
-    for id, success in stats:
-        if success:
-            ytcc_core.mark_watched([id])
-        else:
-            print(_("An Error occured while downloading the video"))
+def download_video(video: Video, audio_only: bool = False) -> None:
+    print(_('Downloading "{video.title}" by "{video.channel.displayname}"...').format(video=video))
+    success = ytcc_core.download_video(video=video, path=download_path, audio_only=audio_only)
+    if success:
+        video.watched = True
+    else:
+        print(_("An Error occured while downloading the video"))
+
+
+def download(video_ids: Optional[List[int]] = None) -> None:
+    ytcc_core.set_video_id_filter(video_ids)
+    for video in ytcc_core.list_videos():
+        download_video(video, no_video)
 
 
 def run() -> None:
@@ -531,7 +538,7 @@ def run() -> None:
     if args.download is not None:
         if option_executed:
             print()
-        download(args.download if args.download else None, no_video)
+        download(args.download if args.download else None)
         option_executed = True
 
     if args.watch is not None:
