@@ -199,7 +199,7 @@ class Interactive:
         return tag, hook_triggered
 
     def run(self) -> None:
-        alphabet = set(ytcc_core.config.quickselect.alphabet)
+        alphabet = set(ytcc_core.config.quickselect_alphabet)
         tags = self._prefix_codes(alphabet, len(self.videos))
         index = OrderedDict(zip(tags, self.videos))
 

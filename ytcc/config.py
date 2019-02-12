@@ -27,7 +27,8 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
     "YTCC": {
         "DBPath": "~/.local/share/ytcc/ytcc.db",
         "DownloadDir": "~/Downloads",
-        "mpvFlags": "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best"
+        "mpvFlags": "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best",
+        "alphabet": "sdfervghnuiojkl",
     },
     "youtube-dl": {
         "format": "bestvideo[height<=?1080]+bestaudio/best",
@@ -38,9 +39,6 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
         "subtitles": "off",
         "thumbnail": "on",
         "skipLiveStream": "yes"
-    },
-    "quickselect": {
-        "alphabet": "sdfervghnuiojkl"
     },
     "TableFormat": {
         "ID": "on",
@@ -104,20 +102,14 @@ class Config(object):
         self.download_dir = os.path.expanduser(config["YTCC"]["DownloadDir"])
         self.db_path = os.path.expanduser(config["YTCC"]["DBPath"])
         self.mpv_flags = re.compile("\\s+").split(config["YTCC"]["mpvFlags"])
+        self.quickselect_alphabet = config["YTCC"]["alphabet"]
         self.table_format = config["TableFormat"]
         self.youtube_dl = _YTDLConf(config["youtube-dl"])
-        self.quickselect = _QuickSelectConf(config["quickselect"])
 
     def __str__(self) -> str:
         strio = io.StringIO()
         self._config.write(strio)
         return strio.getvalue()
-
-
-class _QuickSelectConf(object):
-    def __init__(self, subconf: Any) -> None:
-        super(_QuickSelectConf, self).__init__()
-        self.alphabet = subconf["alphabet"]
 
 
 class _YTDLConf(object):
