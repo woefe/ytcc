@@ -25,7 +25,7 @@ import feedparser
 import os
 import subprocess
 import youtube_dl
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor as Pool
 from io import StringIO
 from lxml import etree
 from typing import Iterable, List, TextIO, Optional, Any, Dict, Tuple
@@ -142,26 +142,30 @@ class Ytcc:
 
         self.include_watched_filter = True
 
+    @staticmethod
+    def _update_channel(channel: Channel) -> List[Dict[str, Any]]:
+        yt_channel_id = channel.yt_channelid
+        feed = feedparser.parse(f"https://www.youtube.com/feeds/videos.xml?channel_id={yt_channel_id}")
+        return [
+            dict(
+                yt_videoid=str(entry.yt_videoid),
+                title=str(entry.title),
+                description=str(entry.description),
+                publisher=yt_channel_id,
+                publish_date=time.mktime(entry.published_parsed),
+                watched=False
+            )
+            for entry in feed.entries
+        ]
+
     def update_all(self) -> None:
         """Checks every channel for new videos"""
 
-        def _update_channel(yt_channel_id: str) -> Dict[str, Any]:
-            feed = feedparser.parse(f"https://www.youtube.com/feeds/videos.xml?channel_id={yt_channel_id}")
-            for entry in feed.entries:
-                yield dict(
-                    yt_videoid=str(entry.yt_videoid),
-                    title=str(entry.title),
-                    description=str(entry.description),
-                    publisher=yt_channel_id,
-                    publish_date=time.mktime(entry.published_parsed),
-                    watched=False
-                )
+        channels = self.db.get_channels()
+        num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 2
 
-        channel_ids = list(map(lambda c: str(c.yt_channelid), self.db.get_channels()))
-        num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 4
-
-        with ThreadPoolExecutor(num_workers) as pool:
-            videos = chain.from_iterable(pool.map(_update_channel, channel_ids))
+        with Pool(num_workers) as pool:
+            videos = chain.from_iterable(pool.map(self._update_channel, channels))
 
         self.db.add_videos(videos)
 
