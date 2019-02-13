@@ -63,7 +63,7 @@ class Database:
         self.session.commit()
 
     def get_channels(self) -> List[Channel]:
-        return self.session.query(Channel).all()
+        return self.session.query(Channel).order_by(Channel.displayname).all()
 
     def delete_channels(self, display_names: Iterable[str]):
         channels = self.session.query(Channel).filter(Channel.displayname.in_(display_names))
