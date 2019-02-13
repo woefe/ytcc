@@ -11,14 +11,20 @@ Install [ytcc](https://aur.archlinux.org/packages/ytcc/) from the AUR.
 Install package `ytcc`.
 
 ### Other distros
-Ytcc requires python 3.6 or later. Install dependencies: `python3-lxml`, `python3-feedparser`, `python3-setuptools`,
-`mpv`, `youtube-dl`, `gettext`.
+Ytcc requires python 3.6 or later. Install dependencies: `python3-sqlalchemy`, `python3-lxml`, `python3-feedparser`,
+`python3-setuptools`, `mpv`, `youtube-dl`, `gettext`.
 
 ```bash
 git clone https://github.com/woefe/ytcc.git
 cd ytcc
 sudo python3 setup.py install
 sudo install -Dm644 zsh/_ytcc /usr/share/zsh/site-functions/_ytcc
+```
+
+### Without installation
+You can start ytcc directly from the cloned repo, if all the requirements are installed.
+```bash
+./ytcc.py --help
 ```
 
 
@@ -42,11 +48,6 @@ ytcc -a "Jupiter Broadcasting" https://www.youtube.com/user/jupiterbroadcasting
 Import subscriptions from YouTube's subscription manager export.
 ```shell
 ytcc --import-from ~/Downloads/subscription_manager
-```
-
-Check for new videos, print a list of new videos and play them.
-```shell
-ytcc -ulw
 ```
 
 Download all videos from a channel that were published in July.
@@ -89,18 +90,12 @@ downloaddir = ~/Downloads
 # Parameters passed to mpv. Adjusting these might break ytcc!
 mpvflags = --really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best
 
-
-# Alternative interactive mode. Select videos with short tags instead of playing them in a pre-defined
-# order
-[quickselect]
-# Enables or disables quickselect mode.
-enabled = yes
-
-# Plays the selected video instantly, if disabled. Otherwise it shows the interactive prompt
-ask = yes
-
-# The character to use for the quickselect tags.
+# The characters to use for selecting videos in interactive mode.
 alphabet = sdfervghnuiojkl
+
+# Defines the order of video listings.
+# Possible options: channel, date, title, url, id, watched
+orderby = channel, date
 
 
 # Options for downloads
@@ -151,6 +146,19 @@ watched = off
 Create a new issue on the [github issue tracker](https://github.com/woefe/ytcc/issues/new). Describe the issue as
 detailed as possible. **Important**: do not forget to include the output of `ytcc --bug-report-info` in bug reports.
 
+## Development
+We recommend developing inside a virtualenv.
+
+1. Set up a [virtualenv](https://virtualenv.pypa.io/en/latest/)
+2. Install development dependencies: `pip install -r devrequirements.txt`
+
+Run the following commands before every pull request and fix the warnings or errors they produce.
+```bash
+mypy --ignore-missing-imports ytcc
+nosetests
+pylint ytcc
+pydocstyle ytcc
+```
 
 ## Translations
 Ytcc uses the GNU gettext utilities to manage localization.
