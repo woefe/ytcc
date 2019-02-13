@@ -33,7 +33,7 @@ setup(
     license=ytcc.__license__,
     scripts=['scripts/ytcc'],
     packages=['ytcc'],
-    install_requires=['lxml', 'feedparser>=5.2.0', 'python-dateutil', 'youtube_dl', 'SQLAlchemy'],
+    install_requires=['lxml', 'feedparser>=5.2.0', 'youtube_dl', 'SQLAlchemy'],
     package_data={
         'ytcc': compile_translations()
     },

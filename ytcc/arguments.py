@@ -16,12 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
-import datetime
 import os
 import argparse
 import ytcc
 import ytcc.cli
-from dateutil import parser as date_parser
+from datetime import datetime
 from gettext import gettext as _
 
 
@@ -33,9 +32,9 @@ def is_directory(string: str) -> str:
     return string
 
 
-def is_date(string: str) -> datetime.datetime:
+def is_date(string: str) -> datetime:
     try:
-        return date_parser.parse(string)
+        return datetime.strptime(string, "%Y-%m-%d")
     except ValueError:
         msg = _("{!r} is not a valid date").format(string)
         raise argparse.ArgumentTypeError(msg)

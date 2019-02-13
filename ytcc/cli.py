@@ -395,21 +395,21 @@ def run() -> None:
         import subprocess
         import feedparser
         import lxml.etree
-        import dateutil
+        import sqlalchemy
         print("---ytcc version---")
         print(ytcc.__version__)
         print()
         print("---youtube-dl version---")
         print(youtube_dl.version.__version__)
         print()
+        print("---SQLAlchemy version---")
+        print(sqlalchemy.__version__)
+        print()
         print("---feedparser version---")
         print(feedparser.__version__)
         print()
         print("---lxml version---")
         print(lxml.etree.__version__)
-        print()
-        print("---dateutil version---")
-        print(dateutil.__version__)
         print()
         print("---python version---")
         print(sys.version)
