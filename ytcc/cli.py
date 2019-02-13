@@ -16,30 +16,62 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
+# Allow lowercase constant names and global statement
+# pylint: disable=W0603
+
 import itertools
 import sys
 from collections import OrderedDict
 
+import inspect
 import shutil
 import signal
 import textwrap as wrap
 from datetime import datetime
 from enum import Enum
 from gettext import gettext as _
-from typing import List, Iterable, Optional, TextIO, Any, Set, Tuple
+from typing import List, Iterable, Optional, TextIO, Any, Set, Tuple, Callable, NamedTuple, Dict
 
 from ytcc import core, arguments, getkey
 from ytcc.database import Video
 from ytcc.utils import unpack_optional
 
-ytcc_core: core.Ytcc = None
-interactive_enabled = True
-description_enabled = True
-no_video = False
-download_path = ""
-header_enabled = True
-table_header = [_("ID"), _("Date"), _("Channel"), _("Title"), _("URL"), _("Watched")]
-column_filter = []
+try:
+    ytcc_core = core.Ytcc()  # pylint: disable=C0103
+    COLUMN_FILTER = [ytcc_core.config.table_format.getboolean("ID"),
+                     ytcc_core.config.table_format.getboolean("Date"),
+                     ytcc_core.config.table_format.getboolean("Channel"),
+                     ytcc_core.config.table_format.getboolean("Title"),
+                     ytcc_core.config.table_format.getboolean("URL"),
+                     ytcc_core.config.table_format.getboolean("Watched")]
+except core.BadConfigException:
+    print(_("The configuration file has errors!"))
+    exit(1)
+
+INTERACTIVE_ENABLED = True
+DESCRIPTION_ENABLED = True
+NO_VIDEO = False
+DOWNLOAD_PATH = ""
+HEADER_ENABLED = True
+TABLE_HEADER = [_("ID"), _("Date"), _("Channel"), _("Title"), _("URL"), _("Watched")]
+_REGISTERED_OPTIONS: Dict[str, "Option"] = dict()
+
+
+def register_option(option_name, exit=False, is_action=True):  # pylint: disable=redefined-builtin
+    def decorator(func):
+        nargs = len(inspect.signature(func).parameters)
+        _REGISTERED_OPTIONS[option_name] = Option(
+            run=func, exit=exit, nargs=nargs, is_action=is_action)
+        return func
+
+    return decorator
+
+
+class Option(NamedTuple):
+    run: Callable
+    exit: bool
+    nargs: int
+    is_action: bool
 
 
 class Action(Enum):
@@ -211,13 +243,8 @@ class Interactive:
                 break
 
 
-def update_all() -> None:
-    print(_("Updating channels..."))
-    ytcc_core.update_all()
-
-
 def maybe_print_description(description: Optional[str]) -> None:
-    if description_enabled and description is not None:
+    if DESCRIPTION_ENABLED and description is not None:
         columns = shutil.get_terminal_size().columns
         delimiter = "=" * columns
         lines = description.splitlines()
@@ -242,25 +269,12 @@ def play(video: Video, audio_only: bool) -> None:
         print()
 
 
-def watch(video_ids: Optional[Iterable[int]] = None) -> None:
-    ytcc_core.set_video_id_filter(video_ids)
-    videos = ytcc_core.list_videos()
-
-    if not videos:
-        print(_("No videos to watch. No videos match the given criteria."))
-    elif not interactive_enabled:
-        for video in videos:
-            play(video, no_video)
-    else:
-        Interactive(videos).run()
-
-
 def table_print(header: List[str], table: List[List[str]]) -> None:
     transposed = zip(header, *table)
     col_widths = [max(map(len, column)) for column in transposed]
     table_format = "│".join(itertools.repeat(" {{:<{}}} ", len(header))).format(*col_widths)
 
-    if header_enabled:
+    if HEADER_ENABLED:
         header_line = "┼".join("─" * (width + 2) for width in col_widths)
         print(table_format.format(*header))
         print(header_line)
@@ -272,7 +286,7 @@ def table_print(header: List[str], table: List[List[str]]) -> None:
 def print_videos(videos: Iterable[Video],
                  quickselect_column: Optional[Iterable[str]] = None) -> None:
     def row_filter(row: Iterable[str]) -> List[str]:
-        return list(itertools.compress(row, column_filter))
+        return list(itertools.compress(row, COLUMN_FILTER))
 
     def video_to_list(video: Video) -> List[str]:
         timestamp = unpack_optional(video.publish_date, lambda: 0)
@@ -292,15 +306,23 @@ def print_videos(videos: Iterable[Video],
 
     if quickselect_column is None:
         table = [row_filter(video_to_list(v)) for v in videos]
-        table_print(row_filter(table_header), table)
+        table_print(row_filter(TABLE_HEADER), table)
     else:
         table = [concat_row(k, v) for k, v in zip(quickselect_column, videos)]
-        header = row_filter(table_header)
+        header = row_filter(TABLE_HEADER)
         header.insert(0, "TAG")
         table_print(header, table)
 
 
-def mark_watched(video_ids: Optional[List[int]]) -> None:
+def download_video(video: Video, audio_only: bool = False) -> None:
+    print(_('Downloading "{video.title}" by "{video.channel.displayname}"...').format(video=video))
+    success = ytcc_core.download_video(video=video, path=DOWNLOAD_PATH, audio_only=audio_only)
+    if not success:
+        print(_("An Error occured while downloading the video"))
+
+
+@register_option("mark_watched")
+def mark_watched(video_ids: List[int]) -> None:
     ytcc_core.set_video_id_filter(video_ids)
     videos = ytcc_core.list_videos()
     if not videos:
@@ -315,6 +337,34 @@ def mark_watched(video_ids: Optional[List[int]]) -> None:
     print_videos(videos)
 
 
+@register_option("watch")
+def watch(video_ids: Iterable[int]) -> None:
+    ytcc_core.set_video_id_filter(video_ids)
+    videos = ytcc_core.list_videos()
+
+    if not videos:
+        print(_("No videos to watch. No videos match the given criteria."))
+    elif not INTERACTIVE_ENABLED:
+        for video in videos:
+            play(video, NO_VIDEO)
+    else:
+        Interactive(videos).run()
+
+
+@register_option("download")
+def download(video_ids: List[int]) -> None:
+    ytcc_core.set_video_id_filter(video_ids)
+    for video in ytcc_core.list_videos():
+        download_video(video, NO_VIDEO)
+
+
+@register_option("update")
+def update_all() -> None:
+    print(_("Updating channels..."))
+    ytcc_core.update_all()
+
+
+@register_option("list")
 def list_videos() -> None:
     videos = ytcc_core.list_videos()
     if not videos:
@@ -323,6 +373,7 @@ def list_videos() -> None:
         print_videos(videos)
 
 
+@register_option("list_channels")
 def print_channels() -> None:
     channels = ytcc_core.get_channels()
     if not channels:
@@ -332,6 +383,7 @@ def print_channels() -> None:
             print(channel.displayname)
 
 
+@register_option("add_channel", exit=True)
 def add_channel(name: str, channel_url: str) -> None:
     try:
         ytcc_core.add_channel(name, channel_url)
@@ -343,11 +395,18 @@ def add_channel(name: str, channel_url: str) -> None:
         print(_("The channel {!r} does not exist").format(channel_url))
 
 
+@register_option("delete_channel", exit=True)
+def delete_channel(channels: List[str]) -> None:
+    ytcc_core.delete_channels(channels)
+
+
+@register_option("cleanup", exit=True)
 def cleanup() -> None:
     print(_("Cleaning up database..."))
     ytcc_core.cleanup()
 
 
+@register_option("import_from", exit=True)
 def import_channels(file: TextIO) -> None:
     print(_("Importing..."))
     try:
@@ -361,165 +420,148 @@ def import_channels(file: TextIO) -> None:
         print(_("The given file is not valid YouTube export file"))
 
 
-def download_video(video: Video, audio_only: bool = False) -> None:
-    print(_('Downloading "{video.title}" by "{video.channel.displayname}"...').format(video=video))
-    success = ytcc_core.download_video(video=video, path=download_path, audio_only=audio_only)
-    if not success:
-        print(_("An Error occured while downloading the video"))
+@register_option("version", exit=True)
+def version() -> None:
+    import ytcc
+    print("ytcc version " + ytcc.__version__)
+    print()
+    print("Copyright (C) 2015-2018  " + ytcc.__author__)
+    print("This program comes with ABSOLUTELY NO WARRANTY; This is free software, and you")
+    print("are welcome to redistribute it under certain conditions.  See the GNU General ")
+    print("Public Licence for details.")
 
 
-def download(video_ids: Optional[List[int]] = None) -> None:
-    ytcc_core.set_video_id_filter(video_ids)
-    for video in ytcc_core.list_videos():
-        download_video(video, no_video)
+@register_option("bug_report_info", exit=True)
+def bug_report_info() -> None:
+    import ytcc
+    import youtube_dl.version
+    import subprocess
+    import feedparser
+    import lxml.etree
+    import sqlalchemy
+    print("---ytcc version---")
+    print(ytcc.__version__)
+    print()
+    print("---youtube-dl version---")
+    print(youtube_dl.version.__version__)
+    print()
+    print("---SQLAlchemy version---")
+    print(sqlalchemy.__version__)
+    print()
+    print("---feedparser version---")
+    print(feedparser.__version__)
+    print()
+    print("---lxml version---")
+    print(lxml.etree.__version__)
+    print()
+    print("---python version---")
+    print(sys.version)
+    print()
+    print("---mpv version---")
+    subprocess.run(["mpv", "--version"])
+    print()
+    print("---config dump---")
+    print(ytcc_core.config)
+
+
+@register_option("disable_interactive", is_action=False)
+def disable_interactive() -> None:
+    global INTERACTIVE_ENABLED
+    INTERACTIVE_ENABLED = False
+
+
+@register_option("no_description", is_action=False)
+def disable_description() -> None:
+    global DESCRIPTION_ENABLED
+    DESCRIPTION_ENABLED = False
+
+
+@register_option("no_header", is_action=False)
+def disable_header() -> None:
+    global HEADER_ENABLED
+    HEADER_ENABLED = False
+
+
+@register_option("no_video", is_action=False)
+def disable_video() -> None:
+    global NO_VIDEO
+    NO_VIDEO = True
+
+
+@register_option("path", is_action=False)
+def set_download_path(path: str) -> None:
+    global DOWNLOAD_PATH
+    DOWNLOAD_PATH = path
+
+
+@register_option("columns", is_action=False)
+def set_columns(cols: List["str"]) -> None:
+    global COLUMN_FILTER
+    if cols == ["all"]:
+        COLUMN_FILTER = [True] * len(TABLE_HEADER)
+    else:
+        COLUMN_FILTER = [f in cols for f in TABLE_HEADER]
+
+
+@register_option("include_watched", is_action=False)
+def set_include_watched_filter() -> None:
+    ytcc_core.set_include_watched_filter()
+    COLUMN_FILTER[5] = True
+
+
+@register_option("channel_filter", is_action=False)
+def set_channel_filter(channels: List[str]) -> None:
+    ytcc_core.set_channel_filter(channels)
+
+
+@register_option("since", is_action=False)
+def set_date_begin_filter(begin: datetime) -> None:
+    ytcc_core.set_date_begin_filter(begin)
+
+
+@register_option("to", is_action=False)
+def set_date_end_filter(end: datetime) -> None:
+    ytcc_core.set_date_end_filter(end)
 
 
 def run() -> None:
-    args = arguments.get_args()
-    option_executed = False
+    args = vars(arguments.get_args())
+    option_names = [
+        "version", "bug_report_info", "add_channel", "delete_channel", "cleanup", "import_from",
 
-    if args.version:
-        import ytcc
-        print("ytcc version " + ytcc.__version__)
-        print()
-        print("Copyright (C) 2015-2018  " + ytcc.__author__)
-        print("This program comes with ABSOLUTELY NO WARRANTY; This is free software, and you")
-        print("are welcome to redistribute it under certain conditions.  See the GNU General ")
-        print("Public Licence for details.")
-        return
+        "disable_interactive", "no_description", "no_header", "no_video", "path",
+        "include_watched", "columns", "channel_filter", "since", "to", "list_channels", "update",
+        "list", "download", "watch", "mark_watched"
+    ]
 
-    if args.bug_report_info:
-        import ytcc
-        import youtube_dl.version
-        import subprocess
-        import feedparser
-        import lxml.etree
-        import sqlalchemy
-        print("---ytcc version---")
-        print(ytcc.__version__)
-        print()
-        print("---youtube-dl version---")
-        print(youtube_dl.version.__version__)
-        print()
-        print("---SQLAlchemy version---")
-        print(sqlalchemy.__version__)
-        print()
-        print("---feedparser version---")
-        print(feedparser.__version__)
-        print()
-        print("---lxml version---")
-        print(lxml.etree.__version__)
-        print()
-        print("---python version---")
-        print(sys.version)
-        print()
-        print("---mpv version---")
-        subprocess.run(["mpv", "--version"])
-        print()
-        print("---config dump---")
-        print(ytcc_core.config)
-        return
+    action_executed = False
+    for option_name in option_names:
+        option = _REGISTERED_OPTIONS.get(option_name)
+        arg = args.get(option_name)
+        if option is not None and (arg or arg == []):
+            if option.nargs == 0:
+                option.run()
+            elif option.nargs == 1:
+                option.run(arg)
+            else:
+                option.run(*arg)
 
-    if args.disable_interactive:
-        global interactive_enabled
-        interactive_enabled = False
+            action_executed = action_executed or option.is_action
 
-    if args.no_description:
-        global description_enabled
-        description_enabled = False
+            if option.exit:
+                return
 
-    if args.no_header:
-        global header_enabled
-        header_enabled = False
-
-    if args.no_video:
-        global no_video
-        no_video = True
-
-    if args.path:
-        global download_path
-        download_path = args.path
-
-    if args.include_watched:
-        ytcc_core.set_include_watched_filter()
-        global column_filter
-        column_filter[5] = True
-
-    if args.columns:
-        if args.columns == ["all"]:
-            column_filter = [True] * len(table_header)
-        else:
-            column_filter = [f in args.columns for f in table_header]
-
-    if args.channel_filter:
-        ytcc_core.set_channel_filter(args.channel_filter)
-
-    if args.since:
-        ytcc_core.set_date_begin_filter(args.since)
-
-    if args.to:
-        ytcc_core.set_date_end_filter(args.to)
-
-    if args.import_from:
-        import_channels(args.import_from)
-        option_executed = True
-
-    if args.cleanup:
-        cleanup()
-        option_executed = True
-
-    if args.add_channel:
-        add_channel(*args.add_channel)
-        option_executed = True
-
-    if args.list_channels:
-        print_channels()
-        option_executed = True
-
-    if args.delete_channel:
-        ytcc_core.delete_channels(args.delete_channel)
-        option_executed = True
-
-    if args.update:
-        if option_executed:
-            print()
-        update_all()
-        option_executed = True
-
-    if args.list:
-        if option_executed:
-            print()
-        list_videos()
-        option_executed = True
-
-    if args.download is not None:
-        if option_executed:
-            print()
-        download(args.download if args.download else None)
-        option_executed = True
-
-    if args.watch is not None:
-        if option_executed:
-            print()
-        watch(args.watch)
-        option_executed = True
-
-    if args.mark_watched is not None:
-        if option_executed:
-            print()
-        mark_watched(args.mark_watched if args.mark_watched else None)
-        option_executed = True
-
-    if not option_executed:
+    if not action_executed:
         update_all()
         print()
-        if not interactive_enabled:
+        if not INTERACTIVE_ENABLED:
             list_videos()
             print()
-        watch()
+        watch([])
 
 
 def register_signal_handlers() -> None:
+    # pylint: disable=unused-argument
     def handler(signum: Any, frame: Any) -> None:
         ytcc_core.close()
         print()
@@ -530,20 +572,6 @@ def register_signal_handlers() -> None:
 
 
 def main() -> None:
-    global ytcc_core, column_filter
-
-    try:
-        ytcc_core = core.Ytcc()
-        column_filter = [ytcc_core.config.table_format.getboolean("ID"),
-                         ytcc_core.config.table_format.getboolean("Date"),
-                         ytcc_core.config.table_format.getboolean("Channel"),
-                         ytcc_core.config.table_format.getboolean("Title"),
-                         ytcc_core.config.table_format.getboolean("URL"),
-                         ytcc_core.config.table_format.getboolean("Watched")]
-    except core.BadConfigException:
-        print(_("The configuration file has errors!"))
-        exit(1)
-
     register_signal_handlers()
     run()
     ytcc_core.close()
