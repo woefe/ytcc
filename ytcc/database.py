@@ -85,9 +85,7 @@ class Database:
         return self.session.query(Video).get(video_id)
 
     def cleanup(self) -> None:
-        """Deletes all videos from all channels, but keeps the 30 latest videos of every channel.
-        """
-
+        """Delete all videos from all channels, but keeps the 30 latest videos of every channel."""
         sql = """
             delete from video
             where id in (

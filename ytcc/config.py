@@ -56,21 +56,20 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
 
 
 def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigParser:
-    """Searches for the config file in
-        0. override_cfg_file
-        1. $XDG_CONFIG_HOME/ytcc/ytcc.conf
-        2. ~/.config/ytcc/ytcc.conf
-        3. ~/.ytcc.conf
+    """Read config file from several locations.
+
+    Searches at following locations:
+    1. ``override_cfg_file``
+    2. ``$XDG_CONFIG_HOME/ytcc/ytcc.conf``
+    3. ``~/.config/ytcc/ytcc.conf``
+    4. ``~/.ytcc.conf``
+
     If no config file is found in these three locations, a default config file is created in
-    '~/.config/ytcc/ytcc.conf'
+    ``~/.config/ytcc/ytcc.conf``
 
-    Args:
-        override_cfg_file (str): reads the config from the given file
-
-    Returns (configparser.ConfigParser):
-        the config
+    :param override_cfg_file: Read the config from this file.
+    :return: The dict-like config object
     """
-
     config_dir = os.getenv("XDG_CONFIG_HOME")
     if not config_dir:
         config_dir = "~/.config"
@@ -97,7 +96,7 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
 
 
 class Config:
-    """Handles the ini-based configuration file"""
+    """Handles the ini-based configuration file."""
 
     def __init__(self, override_cfg_file: Optional[str] = None) -> None:
         super(Config, self).__init__()

@@ -1,7 +1,7 @@
 """Exceptions in their own module to avoid circular imports."""
 
 class YtccException(Exception):
-    """A general parent class of all Exceptions that are used in Ytcc"""
+    """A general parent class of all Exceptions that are used in Ytcc."""
 
 
 class BadURLException(YtccException):

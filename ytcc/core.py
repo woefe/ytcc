@@ -41,12 +41,13 @@ from ytcc.utils import unpack_optional
 
 
 class Ytcc:
-    """The Ytcc class handles updating the YouTube RSS feed and playing and listing/filtering
-    videos. Filters can be set with with following methods:
-        set_channel_filter
-        set_date_begin_filter
-        set_date_end_filter
-        set_include_watched_filter
+    """The Ytcc class handles updating the RSS feeds and playing and listing/filtering videos.
+
+    Filters can be set with with following methods:
+    * ``set_channel_filter``
+    * ``set_date_begin_filter``
+    * ``set_date_end_filter``
+    * ``set_include_watched_filter``
     """
 
     def __init__(self, override_cfg_file: Optional[str] = None) -> None:
@@ -65,17 +66,15 @@ class Ytcc:
         self.database.__exit__(exc_type, exc_val, exc_tb)
 
     def close(self) -> None:
+        """Close open resources like the database connection."""
         self.database.close()
 
     @staticmethod
     def get_youtube_video_url(yt_videoid: Optional[str]) -> str:
-        """Returns the YouTube URL for the given youtube video ID
+        """Return the YouTube URL for the given youtube video ID.
 
-        Args:
-            yt_videoid (str): the YouTube video ID
-
-        Returns (str):
-            the YouTube URL for the given youtube video ID
+        :param yt_videoid:  The YouTube video ID.
+        :return: The YouTube URL for the given youtube video ID.
         """
         if yt_videoid is None:
             raise YtccException("Video id is none!")
@@ -83,49 +82,46 @@ class Ytcc:
         return f"https://www.youtube.com/watch?v={yt_videoid}"
 
     def set_channel_filter(self, channel_filter: List[str]) -> None:
-        """Sets the channel filter. The results when listing videos will only include videos by
-        channels specifide in the filter
+        """Set the channel filter.
 
-        Args:
-            channel_filter (list): the list of channel names
+        The results when listing videos will only include videos by channels specified in the
+        filter.
+
+        :param channel_filter: The list of channel names.
         """
-
         self.channel_filter.clear()
         self.channel_filter.extend(channel_filter)
 
     def set_date_begin_filter(self, begin: datetime.datetime) -> None:
-        """Sets the time filter. The results when listing videos will only include videos newer
-        than the given time.
+        """Set the time filter.
 
-        Args:
-            begin (datetime.datetime): the lower bound of the time filter
+        The results when listing videos will only include videos newer than the given time.
+
+        :param begin: The lower bound of the time filter.
         """
-
         self.date_begin_filter = begin.timestamp()
 
     def set_date_end_filter(self, end: datetime.datetime) -> None:
-        """Sets the time filter. The results when listing videos will only include videos older
-        than the given time.
+        """Set the time filter.
 
-        Args:
-            end (datetime.datetime): the upper bound of the time filter
+        The results when listing videos will only include videos older than the given time.
+
+        :param end: The upper bound of the time filter.
         """
-
         self.date_end_filter = end.timestamp()
 
     def set_include_watched_filter(self) -> None:
-        """Sets "watched video" filter. The results when listing videos will include both watched
-        and unwatched videos.
-        """
+        """Set the "watched video" filter.
 
+        The results when listing videos will include both watched and unwatched videos.
+        """
         self.include_watched_filter = True
 
     def set_video_id_filter(self, ids: Optional[Iterable[int]] = None) -> None:
-        """
-        Set the id filter.
+        """Set the id filter.
 
         This filter overrides all other filters.
-        :param ids: IDs to filter for
+        :param ids: IDs to filter for.
         """
         self.video_id_filter.clear()
         if ids is not None:
@@ -149,8 +145,7 @@ class Ytcc:
         ]
 
     def update_all(self) -> None:
-        """Checks every channel for new videos"""
-
+        """Check every channel for new videos."""
         channels = self.database.get_channels()
         num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 2
 
@@ -160,18 +155,16 @@ class Ytcc:
         self.database.add_videos(videos)
 
     def play_video(self, video: Video, audio_only: bool = False) -> bool:
-        """Plays the video identified by the given video ID with the mpv video player and marks the
-        video watched, if the player exits with an exit code of zero.
+        """Play the given video with the mpv video player and mark the the video as watched.
 
-        Args:
-            video (Video): The Video to play.
-            audio_only (bool): If True only the audio is played
+        The video will not be marked as watched, if the player exits unexpectedly (i.e. exits with
+        non-zero exit code) or another error occurs.
 
-        Returns (bool):
-            False if the given video_id does not exist or the player closed with a non zero exit
-            code. True if the video was played successfully.
+        :param video: The video to play.
+        :param audio_only: If True, only the audio track of the video is played
+        :return: False if the given video_id does not exist or the player closed with a non-zero
+         exit code. True if the video was played successfully.
         """
-
         no_video_flag = []
         if audio_only:
             no_video_flag.append("--no-video")
@@ -192,15 +185,13 @@ class Ytcc:
     def download_video(self, video: Video, path: str = "", audio_only: bool = False) -> bool:
         """Download the given video with youtube-dl and mark it as watched.
 
-        Args:
-            video_ids ([int]): The (local) video IDs.
-            path (str): The directory where the download is saved.
-            audio_only (bool): If True only the audio is downloaded
+        If the path is not given, the path is read from the config file.
 
-        Returns:
-            Generator of tuples indicating whether the a download was successful.
+        :param video: The video to download.
+        :param path: The directory where the download is saved.
+        :param audio_only: If True, only the audio track is downloaded.
+        :return: True, if the video was downloaded successfully. False otherwise.
         """
-
         if path:
             download_dir = path
         elif self.config.download_dir:
@@ -252,17 +243,13 @@ class Ytcc:
                 return False
 
     def add_channel(self, displayname: str, channel_url: str) -> None:
-        """Subscribes to a channel.
+        """Subscribe to a channel.
 
-        Args:
-            displayname (str): a human readable name of the channel.
-            channel_url (str): the url to the channel's home page.
-
-        Raises:
-            ChannelDoesNotExistException: when the given URL does not exist.
-            DuplicateChannelException: when trying to subscribe to a channel the second (or more)
-                                       time.
-            BadURLException: when a given URL does not refer to a YouTube channel.
+        :param displayname: A human readable name of the channel.
+        :param channel_url: The url to a page that can identify the channel.
+        :raises ChannelDoesNotExistException: If the given URL does not exist.
+        :raises DuplicateChannelException: If the channel already exists in the database.
+        :raises BadURLException: If the given URL does not refer to a YouTube channel.
         """
         known_yt_domains = ["youtu.be", "youtube.com", "youtubeeducation.com", "youtubekids.com",
                             "youtube-nocookie.com", "yt.be", "ytimg.com"]
@@ -304,12 +291,10 @@ class Ytcc:
             raise DuplicateChannelException(f"Channel already subscribed: {displayname}")
 
     def import_channels(self, file: TextIO) -> None:
-        """Imports all channels from YouTube's subsciption export file.
+        """Import all channels from YouTube's subscription export file.
 
-        Args:
-            file (TextIOWrapper): the opened file
+        :param file: The file to read from.
         """
-
         def _create_channel(elem: etree.Element) -> Channel:
             rss_url = urlparse(elem.attrib["xmlUrl"])
             query_dict = parse_qs(rss_url.query, keep_blank_values=False)
@@ -328,10 +313,9 @@ class Ytcc:
         self.database.add_channels((_create_channel(e) for e in elements))
 
     def list_videos(self) -> List[Video]:
-        """Returns a list of videos that match the filters set by the set_*_filter methods.
+        """Return a list of videos that match the filters set by the set_*_filter methods.
 
-        Returns (list):
-            A list of ytcc.video.Video objects
+        :return: A list of videos.
         """
         if self.video_id_filter:
             return self.database.session.query(Video) \
@@ -356,22 +340,17 @@ class Ytcc:
     def delete_channels(self, displaynames: List[str]) -> None:
         """Delete (or unsubscribe) channels.
 
-        Args:
-            displaynames (list): A list of channels' displaynames.
+        :param displaynames: The names of channels to delete.
         """
-
         self.database.delete_channels(displaynames)
 
     def get_channels(self) -> List[Channel]:
-        """Returns a list of all subscribed channels.
+        """Get the list of all subscribed channels.
 
-        Returns ([str]):
-            A list of channel names.
+        :return: A list of channel names.
         """
-
         return self.database.get_channels()
 
     def cleanup(self) -> None:
-        """Deletes old videos from the database."""
-
+        """Delete old videos from the database."""
         self.database.cleanup()
