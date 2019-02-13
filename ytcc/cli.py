@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
-# Allow lowercase constant names and global statement
+# Allow global statement
 # pylint: disable=W0603
 
 import itertools
@@ -447,7 +447,7 @@ def bug_report_info() -> None:
     print(youtube_dl.version.__version__)
     print()
     print("---SQLAlchemy version---")
-    print(sqlalchemy.__version__)
+    print(sqlalchemy.__version__)  # type: ignore
     print()
     print("---feedparser version---")
     print(feedparser.__version__)

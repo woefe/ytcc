@@ -83,7 +83,7 @@ def getkey() -> str:
     """Read a single character from stdin without the need to press enter.
 
     If the key press caused an escape sequence, return the sequence (see Keys). If the sequence
-     could not be understood, return "Unknown Sequence".
+    could not be understood, return "Unknown Sequence".
 
     :return: Character read from stdin.
     """

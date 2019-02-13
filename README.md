@@ -154,7 +154,7 @@ We recommend developing inside a virtualenv.
 
 Run the following commands before every pull request and fix the warnings or errors they produce.
 ```bash
-mypy --ignore-missing-imports ytcc
+mypy ytcc
 nosetests
 pylint ytcc
 pydocstyle ytcc
