@@ -19,10 +19,9 @@
 import argparse
 import os
 from datetime import datetime
-from gettext import gettext as _
 
-import ytcc
 import ytcc.cli
+from ytcc import _
 
 
 def is_directory(string: str) -> str:

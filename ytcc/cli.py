@@ -29,10 +29,9 @@ import signal
 import textwrap as wrap
 from datetime import datetime
 from enum import Enum
-from gettext import gettext as _
 from typing import List, Iterable, Optional, TextIO, Any, Set, Tuple, Callable, NamedTuple, Dict
 
-from ytcc import core, arguments, getkey
+from ytcc import core, arguments, getkey, _
 from ytcc.database import Video
 from ytcc.exceptions import BadConfigException, ChannelDoesNotExistException, \
     DuplicateChannelException, BadURLException
@@ -235,7 +234,7 @@ class Interactive:
                     " <Enter> Accept first video.\n"
                     "<CTRL+D> Exit.\n"
                 ))
-                input("Press Enter to continue")
+                input(_("Press Enter to continue"))
             elif self.action == Action.REFRESH:
                 self.action = self.previous_action
                 print("\033[2J\033[1;1H", end="")

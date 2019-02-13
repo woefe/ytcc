@@ -41,4 +41,6 @@ def _get_translations_path() -> str:
     return sys.prefix + "/share/locale"
 
 
-gettext.install('ytcc', _get_translations_path())
+gettext.bindtextdomain("ytcc", _get_translations_path())
+gettext.textdomain("ytcc")
+_ = gettext.gettext
