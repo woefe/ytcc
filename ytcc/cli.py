@@ -34,6 +34,8 @@ from typing import List, Iterable, Optional, TextIO, Any, Set, Tuple, Callable, 
 
 from ytcc import core, arguments, getkey
 from ytcc.database import Video
+from ytcc.exceptions import BadConfigException, ChannelDoesNotExistException, \
+    DuplicateChannelException, BadURLException
 from ytcc.utils import unpack_optional
 
 try:
@@ -44,7 +46,7 @@ try:
                      ytcc_core.config.table_format.getboolean("Title"),
                      ytcc_core.config.table_format.getboolean("URL"),
                      ytcc_core.config.table_format.getboolean("Watched")]
-except core.BadConfigException:
+except BadConfigException:
     print(_("The configuration file has errors!"))
     exit(1)
 
@@ -387,11 +389,11 @@ def print_channels() -> None:
 def add_channel(name: str, channel_url: str) -> None:
     try:
         ytcc_core.add_channel(name, channel_url)
-    except core.BadURLException:
+    except BadURLException:
         print(_("{!r} is not a valid YouTube URL").format(channel_url))
-    except core.DuplicateChannelException:
+    except DuplicateChannelException:
         print(_("You are already subscribed to {!r}").format(name))
-    except core.ChannelDoesNotExistException:
+    except ChannelDoesNotExistException:
         print(_("The channel {!r} does not exist").format(channel_url))
 
 

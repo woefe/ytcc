@@ -23,10 +23,8 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Optional, Iterable
 
-from sqlalchemy import Column
-
-import ytcc
 from ytcc.database import Video, Channel
+from ytcc.exceptions import BadConfigException
 
 DEFAULTS: Dict[str, Dict[str, Any]] = {
     "YTCC": {
@@ -113,7 +111,7 @@ class Config:
         self.youtube_dl = _YTDLConf(config["youtube-dl"])
         self.order_by = list(self.init_order())
 
-    def init_order(self) -> Iterable[Column]:
+    def init_order(self) -> Iterable[Any]:
         col_mapping = {
             "id": Video.id,
             "date": Video.publish_date,
@@ -127,7 +125,7 @@ class Config:
             if column is not None:
                 yield column
             else:
-                raise ytcc.core.BadConfigException(f"Cannot order by {key.strip()}")
+                raise BadConfigException(f"Cannot order by {key.strip()}")
 
     def __str__(self) -> str:
         strio = io.StringIO()
