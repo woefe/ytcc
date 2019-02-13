@@ -29,10 +29,10 @@ from gettext import gettext as _
 from typing import List, Iterable, Optional, TextIO, Any, Set, Tuple
 
 from ytcc import core, arguments, getkey
-from ytcc.db import Video
+from ytcc.database import Video
 from ytcc.utils import unpack_optional
 
-ytcc_core = None
+ytcc_core: core.Ytcc = None
 interactive_enabled = True
 description_enabled = True
 no_video = False
@@ -87,14 +87,14 @@ class Interactive:
             return codes[:count]
 
         first = codes.pop(0)
-        it = iter(alphabet)
+        iterator = iter(alphabet)
 
         while len(codes) < count:
             try:
-                char = next(it)
+                char = next(iterator)
                 codes.append(first + char)
             except StopIteration:
-                it = iter(alphabet)
+                iterator = iter(alphabet)
                 first = codes.pop(0)
         return codes
 
@@ -217,7 +217,6 @@ def update_all() -> None:
 
 
 def maybe_print_description(description: Optional[str]) -> None:
-    global description_enabled
     if description_enabled and description is not None:
         columns = shutil.get_terminal_size().columns
         delimiter = "=" * columns
@@ -250,8 +249,8 @@ def watch(video_ids: Optional[Iterable[int]] = None) -> None:
     if not videos:
         print(_("No videos to watch. No videos match the given criteria."))
     elif not interactive_enabled:
-        for v in videos:
-            play(v, no_video)
+        for video in videos:
+            play(video, no_video)
     else:
         Interactive(videos).run()
 
@@ -308,8 +307,8 @@ def mark_watched(video_ids: Optional[List[int]]) -> None:
         print(_("No videos were marked as watched"))
         return
 
-    for v in videos:
-        v.watched = True
+    for video in videos:
+        video.watched = True
 
     print(_("Following videos were marked as watched:"))
     print()
@@ -450,7 +449,7 @@ def run() -> None:
         if args.columns == ["all"]:
             column_filter = [True] * len(table_header)
         else:
-            column_filter = [True if f in args.columns else False for f in table_header]
+            column_filter = [f in args.columns for f in table_header]
 
     if args.channel_filter:
         ytcc_core.set_channel_filter(args.channel_filter)

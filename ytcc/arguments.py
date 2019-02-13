@@ -16,12 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import argparse
-import ytcc
-import ytcc.cli
+import os
 from datetime import datetime
 from gettext import gettext as _
+
+import ytcc
+import ytcc.cli
 
 
 def is_directory(string: str) -> str:

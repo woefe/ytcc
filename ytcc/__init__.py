@@ -32,7 +32,7 @@ import gettext
 import sys
 
 
-def get_translations_path() -> str:
+def _get_translations_path() -> str:
     path = Path(__file__)
     path = path.parent.joinpath("resources", "locale")
     if path.is_dir():
@@ -41,4 +41,4 @@ def get_translations_path() -> str:
     return sys.prefix + "/share/locale"
 
 
-gettext.install('ytcc', get_translations_path())
+gettext.install('ytcc', _get_translations_path())

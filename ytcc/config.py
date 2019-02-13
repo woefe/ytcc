@@ -21,11 +21,12 @@ import io
 import os
 import re
 from pathlib import Path
+from typing import Any, Dict, Optional, Iterable
+
 from sqlalchemy import Column
-from typing import Any, Dict, Optional, List
 
 import ytcc
-from ytcc.db import Video, Channel
+from ytcc.database import Video, Channel
 
 DEFAULTS: Dict[str, Dict[str, Any]] = {
     "YTCC": {
@@ -87,7 +88,7 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
     if override_cfg_file:
         cfg_file_locations.append(override_cfg_file)
 
-    if len(config.read(cfg_file_locations)) < 1:
+    if not config.read(cfg_file_locations):
         path = Path(default_cfg_file)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.touch()
@@ -97,7 +98,7 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
     return config
 
 
-class Config(object):
+class Config:
     """Handles the ini-based configuration file"""
 
     def __init__(self, override_cfg_file: Optional[str] = None) -> None:
@@ -112,7 +113,7 @@ class Config(object):
         self.youtube_dl = _YTDLConf(config["youtube-dl"])
         self.order_by = list(self.init_order())
 
-    def init_order(self) -> List[Column]:
+    def init_order(self) -> Iterable[Column]:
         col_mapping = {
             "id": Video.id,
             "date": Video.publish_date,
@@ -121,12 +122,12 @@ class Config(object):
             "url": Video.yt_videoid,
             "watched": Video.watched
         }
-        for c in self._config["YTCC"]["orderBy"].split(","):
-            column = col_mapping.get(c.strip().lower())
+        for key in self._config["YTCC"]["orderBy"].split(","):
+            column = col_mapping.get(key.strip().lower())
             if column is not None:
                 yield column
             else:
-                raise ytcc.core.BadConfigException(f"Cannot order by {c.strip()}")
+                raise ytcc.core.BadConfigException(f"Cannot order by {key.strip()}")
 
     def __str__(self) -> str:
         strio = io.StringIO()
@@ -134,7 +135,7 @@ class Config(object):
         return strio.getvalue()
 
 
-class _YTDLConf(object):
+class _YTDLConf:
     def __init__(self, subconf: Any) -> None:
         super(_YTDLConf, self).__init__()
         self.format = subconf["format"]

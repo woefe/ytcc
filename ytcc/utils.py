@@ -18,6 +18,7 @@
 
 from typing import TypeVar, Optional, Callable
 
+# pylint: disable=invalid-name
 T = TypeVar("T")
 
 

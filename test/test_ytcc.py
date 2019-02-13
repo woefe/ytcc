@@ -6,7 +6,7 @@ from datetime import datetime
 from ytcc.core import BadURLException
 from ytcc.core import DuplicateChannelException
 from ytcc.core import Ytcc
-from ytcc.db import Channel, Video
+from ytcc.database import Channel, Video
 
 
 class TestYtcc(TestCase):
@@ -14,7 +14,7 @@ class TestYtcc(TestCase):
     def setUp(self):
         self.current_dir = os.path.dirname(__file__)
         self.ytcc = Ytcc(os.path.join(self.current_dir, "data/ytcc_test.conf"))
-        self.db_conn = self.ytcc.db
+        self.db_conn = self.ytcc.database
 
     def tearDown(self):
         self.db_conn.engine.execute("delete from video")
@@ -53,7 +53,7 @@ class TestYtccPreparedChannels(TestCase):
     def setUp(self):
         self.current_dir = os.path.dirname(__file__)
         self.ytcc = Ytcc(os.path.join(self.current_dir, "data/ytcc_test.conf"))
-        self.db_conn = self.ytcc.db
+        self.db_conn = self.ytcc.database
         self.db_conn.engine.execute("delete from video")
         self.db_conn.engine.execute("delete from channel")
         self.db_conn.add_channel(Channel(displayname="Webdriver Torso", yt_channelid="UCsLiV4WJfkTEHH0b9PmRklw"))
@@ -81,7 +81,7 @@ class TestYtccPreparedVideos(TestCase):
     def setUp(self):
         self.current_dir = os.path.dirname(__file__)
         self.ytcc = Ytcc(os.path.join(self.current_dir, "data/ytcc_test.conf"))
-        self.db_conn = self.ytcc.db
+        self.db_conn = self.ytcc.database
 
         insert_list = [
             dict(yt_videoid="V-ozGFl3Jks", title="tmptYnCut", description="",

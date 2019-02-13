@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import sqlalchemy
 from nose.tools import raises
-from ytcc.db import Database, Video, Channel
+from ytcc.database import Database, Video, Channel
 
 insert_list = [
     dict(yt_videoid="0", title="title1", description="description1", publisher="id_publisher1", publish_date=1488286166,

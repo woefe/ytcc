@@ -1,8 +1,9 @@
 from pathlib import Path
+from typing import List, Iterable, Any, Dict
+
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, Float
 from sqlalchemy.orm import relationship, sessionmaker
-from typing import List, Iterable, Any, Dict
 
 Base = declarative_base()
 
@@ -34,13 +35,13 @@ class Video(Base):
 class Database:
     def __init__(self, path: str = ":memory:"):
         if path != ":memory:":
-            p = Path(path).expanduser()
-            p.parent.mkdir(parents=True, exist_ok=True)
-            path = str(p)
+            expanded_path = Path(path).expanduser()
+            expanded_path.parent.mkdir(parents=True, exist_ok=True)
+            path = str(expanded_path)
 
         self.engine = create_engine(f"sqlite:///{path}")
-        Session = sessionmaker(bind=self.engine)
-        self.session = Session()
+        session = sessionmaker(bind=self.engine)
+        self.session = session()
         Base.metadata.create_all(self.engine)
 
     def __enter__(self) -> "Database":
@@ -72,9 +73,9 @@ class Database:
 
     def add_videos(self, videos: Iterable[Dict[str, Any]]) -> None:
         videos = list(videos)
-        q = Video.__table__.insert().prefix_with("OR IGNORE")
+        query = Video.__table__.insert().prefix_with("OR IGNORE")
         self.session.commit()
-        self.engine.execute(q, videos)
+        self.engine.execute(query, videos)
         self.session.commit()
 
     def resolve_video_ids(self, video_ids: Iterable[int]):

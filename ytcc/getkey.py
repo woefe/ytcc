@@ -14,7 +14,7 @@ class Keys:
 
 
 # https://invisible-island.net/xterm/xterm-function-keys.html
-_known_keys = {
+_KNOWN_KEYS = {
     # vt100
     "\x1bOP": Keys.F1,
     "\x1bOQ": Keys.F2,
@@ -41,21 +41,22 @@ _known_keys = {
     "\x1b[[E": Keys.F5,
 }
 
-_prefixes = set()
-for seq in _known_keys.keys():
-    for i in range(1, len(seq) + 1):
-        _prefixes.add(seq[:i])
+_PREFIXES = {
+    escape_sequence[:i]
+    for escape_sequence in _KNOWN_KEYS
+    for i in range(1, len(escape_sequence) + 1)
+}
 
 
-def _read_sequence(fd) -> str:
-    seq = fd.read(1)
+def _read_sequence(stream) -> str:
+    seq = stream.read(1)
     if seq == "\x1b":
-        while seq not in _known_keys and seq in _prefixes:
-            seq += fd.read(1)
+        while seq not in _KNOWN_KEYS and seq in _PREFIXES:
+            seq += stream.read(1)
 
-        return _known_keys.get(seq, "Unknown Sequence")
-    else:
-        return seq
+        return _KNOWN_KEYS.get(seq, "Unknown Sequence")
+
+    return seq
 
 
 def getkey() -> str:

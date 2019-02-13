@@ -17,56 +17,49 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
-from itertools import chain
-
 import datetime
-import feedparser
 import os
-import sqlalchemy
 import subprocess
-import youtube_dl
+from itertools import chain
 from concurrent.futures import ThreadPoolExecutor as Pool
 from io import StringIO
-from lxml import etree
 from typing import Iterable, List, TextIO, Optional, Any, Dict
 from urllib.error import URLError
 from urllib.parse import urlparse, urlunparse, parse_qs
 from urllib.request import urlopen
 
+import sqlalchemy
+import youtube_dl
+from lxml import etree
+import feedparser
+
 from ytcc.config import Config
-from ytcc.db import Channel
-from ytcc.db import Database
-from ytcc.db import Video
+from ytcc.database import Channel, Database, Video
 from ytcc.utils import unpack_optional
 
 
 class YtccException(Exception):
     """A general parent class of all Exceptions that are used in Ytcc"""
-    pass
 
 
 class BadURLException(YtccException):
     """Raised when a given URL does not refer to a YouTube channel."""
-    pass
 
 
 class DuplicateChannelException(YtccException):
     """Raised when trying to subscribe to a channel the second (or more) time."""
-    pass
 
 
 class ChannelDoesNotExistException(YtccException):
     """Raised when the url of a given channel does not exist."""
-    pass
 
 
 class InvalidSubscriptionFileError(YtccException):
     """Raised when the given file is not a valid XML file."""
-    pass
 
 
 class BadConfigException(YtccException):
-    pass
+    """Raised when error in config file is encountered."""
 
 
 class Ytcc:
@@ -80,7 +73,7 @@ class Ytcc:
 
     def __init__(self, override_cfg_file: Optional[str] = None) -> None:
         self.config = Config(override_cfg_file)
-        self.db = Database(self.config.db_path)
+        self.database = Database(self.config.db_path)
         self.video_id_filter: List[int] = []
         self.channel_filter: List[str] = []
         self.date_begin_filter = 0.0
@@ -91,10 +84,10 @@ class Ytcc:
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Any:
-        self.db.__exit__(exc_type, exc_val, exc_tb)
+        self.database.__exit__(exc_type, exc_val, exc_tb)
 
     def close(self) -> None:
-        self.db.close()
+        self.database.close()
 
     @staticmethod
     def get_youtube_video_url(yt_videoid: Optional[str]) -> str:
@@ -180,13 +173,13 @@ class Ytcc:
     def update_all(self) -> None:
         """Checks every channel for new videos"""
 
-        channels = self.db.get_channels()
+        channels = self.database.get_channels()
         num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 2
 
         with Pool(num_workers) as pool:
             videos = chain.from_iterable(pool.map(self._update_channel, channels))
 
-        self.db.add_videos(videos)
+        self.database.add_videos(videos)
 
     def play_video(self, video: Video, audio_only: bool = False) -> bool:
         """Plays the video identified by the given video ID with the mpv video player and marks the
@@ -219,7 +212,7 @@ class Ytcc:
         return False
 
     def download_video(self, video: Video, path: str = "", audio_only: bool = False) -> bool:
-        """Downloads the videos identified by the given video IDs with youtube-dl and marks it watched
+        """Download the given video with youtube-dl and mark it as watched.
 
         Args:
             video_ids ([int]): The (local) video IDs.
@@ -328,7 +321,7 @@ class Ytcc:
         yt_channelid = channel_id_node[0].attrib.get("content")
 
         try:
-            self.db.add_channel(Channel(displayname=displayname, yt_channelid=yt_channelid))
+            self.database.add_channel(Channel(displayname=displayname, yt_channelid=yt_channelid))
         except sqlalchemy.exc.IntegrityError:
             raise DuplicateChannelException(f"Channel already subscribed: {displayname}")
 
@@ -344,7 +337,8 @@ class Ytcc:
             query_dict = parse_qs(rss_url.query, keep_blank_values=False)
             channel_id = query_dict.get("channel_id", [])
             if len(channel_id) != 1:
-                raise InvalidSubscriptionFileError(f"'{file.name}' is not a valid YouTube export file")
+                message = f"'{file.name}' is not a valid YouTube export file"
+                raise InvalidSubscriptionFileError(message)
             return Channel(displayname=elem.attrib["title"], yt_channelid=channel_id[0])
 
         try:
@@ -353,7 +347,7 @@ class Ytcc:
             raise InvalidSubscriptionFileError(f"'{file.name}' is not a valid YouTube export file")
 
         elements = root.xpath('//outline[@type="rss"]')
-        self.db.add_channels((_create_channel(e) for e in elements))
+        self.database.add_channels((_create_channel(e) for e in elements))
 
     def list_videos(self) -> List[Video]:
         """Returns a list of videos that match the filters set by the set_*_filter methods.
@@ -362,24 +356,24 @@ class Ytcc:
             A list of ytcc.video.Video objects
         """
         if self.video_id_filter:
-            return self.db.session.query(Video) \
+            return self.database.session.query(Video) \
                 .join(Channel, Channel.yt_channelid == Video.publisher) \
-                .filter(Video.id.in_(self.video_id_filter))\
+                .filter(Video.id.in_(self.video_id_filter)) \
                 .order_by(*self.config.order_by).all()
 
-        q = self.db.session.query(Video) \
+        query = self.database.session.query(Video) \
             .join(Channel, Channel.yt_channelid == Video.publisher) \
             .filter(Video.publish_date > self.date_begin_filter) \
             .filter(Video.publish_date < self.date_end_filter)
 
         if self.channel_filter:
-            q = q.filter(Channel.displayname.in_(self.channel_filter))
+            query = query.filter(Channel.displayname.in_(self.channel_filter))
 
         if not self.include_watched_filter:
-            q = q.filter(Video.watched == False)
+            query = query.filter(~Video.watched)
 
-        q = q.order_by(*self.config.order_by)
-        return q.all()
+        query = query.order_by(*self.config.order_by)
+        return query.all()
 
     def delete_channels(self, displaynames: List[str]) -> None:
         """Delete (or unsubscribe) channels.
@@ -388,7 +382,7 @@ class Ytcc:
             displaynames (list): A list of channels' displaynames.
         """
 
-        self.db.delete_channels(displaynames)
+        self.database.delete_channels(displaynames)
 
     def get_channels(self) -> List[Channel]:
         """Returns a list of all subscribed channels.
@@ -397,9 +391,9 @@ class Ytcc:
             A list of channel names.
         """
 
-        return self.db.get_channels()
+        return self.database.get_channels()
 
     def cleanup(self) -> None:
         """Deletes old videos from the database."""
 
-        self.db.cleanup()
+        self.database.cleanup()
