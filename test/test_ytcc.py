@@ -17,6 +17,7 @@ class TestYtcc(TestCase):
         self.db_conn = self.ytcc.database
 
     def tearDown(self):
+        self.db_conn.session.flush()
         self.db_conn.engine.execute("delete from video")
         self.db_conn.engine.execute("delete from channel")
 
@@ -60,6 +61,7 @@ class TestYtccPreparedChannels(TestCase):
         self.db_conn.add_channel(Channel(displayname="Webdriver YPP", yt_channelid="UCxexYYtOetqikZqriLuTS-g"))
 
     def tearDown(self):
+        self.db_conn.session.commit()
         self.db_conn.engine.execute("delete from video")
         self.db_conn.engine.execute("delete from channel")
 
@@ -84,28 +86,28 @@ class TestYtccPreparedVideos(TestCase):
         self.db_conn = self.ytcc.database
 
         insert_list = [
-            dict(yt_videoid="V-ozGFl3Jks", title="tmptYnCut", description="",
-                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488348731.0, watched=1),
-            dict(yt_videoid="a1gOeiyIqPs", title="tmp99Yc1l", description="",
-                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488348519.0, watched=1),
-            dict(yt_videoid="0ounUgOrcqo", title="tmppfXKp6", description="",
-                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488345630.0, watched=1),
-            dict(yt_videoid="7mckB-NdKWY", title="tmpiM62pN", description="",
-                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488345565.0, watched=0),
-            dict(yt_videoid="RmRPt93uAsQ", title="tmpIXBgjd", description="",
-                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488344217.0, watched=0),
-            dict(yt_videoid="nDPy3RyKdrg", title="tmpwA0TjG", description="",
-                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488343000.0, watched=0),
-            dict(yt_videoid="L0_F805qUIM", title="tmpKDOkro", description="",
-                 publisher="UCxexYYtOetqikZqriLuTS-g", publish_date=1488344253.0, watched=1),
-            dict(yt_videoid="lXWrdlDEzQs", title="tmpEvCR4s", description="",
-                 publisher="UCxexYYtOetqikZqriLuTS-g", publish_date=1488343152.0, watched=1),
-            dict(yt_videoid="cCnXsCQNkr8", title="tmp1rpsWK", description="",
-                 publisher="UCxexYYtOetqikZqriLuTS-g", publish_date=1488343046.0, watched=1),
-            dict(yt_videoid="rSxVs0XeQa4", title="tmpc5Y2pd", description="",
-                 publisher="UCxexYYtOetqikZqriLuTS-g", publish_date=1488342015.0, watched=0),
-            dict(yt_videoid="gQAsWrGfsrw", title="tmpn1M1Oa", description="",
-                 publisher="UCxexYYtOetqikZqriLuTS-g", publish_date=1488341324.0, watched=0),
+            Video(yt_videoid="V-ozGFl3Jks", title="tmptYnCut", description="",
+                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488348731.0, watched=True),
+            Video(yt_videoid="a1gOeiyIqPs", title="tmp99Yc1l", description="",
+                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488348519.0, watched=True),
+            Video(yt_videoid="0ounUgOrcqo", title="tmppfXKp6", description="",
+                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488345630.0, watched=True),
+            Video(yt_videoid="7mckB-NdKWY", title="tmpiM62pN", description="",
+                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488345565.0, watched=False),
+            Video(yt_videoid="RmRPt93uAsQ", title="tmpIXBgjd", description="",
+                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488344217.0, watched=False),
+            Video(yt_videoid="nDPy3RyKdrg", title="tmpwA0TjG", description="",
+                 publisher="UCsLiV4WJfkTEHH0b9PmRklw", publish_date=1488343000.0, watched=False),
+            Video(yt_videoid="L0_F805qUIM", title="tmpKDOkro", description="",
+                 publisher="UCxexYYtOetqikZqriLuTS-g", publish_date=1488344253.0, watched=True),
+            Video(yt_videoid="lXWrdlDEzQs", title="tmpEvCR4s", description="",
+                 publisher="UCxexYYtOetqikZqriLuTS-g", publish_date=1488343152.0, watched=True),
+            Video(yt_videoid="cCnXsCQNkr8", title="tmp1rpsWK", description="",
+                 publisher="UCxexYYtOetqikZqriLuTS-g", publish_date=1488343046.0, watched=True),
+            Video(yt_videoid="rSxVs0XeQa4", title="tmpc5Y2pd", description="",
+                 publisher="UCxexYYtOetqikZqriLuTS-g", publish_date=1488342015.0, watched=False),
+            Video(yt_videoid="gQAsWrGfsrw", title="tmpn1M1Oa", description="",
+                 publisher="UCxexYYtOetqikZqriLuTS-g", publish_date=1488341324.0, watched=False),
         ]
         self.db_conn.session.execute("delete from video")
         self.db_conn.session.execute("delete from channel")

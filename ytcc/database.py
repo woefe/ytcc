@@ -17,7 +17,7 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 from pathlib import Path
-from typing import List, Iterable, Any, Dict
+from typing import List, Iterable, Any
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, Float
@@ -57,7 +57,7 @@ class Database:
             expanded_path.parent.mkdir(parents=True, exist_ok=True)
             path = str(expanded_path)
 
-        self.engine = create_engine(f"sqlite:///{path}")
+        self.engine = create_engine(f"sqlite:///{path}", echo=False)
         session = sessionmaker(bind=self.engine)
         self.session = session()
         Base.metadata.create_all(self.engine)
@@ -89,12 +89,12 @@ class Database:
             self.session.delete(channel)
         self.session.commit()
 
-    def add_videos(self, videos: Iterable[Dict[str, Any]]) -> None:
-        videos = list(videos)
-        query = Video.__table__.insert().prefix_with("OR IGNORE")
-        self.session.commit()
-        self.engine.execute(query, videos)
-        self.session.commit()
+    def add_videos(self, videos: Iterable[Video]) -> None:
+        for video in videos:
+            query = self.session.query(Video.id).filter(Video.yt_videoid == video.yt_videoid)
+            if not self.session.query(query.exists()).scalar():
+                self.session.add(video)
+        self.session.flush()
 
     def resolve_video_ids(self, video_ids: Iterable[int]):
         return self.session.query(Video).filter(Video.id.in_(video_ids))

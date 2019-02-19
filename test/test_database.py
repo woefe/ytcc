@@ -4,21 +4,21 @@ import sqlalchemy
 from nose.tools import raises
 from ytcc.database import Database, Video, Channel
 
-insert_list = [
-    dict(yt_videoid="0", title="title1", description="description1", publisher="id_publisher1", publish_date=1488286166,
-         watched=False),
-    dict(yt_videoid="0", title="title1", description="description1", publisher="id_publisher1", publish_date=1488286167,
-         watched=False),
-    dict(yt_videoid="0", title="title2", description="description1", publisher="id_publisher1", publish_date=1488286168,
-         watched=False),
-    dict(yt_videoid="1", title="title2", description="description2", publisher="id_publisher2", publish_date=1488286170,
-         watched=False),
-    dict(yt_videoid="2", title="title3", description="description3", publisher="id_publisher2", publish_date=1488286171,
-         watched=False)
-]
 
 
 def init_db():
+    insert_list = [
+        Video(yt_videoid="0", title="title1", description="description1", publisher="id_publisher1", publish_date=1488286166,
+              watched=False),
+        Video(yt_videoid="0", title="title1", description="description1", publisher="id_publisher1", publish_date=1488286167,
+              watched=False),
+        Video(yt_videoid="1", title="title2", description="description1", publisher="id_publisher1", publish_date=1488286168,
+              watched=False),
+        Video(yt_videoid="1", title="title2", description="description2", publisher="id_publisher2", publish_date=1488286170,
+              watched=False),
+        Video(yt_videoid="2", title="title3", description="description3", publisher="id_publisher2", publish_date=1488286171,
+              watched=False)
+    ]
     db = Database(":memory:")
     db.add_channel(Channel(displayname="publisher1", yt_channelid="id_publisher1"))
     db.add_channel(Channel(displayname="publisher2", yt_channelid="id_publisher2"))
@@ -48,7 +48,6 @@ class DatabaseTest(TestCase):
 
     def test_add_and_get_videos(self):
         db = init_db()
-        db.add_videos(insert_list)
         videos = db.session.query(Video).all()
         self.assertEqual(len(videos), 3)
         self.assertEqual(videos[0].yt_videoid, "0")

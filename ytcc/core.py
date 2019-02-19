@@ -56,7 +56,7 @@ class Ytcc:
         self.video_id_filter: List[int] = []
         self.channel_filter: List[str] = []
         self.date_begin_filter = 0.0
-        self.date_end_filter = time.mktime(time.gmtime()) + 20
+        self.date_end_filter = (0.0, False)
         self.include_watched_filter = False
 
     def __enter__(self) -> "Ytcc":
@@ -108,7 +108,7 @@ class Ytcc:
 
         :param end: The upper bound of the time filter.
         """
-        self.date_end_filter = end.timestamp()
+        self.date_end_filter = (end.timestamp(), True)
 
     def set_include_watched_filter(self) -> None:
         """Set the "watched video" filter.
@@ -128,12 +128,12 @@ class Ytcc:
             self.video_id_filter.extend(ids)
 
     @staticmethod
-    def _update_channel(channel: Channel) -> List[Dict[str, Any]]:
+    def _update_channel(channel: Channel) -> List[Video]:
         yt_channel_id = channel.yt_channelid
         url = f"https://www.youtube.com/feeds/videos.xml?channel_id={yt_channel_id}"
         feed = feedparser.parse(url)
         return [
-            dict(
+            Video(
                 yt_videoid=str(entry.yt_videoid),
                 title=str(entry.title),
                 description=str(entry.description),
@@ -323,10 +323,15 @@ class Ytcc:
                 .filter(Video.id.in_(self.video_id_filter)) \
                 .order_by(*self.config.order_by).all()
 
+        if not self.date_end_filter[1]:
+            date_end_filter = time.mktime(time.gmtime()) + 20
+        else:
+            date_end_filter = self.date_end_filter[0]
+
         query = self.database.session.query(Video) \
             .join(Channel, Channel.yt_channelid == Video.publisher) \
             .filter(Video.publish_date > self.date_begin_filter) \
-            .filter(Video.publish_date < self.date_end_filter)
+            .filter(Video.publish_date < date_end_filter)
 
         if self.channel_filter:
             query = query.filter(Channel.displayname.in_(self.channel_filter))
