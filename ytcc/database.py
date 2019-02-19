@@ -105,22 +105,15 @@ class Database:
     def cleanup(self) -> None:
         """Delete all videos from all channels, but keeps the 30 latest videos of every channel."""
         sql = """
-            delete from video
-            where id in (
-                select v.id
-                from video v, channel c
-                where v.publisher = c.yt_channelid and c.displayname = :displayname
-                    and v.publish_date <= (
-                        select v.publish_date
-                        from video v, channel chan
-                        where v.publisher = chan.yt_channelid and chan.displayname = c.displayname
-                        order by v.publish_date desc
-                        limit 30,1
-                    )
-            )
+            delete
+            from video as v
+            where (select count(*)
+                   from video w
+                   where v.publish_date < w.publish_date
+                     and v.publisher = w.publisher) >= 30;
             """
         self.session.commit()
-        self.engine.execute(sql, [{"displayname": e.displayname} for e in self.get_channels()])
+        self.engine.execute(sql)
 
         # Delete videos without channels.
         # This happend in older versions, because foreign keys were not enabled.
