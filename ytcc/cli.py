@@ -183,10 +183,22 @@ class Interactive:
 
     def run(self) -> None:
         alphabet = ytcc_core.config.quickselect_alphabet
-        tags = self._prefix_codes(alphabet, len(self.videos))
-        index = OrderedDict(zip(tags, self.videos))
-
-        while index:
+        
+        while True:
+            # 5 is subtracted to ensure room for the header (2 lines) and the selector
+            # (3 lines)
+            lines = shutil.get_terminal_size(fallback=(-1,-1)).lines - 5
+            
+            num_to_show = len(self.videos)
+            
+            # If the number of lines in the shell could be determined, show an appropriate
+            # number of videos
+            if lines > 1:
+                num_to_show = min(num_to_show, lines)
+            
+            tags = self._prefix_codes(alphabet, num_to_show)
+            index = OrderedDict(zip(tags, self.videos))
+            
             remaining_tags = list(index.keys())
             remaining_videos = index.values()
 
@@ -242,8 +254,12 @@ class Interactive:
                 self.videos = ytcc_core.list_videos()
                 self.run()
                 break
-
-
+            
+            # End loop if video list is empty
+            if not index:
+                break
+            
+    
 def maybe_print_description(description: Optional[str]) -> None:
     if DESCRIPTION_ENABLED and description is not None:
         columns = shutil.get_terminal_size().columns
