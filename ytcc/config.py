@@ -34,6 +34,14 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
         "alphabet": "sdfervghnuiojkl",
         "orderBy": "channel, date"
     },
+    "color": {
+        "promptDownloadAudio": 2,
+        "promptDownloadVideo": 4,
+        "promptPlayAudio": 2,
+        "promptPlayVideo": 4,
+        "promptMarkWatched": 1,
+        "tableAlternateBackground": 245,
+    },
     "youtube-dl": {
         "format": "bestvideo[height<=?1080]+bestaudio/best",
         "outputTemplate": "%(title)s.%(ext)s",
@@ -109,6 +117,7 @@ class Config:
         self.table_format = config["TableFormat"]
         self.youtube_dl = _YTDLConf(config["youtube-dl"])
         self.order_by = list(self.init_order())
+        self.color = _ColorConf(config["color"])
 
     def init_order(self) -> Iterable[Any]:
         col_mapping = {
@@ -130,6 +139,17 @@ class Config:
         strio = io.StringIO()
         self._config.write(strio)
         return strio.getvalue()
+
+
+class _ColorConf:
+    def __init__(self, subconf: Any) -> None:
+        super(_ColorConf, self).__init__()
+        self.prompt_download_audio = int(subconf["promptDownloadAudio"])
+        self.prompt_download_video = int(subconf["promptDownloadVideo"])
+        self.prompt_play_audio = int(subconf["promptPlayAudio"])
+        self.prompt_play_video = int(subconf["promptPlayVideo"])
+        self.prompt_mark_watched = int(subconf["promptMarkWatched"])
+        self.table_alternate_background = int(subconf["tableAlternateBackground"])
 
 
 class _YTDLConf:
