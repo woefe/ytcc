@@ -20,6 +20,8 @@ import sys
 import tty
 import termios
 
+from typing import Optional
+
 
 class Keys:
     """Indetifiers for special key sequences like the F-keys."""
@@ -98,3 +100,58 @@ def getkey() -> str:
     finally:
         termios.tcsetattr(file_descriptor, termios.TCSADRAIN, old_settings)
     return char
+
+
+def clear_screen() -> None:
+    print("\033[2J\033[1;1H", end="")
+
+
+def printtln(*text, foreground: Optional[int] = None, background: Optional[int] = None,
+             bold: bool = False, replace: bool = False) -> None:
+    """Like printt, but print newline at the end.
+
+    :param text: The text to print, elements are concatenated without a separator.
+    :param foreground: Foreground color.
+    :param background: Background color.
+    :param bold: Make text bold.
+    :param replace: Replace the current line.
+    """
+    printt(*text, foreground=foreground, background=background, bold=bold, replace=replace)
+    print()
+
+
+def printt(*text, foreground: Optional[int] = None, background: Optional[int] = None,
+           bold: bool = False, replace: bool = False) -> None:
+    """Print text on terminal styled with ANSI escape sequences.
+
+    If stdout is not a TTY, no escape sequences will be printed. Supports 8-bit colors.
+
+    :param text: The text to print, elements are concatenated without a separator.
+    :param foreground: Foreground color.
+    :param background: Background color.
+    :param bold: Make text bold.
+    :param replace: Replace the current line.
+    """
+    if not sys.stdout.isatty():
+        print(*text, sep="", end="")
+        return
+
+    esc_color_background = "\033[48;5;{}m"
+    esc_color_foreground = "\033[38;5;{}m"
+    esc_clear_attrs = "\033[0m"
+    esc_bold = "\033[1m"
+
+    if foreground is not None and 0 <= foreground <= 255:
+        print(esc_color_foreground.format(foreground), end="")
+
+    if background is not None and 0 <= background <= 255:
+        print(esc_color_background.format(background), end="")
+
+    if bold:
+        print(esc_bold, end="")
+
+    if replace:
+        print(f"\033[2K\r", end="")
+
+    print(*text, sep="", end="")
+    print(esc_clear_attrs, flush=True, end="")

@@ -31,10 +31,11 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Iterable, Optional, TextIO, Any, Set, Tuple, Callable, NamedTuple, Dict
 
-from ytcc import core, arguments, getkey, _
+from ytcc import core, arguments, terminal, _
 from ytcc.database import Video
 from ytcc.exceptions import BadConfigException, ChannelDoesNotExistException, \
     DuplicateChannelException, BadURLException
+from ytcc.terminal import printt, printtln
 from ytcc.utils import unpack_optional
 
 try:
@@ -45,6 +46,7 @@ try:
                      ytcc_core.config.table_format.getboolean("Title"),
                      ytcc_core.config.table_format.getboolean("URL"),
                      ytcc_core.config.table_format.getboolean("Watched")]
+    COLORS = ytcc_core.config.color
 except BadConfigException:
     print(_("The configuration file has errors!"))
     exit(1)
@@ -76,13 +78,18 @@ class Option(NamedTuple):
 
 
 class Action(Enum):
-    PLAY_VIDEO = 1
-    PLAY_AUDIO = 2
-    DOWNLOAD_VIDEO = 3
-    DOWNLOAD_AUDIO = 4
-    MARK_WATCHED = 5
-    SHOW_HELP = 6
-    REFRESH = 7
+    def __init__(self, text: str, hotkey: str, color: int):
+        self.text = text
+        self.hotkey = hotkey
+        self.color = color
+
+    SHOW_HELP = (None, terminal.Keys.F1, None)
+    PLAY_VIDEO = (_("Play video"), terminal.Keys.F2, COLORS.prompt_play_video)
+    PLAY_AUDIO = (_("Play audio"), terminal.Keys.F3, COLORS.prompt_play_audio)
+    MARK_WATCHED = (_("Mark as watched"), terminal.Keys.F4, COLORS.prompt_mark_watched)
+    REFRESH = (None, terminal.Keys.F5, None)
+    DOWNLOAD_AUDIO = (_("Download audio"), terminal.Keys.F7, COLORS.prompt_download_audio)
+    DOWNLOAD_VIDEO = (_("Download video"), terminal.Keys.F6, COLORS.prompt_download_video)
 
 
 class Interactive:
@@ -91,15 +98,11 @@ class Interactive:
         self.videos = videos
         self.previous_action = Action.PLAY_VIDEO
         self.action = Action.PLAY_VIDEO
-        self.hooks = {
-            getkey.Keys.F1: lambda: self.set_action(Action.SHOW_HELP),
-            getkey.Keys.F2: lambda: self.set_action(Action.PLAY_VIDEO),
-            getkey.Keys.F3: lambda: self.set_action(Action.PLAY_AUDIO),
-            getkey.Keys.F4: lambda: self.set_action(Action.MARK_WATCHED),
-            getkey.Keys.F5: lambda: self.set_action(Action.REFRESH),
-            getkey.Keys.F6: lambda: self.set_action(Action.DOWNLOAD_VIDEO),
-            getkey.Keys.F7: lambda: self.set_action(Action.DOWNLOAD_AUDIO),
-        }
+
+        def makef(arg):
+            return lambda: self.set_action(arg)
+
+        self.hooks = {action.hotkey: makef(action) for action in list(Action)}
 
     def set_action(self, action: Action) -> bool:
         self.previous_action = self.action
@@ -132,30 +135,25 @@ class Interactive:
         return codes
 
     def get_prompt_text(self) -> str:
-        if self.action == Action.MARK_WATCHED:
-            return _("Mark as watched")
-        if self.action == Action.DOWNLOAD_AUDIO:
-            return _("Download audio")
-        if self.action == Action.DOWNLOAD_VIDEO:
-            return _("Download video")
-        if self.action == Action.PLAY_AUDIO:
-            return _("Play audio")
-        if self.action == Action.PLAY_VIDEO:
-            return _("Play video")
+        return self.action.text
 
-        return ""
+    def get_prompt_color(self) -> Optional[int]:
+        return self.action.color
 
     def command_line(self, tags: List[str], alphabet: Set[str]) -> Tuple[str, bool]:
-        prompt_format = "{prompt_text} >"
-        prompt = prompt_format.format(prompt_text=self.get_prompt_text())
+        def print_prompt():
+            prompt_format = "{prompt_text} > "
+            prompt = prompt_format.format(prompt_text=self.get_prompt_text())
+            printt(prompt, foreground=self.get_prompt_color(), bold=True, replace=True)
+
         print()
         print(_("Type a valid TAG. <F1> for help."))
-        print(prompt, end=" ", flush=True)
+        print_prompt()
 
         tag = ""
         hook_triggered = False
         while tag not in tags:
-            char = getkey.getkey()
+            char = terminal.getkey()
 
             if char in self.hooks:
                 hook_triggered = True
@@ -174,9 +172,8 @@ class Interactive:
             elif char in alphabet:
                 tag += char
 
-            prompt = prompt_format.format(prompt_text=self.get_prompt_text())
-            # Clear line, reset cursor, print prompt and tag
-            print(f"\033[2K\r{prompt}", tag, end="", flush=True)
+            print_prompt()
+            printt(tag)
 
         print()
         return tag, hook_triggered
@@ -191,7 +188,7 @@ class Interactive:
             remaining_videos = index.values()
 
             # Clear display and set cursor to (1,1). Allows scrolling back in some terminals
-            print("\033[2J\033[1;1H", end="")
+            terminal.clear_screen()
             print_videos(remaining_videos, quickselect_column=remaining_tags)
 
             tag, hook_triggered = self.command_line(remaining_tags, alphabet)
@@ -201,28 +198,28 @@ class Interactive:
                 break
 
             if video is not None:
-                if self.action == Action.MARK_WATCHED:
+                if self.action is Action.MARK_WATCHED:
                     video.watched = True
                     del index[tag]
-                elif self.action == Action.DOWNLOAD_AUDIO:
+                elif self.action is Action.DOWNLOAD_AUDIO:
                     print()
                     download_video(video, True)
                     del index[tag]
-                elif self.action == Action.DOWNLOAD_VIDEO:
+                elif self.action is Action.DOWNLOAD_VIDEO:
                     print()
                     download_video(video, False)
                     del index[tag]
-                elif self.action == Action.PLAY_AUDIO:
+                elif self.action is Action.PLAY_AUDIO:
                     print()
                     play(video, True)
                     del index[tag]
-                elif self.action == Action.PLAY_VIDEO:
+                elif self.action is Action.PLAY_VIDEO:
                     print()
                     play(video, False)
                     del index[tag]
-            elif self.action == Action.SHOW_HELP:
+            elif self.action is Action.SHOW_HELP:
                 self.action = self.previous_action
-                print("\033[2J\033[1;1H", end="")
+                terminal.clear_screen()
                 print(_(
                     "    <F1> Display this help text.\n"
                     "    <F2> Set action: Play video.\n"
@@ -235,9 +232,9 @@ class Interactive:
                     "<CTRL+D> Exit.\n"
                 ))
                 input(_("Press Enter to continue"))
-            elif self.action == Action.REFRESH:
+            elif self.action is Action.REFRESH:
                 self.action = self.previous_action
-                print("\033[2J\033[1;1H", end="")
+                terminal.clear_screen()
                 update_all()
                 self.videos = ytcc_core.list_videos()
                 self.run()
@@ -277,11 +274,12 @@ def table_print(header: List[str], table: List[List[str]]) -> None:
 
     if HEADER_ENABLED:
         header_line = "┼".join("─" * (width + 2) for width in col_widths)
-        print(table_format.format(*header))
+        printtln(table_format.format(*header), bold=True)
         print(header_line)
 
-    for row in table:
-        print(table_format.format(*row))
+    for i, row in enumerate(table):
+        background = None if i % 2 == 0 else COLORS.table_alternate_background
+        printtln(table_format.format(*row), background=background)
 
 
 def print_videos(videos: Iterable[Video],

@@ -98,6 +98,17 @@ alphabet = sdfervghnuiojkl
 orderby = channel, date
 
 
+# Prompt and table colors. Supports 256 colors. Hence, values between 0-255 are allowed.
+# See https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit for the color codes.
+[color]
+promptdownloadaudio = 2
+promptdownloadvideo = 4
+promptplayaudio = 2
+promptplayvideo = 4
+promptmarkwatched = 1
+tablealternatebackground = 245
+
+
 # Options for downloads
 [youtube-dl]
 # Format (see FORMAT SELECTION in youtube-dl manpage). Make sure to use a video format here, if you
