@@ -29,7 +29,8 @@ import signal
 import textwrap as wrap
 from datetime import datetime
 from enum import Enum
-from typing import List, Iterable, Optional, TextIO, Any, Set, Tuple, Callable, NamedTuple, Dict
+from typing import List, Iterable, Optional, TextIO, Any, Set, Tuple, Callable, NamedTuple, Dict, \
+    BinaryIO
 
 from ytcc import core, arguments, terminal, _
 from ytcc.database import Video
@@ -419,6 +420,11 @@ def import_channels(file: TextIO) -> None:
         print(_("The given file is not valid YouTube export file"))
 
 
+@register_option("export_to", exit=True)
+def export_channels(file: BinaryIO) -> None:
+    ytcc_core.export_channels(file)
+
+
 @register_option("version", exit=True)
 def version() -> None:
     import ytcc
@@ -527,6 +533,7 @@ def run() -> None:
     args = vars(arguments.get_args())
     option_names = [
         "version", "bug_report_info", "add_channel", "delete_channel", "cleanup", "import_from",
+        "export_to",
 
         "disable_interactive", "no_description", "no_header", "no_video", "path",
         "include_watched", "columns", "channel_filter", "since", "to", "list_channels", "update",

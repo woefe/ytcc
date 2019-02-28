@@ -29,8 +29,8 @@ Base = declarative_base()
 class Channel(Base):
     __tablename__ = "channel"
     id = Column(Integer, primary_key=True)
-    displayname = Column(String, unique=True)
-    yt_channelid = Column(String, unique=True)
+    displayname = Column(String, unique=True, nullable=False)
+    yt_channelid = Column(String, unique=True, nullable=False)
 
     videos = relationship("Video", back_populates="channel",
                           cascade="all, delete, delete-orphan")
@@ -40,10 +40,10 @@ class Video(Base):
     __tablename__ = "video"
 
     id = Column(Integer, primary_key=True)
-    yt_videoid = Column(String, unique=True)
+    yt_videoid = Column(String, unique=True, nullable=False)
     title = Column(String)
     description = Column(String)
-    publisher = Column(String, ForeignKey("channel.yt_channelid"))
+    publisher = Column(String, ForeignKey("channel.yt_channelid"), nullable=False)
     publish_date = Column(Float)
     watched = Column(Boolean)
 

@@ -152,6 +152,11 @@ def get_args() -> argparse.Namespace:
                         metavar="PATH",
                         type=argparse.FileType("r"))
 
+    parser.add_argument("--export-to",
+                        help=_("export YouTube channels in opml format"),
+                        metavar="PATH",
+                        type=argparse.FileType("wb"))
+
     parser.add_argument("--cleanup",
                         help=_("removes old videos from the database and shrinks the size of the "
                                "database file"),

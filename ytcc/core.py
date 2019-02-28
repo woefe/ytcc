@@ -23,7 +23,7 @@ import subprocess
 from itertools import chain
 from concurrent.futures import ThreadPoolExecutor as Pool
 from io import StringIO
-from typing import Iterable, List, TextIO, Optional, Any, Dict
+from typing import Iterable, List, TextIO, Optional, Any, Dict, BinaryIO
 from urllib.error import URLError
 from urllib.parse import urlparse, urlunparse, parse_qs
 from urllib.request import urlopen
@@ -31,6 +31,7 @@ from urllib.request import urlopen
 import sqlalchemy
 import youtube_dl
 from lxml import etree
+
 import feedparser
 
 from ytcc.config import Config
@@ -38,6 +39,10 @@ from ytcc.database import Channel, Database, Video
 from ytcc.exceptions import YtccException, BadURLException, ChannelDoesNotExistException, \
     DuplicateChannelException, InvalidSubscriptionFileError
 from ytcc.utils import unpack_optional
+
+
+def _get_youtube_rss_url(yt_channel_id: str) -> str:
+    return f"https://www.youtube.com/feeds/videos.xml?channel_id={yt_channel_id}"
 
 
 class Ytcc:
@@ -130,7 +135,7 @@ class Ytcc:
     @staticmethod
     def _update_channel(channel: Channel) -> List[Video]:
         yt_channel_id = channel.yt_channelid
-        url = f"https://www.youtube.com/feeds/videos.xml?channel_id={yt_channel_id}"
+        url = _get_youtube_rss_url(yt_channel_id)
         feed = feedparser.parse(url)
         return [
             Video(
@@ -311,6 +316,22 @@ class Ytcc:
 
         elements = root.xpath('//outline[@type="rss"]')
         self.database.add_channels((_create_channel(e) for e in elements))
+
+    def export_channels(self, outstream: BinaryIO) -> None:
+        """Export all channels as OPML file.
+
+        :param outstream: The file/stream the OPML file will be written to.
+        """
+        opml = etree.Element("opml", version="1.1")
+        body = etree.SubElement(opml, "body")
+        outline = etree.SubElement(body, "outline", text="ytcc subscriptions",
+                                   title="ytcc subscriptions")
+        for channel in self.get_channels():
+            outline.append(etree.Element("outline", text=channel.displayname,
+                                         title=channel.displayname, type="rss",
+                                         xmlUrl=_get_youtube_rss_url(channel.yt_channelid)))
+
+        outstream.write(etree.tostring(opml, pretty_print=True))
 
     def list_videos(self) -> List[Video]:
         """Return a list of videos that match the filters set by the set_*_filter methods.
