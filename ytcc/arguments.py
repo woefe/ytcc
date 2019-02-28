@@ -59,9 +59,15 @@ def get_args() -> argparse.Namespace:
                         action="store_true")
 
     parser.add_argument("-r", "--delete-channel",
-                        help=_("unsubscribe from the channel identified by 'ID'"),
-                        metavar="ID",
+                        help=_("unsubscribe from the channel identified by 'NAME'"),
+                        metavar="NAME",
                         nargs='+',
+                        type=str)
+
+    parser.add_argument("--rename",
+                        help=_("rename channel 'OLDNAME' to 'NEWNAME'"),
+                        metavar=("OLDNAME", "NEWNAME"),
+                        nargs=2,
                         type=str)
 
     parser.add_argument("-u", "--update",

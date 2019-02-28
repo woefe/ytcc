@@ -400,6 +400,16 @@ def delete_channel(channels: List[str]) -> None:
     ytcc_core.delete_channels(channels)
 
 
+@register_option("rename", exit=True)
+def rename_channel(oldname: str, newname: str) -> None:
+    try:
+        ytcc_core.rename_channel(oldname, newname)
+    except ChannelDoesNotExistException:
+        print(_("Error: The given channel does not exist."))
+    except DuplicateChannelException:
+        print(_("Error: The new name already exists."))
+
+
 @register_option("cleanup", exit=True)
 def cleanup() -> None:
     print(_("Cleaning up database..."))
@@ -533,7 +543,7 @@ def run() -> None:
     args = vars(arguments.get_args())
     option_names = [
         "version", "bug_report_info", "add_channel", "delete_channel", "cleanup", "import_from",
-        "export_to",
+        "export_to", "rename",
 
         "disable_interactive", "no_description", "no_header", "no_video", "path",
         "include_watched", "columns", "channel_filter", "since", "to", "list_channels", "update",

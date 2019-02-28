@@ -370,6 +370,16 @@ class Ytcc:
         """
         self.database.delete_channels(displaynames)
 
+    def rename_channel(self, oldname: str, newname: str) -> None:
+        """Rename the given channel.
+
+        :param oldname: The name of the channel.
+        :param newname: The new name of the channel.
+        :raises ChannelDoesNotExistException: If the given channel does not exist.
+        :raises DuplicateChannelException: If new name already exists.
+        """
+        self.database.rename_channel(oldname, newname)
+
     def get_channels(self) -> List[Channel]:
         """Get the list of all subscribed channels.
 

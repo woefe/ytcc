@@ -22,6 +22,9 @@ from typing import List, Iterable, Any
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, Float
 from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
+
+from ytcc.exceptions import ChannelDoesNotExistException, DuplicateChannelException
 
 Base = declarative_base()
 
@@ -88,6 +91,24 @@ class Database:
         for channel in channels:
             self.session.delete(channel)
         self.session.commit()
+
+    def rename_channel(self, oldname: str, newname: str) -> None:
+        """Rename the given channel.
+
+        :param oldname: The name of the channel.
+        :param newname: The new name of the channel.
+        :raises ChannelDoesNotExistException: If the given channel does not exist.
+        :raises DuplicateChannelException: If new name already exists.
+        """
+        query = self.session.query(Channel).filter(Channel.displayname == newname)
+        if query.one_or_none() is not None:
+            raise DuplicateChannelException()
+
+        try:
+            channel = self.session.query(Channel).filter(Channel.displayname == oldname).one()
+            channel.displayname = newname
+        except NoResultFound:
+            raise ChannelDoesNotExistException()
 
     def add_videos(self, videos: Iterable[Video]) -> None:
         for video in videos:
