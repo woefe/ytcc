@@ -94,8 +94,10 @@ mpvflags = --really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudi
 alphabet = sdfervghnuiojkl
 
 # Defines the order of video listings.
-# Possible options: channel, date, title, url, id, watched
-orderby = channel, date
+# Possible options: channel, date, title, url, id, watched.
+# Every option can be postfixed with :desc or :asc for descending or ascending sort.
+# If neither :desc nor :asc are given, it defaults to :asc.
+orderby = channel, date, watched:desc
 
 
 # Prompt and table colors. Supports 256 colors. Hence, values between 0-255 are allowed.

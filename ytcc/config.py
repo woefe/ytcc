@@ -129,9 +129,17 @@ class Config:
             "watched": Video.watched
         }
         for key in self._config["YTCC"]["orderBy"].split(","):
-            column = col_mapping.get(key.strip().lower())
+            sort_spec = list(map(lambda s: s.strip().lower(), key.split(":")))
+            col = sort_spec[0]
+            desc = ""
+
+            if len(sort_spec) == 2:
+                desc = sort_spec[1]
+
+            column = col_mapping.get(col)
             if column is not None:
-                yield column
+                column = column.collate("NOCASE")
+                yield column.desc() if desc == "desc" else column
             else:
                 raise BadConfigException(f"Cannot order by {key.strip()}")
 
