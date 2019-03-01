@@ -242,25 +242,40 @@ class Interactive:
                 break
 
 
-def maybe_print_description(description: Optional[str]) -> None:
+def print_meta(video: Video) -> None:
+    def print_separator(text: Optional[str] = None, fat: bool = False) -> None:
+        columns = shutil.get_terminal_size().columns
+        sep = "━" if fat else "─"
+        if not text:
+            print(sep * columns)
+        else:
+            sep_len = (columns - len(text) - 2)
+            padding = sep_len // 2
+            printt(sep * padding)
+            printt(" ", text, " ", bold=fat)
+            printtln(sep * (padding + (sep_len % 2)))
+
+    print_separator("Playing now", fat=True)
+    printt(_("Title:   "))
+    printtln(video.title, bold=True)
+    printt(_("Channel: "))
+    printtln(video.channel.displayname, bold=True)
+
+    description = video.description
     if DESCRIPTION_ENABLED and description is not None:
         columns = shutil.get_terminal_size().columns
-        delimiter = "=" * columns
         lines = description.splitlines()
-
-        print()
-        print(_("Video description:"))
-        print(delimiter)
+        print_separator(_("Video description"))
 
         for line in lines:
             print(wrap.fill(line, width=columns))
 
-        print(delimiter, end="\n\n")
+    print_separator(fat=True)
+    print()
 
 
 def play(video: Video, audio_only: bool) -> None:
-    print(_('Playing "{video.title}" by "{video.channel.displayname}"...').format(video=video))
-    maybe_print_description(video.description)
+    print_meta(video)
     if not ytcc_core.play_video(video, audio_only):
         print()
         print(_("WARNING: The video player terminated with an error.\n"
