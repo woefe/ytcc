@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ytcc 1.7.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-02-13 18:36+0100\n"
-"PO-Revision-Date: 2019-02-13 18:37+0100\n"
+"POT-Creation-Date: 2019-03-01 08:57+0100\n"
+"PO-Revision-Date: 2019-03-01 09:01+0100\n"
 "Last-Translator: Wolfgang Popp <mail@wolfgang-popp.de>\n"
 "Language-Team: German <mail@wolfgang-popp.de>\n"
 "Language: de\n"
@@ -19,59 +19,59 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "X-Generator: Gtranslator 3.30.1\n"
 
-#: ytcc/cli.py:50
+#: ytcc/cli.py:52
 msgid "The configuration file has errors!"
 msgstr "Die Konfigurationsdatei enthält Fehler!"
 
-#: ytcc/cli.py:58
+#: ytcc/cli.py:60
 msgid "ID"
 msgstr "ID"
 
-#: ytcc/cli.py:58
+#: ytcc/cli.py:60
 msgid "Date"
 msgstr "Datum"
 
-#: ytcc/cli.py:58
+#: ytcc/cli.py:60
 msgid "Channel"
 msgstr "Kanal"
 
-#: ytcc/cli.py:58
+#: ytcc/cli.py:60
 msgid "Title"
 msgstr "Titel"
 
-#: ytcc/cli.py:58
+#: ytcc/cli.py:60
 msgid "URL"
 msgstr "URL"
 
-#: ytcc/cli.py:58
+#: ytcc/cli.py:60
 msgid "Watched"
 msgstr "Gesehen"
 
-#: ytcc/cli.py:137
-msgid "Mark as watched"
-msgstr "Als gesehen markieren"
-
-#: ytcc/cli.py:139
-msgid "Download audio"
-msgstr "Tonspur herunterladen"
-
-#: ytcc/cli.py:141
-msgid "Download video"
-msgstr "Video herunterladen"
-
-#: ytcc/cli.py:143
-msgid "Play audio"
-msgstr "Tonspur abspielen"
-
-#: ytcc/cli.py:145
+#: ytcc/cli.py:88
 msgid "Play video"
 msgstr "Video apspielen"
 
-#: ytcc/cli.py:153
+#: ytcc/cli.py:89
+msgid "Play audio"
+msgstr "Tonspur abspielen"
+
+#: ytcc/cli.py:90
+msgid "Mark as watched"
+msgstr "Als gesehen markieren"
+
+#: ytcc/cli.py:92
+msgid "Download audio"
+msgstr "Tonspur herunterladen"
+
+#: ytcc/cli.py:93
+msgid "Download video"
+msgstr "Video herunterladen"
+
+#: ytcc/cli.py:151
 msgid "Type a valid TAG. <F1> for help."
 msgstr "Gib einen TAG ein. <F1> für Hilfe."
 
-#: ytcc/cli.py:228
+#: ytcc/cli.py:225
 msgid ""
 "    <F1> Display this help text.\n"
 "    <F2> Set action: Play video.\n"
@@ -93,20 +93,20 @@ msgstr ""
 " <Enter> Wählt das oberste Video.\n"
 "<CTRL+D> Beenden.\n"
 
-#: ytcc/cli.py:238
+#: ytcc/cli.py:235
 msgid "Press Enter to continue"
 msgstr "Enter drücken zum Fortfahren"
 
-#: ytcc/cli.py:255
+#: ytcc/cli.py:252
 msgid "Video description:"
 msgstr "Videobeschreibung:"
 
-#: ytcc/cli.py:265
+#: ytcc/cli.py:262
 #, python-brace-format
 msgid "Playing \"{video.title}\" by \"{video.channel.displayname}\"..."
 msgstr "Spiele \"{video.title}\" von \"{video.channel.displayname}\" ab..."
 
-#: ytcc/cli.py:269
+#: ytcc/cli.py:266
 msgid ""
 "WARNING: The video player terminated with an error.\n"
 "         The last video is not marked as watched!"
@@ -114,92 +114,100 @@ msgstr ""
 "WARNUNG: Der Videoplayer wurde fehlerhaft beendet.\n"
 "         Das Video wurde nicht als gesehen markiert!"
 
-#: ytcc/cli.py:301
+#: ytcc/cli.py:299
 msgid "Yes"
 msgstr "Ja"
 
-#: ytcc/cli.py:301
+#: ytcc/cli.py:299
 msgid "No"
 msgstr "Nein"
 
-#: ytcc/cli.py:320
+#: ytcc/cli.py:318
 #, python-brace-format
 msgid "Downloading \"{video.title}\" by \"{video.channel.displayname}\"..."
 msgstr "Lade \"{video.title}\" von \"{video.channel.displayname}\" herunter..."
 
-#: ytcc/cli.py:323
+#: ytcc/cli.py:321
 msgid "An Error occured while downloading the video"
 msgstr "Während des Herunterladens ist ein Fehler aufgetreten"
 
-#: ytcc/cli.py:331
+#: ytcc/cli.py:329
 msgid "No videos were marked as watched"
 msgstr "Keine Videos wurden als gesehen markiert"
 
-#: ytcc/cli.py:337
+#: ytcc/cli.py:335
 msgid "Following videos were marked as watched:"
 msgstr "Die Folgenden Videos wurden als gesehen markiert:"
 
-#: ytcc/cli.py:348
+#: ytcc/cli.py:346
 msgid "No videos to watch. No videos match the given criteria."
 msgstr ""
 "Keine Videos zum abspielen gefunden. Die gegeben Suchkriterien treffen auf "
 "kein Video zu."
 
-#: ytcc/cli.py:365
+#: ytcc/cli.py:363
 msgid "Updating channels..."
 msgstr "Aktualisiere Kanäle..."
 
-#: ytcc/cli.py:373
+#: ytcc/cli.py:371
 msgid "No videos to list. No videos match the given criteria."
 msgstr ""
 "Keine Videos zum auflisten gefunden. Die gegeben Suchkriterien treffen auf "
 "kein Video zu."
 
-#: ytcc/cli.py:382
+#: ytcc/cli.py:380
 msgid "No channels added, yet."
 msgstr "Bisher wurden noch keine Kanäle abboniert"
 
-#: ytcc/cli.py:393
+#: ytcc/cli.py:391
 msgid "{!r} is not a valid YouTube URL"
 msgstr "{!r} ist keine gültige YouTube URL"
 
-#: ytcc/cli.py:395
+#: ytcc/cli.py:393
 msgid "You are already subscribed to {!r}"
 msgstr "Der Kanal {!r} ist bereits abonniert"
 
-#: ytcc/cli.py:397
+#: ytcc/cli.py:395
 msgid "The channel {!r} does not exist"
 msgstr "Der Kanal {!r} existiert nicht"
 
-#: ytcc/cli.py:407
+#: ytcc/cli.py:408
+msgid "Error: The given channel does not exist."
+msgstr "Fehler: Der angegebene Kanal existiert nicht."
+
+#: ytcc/cli.py:410
+msgid "Error: The new name already exists."
+msgstr "Fehler: Der neue Name existiert bereits."
+
+#: ytcc/cli.py:415
 msgid "Cleaning up database..."
 msgstr "Bereinige die Datenbank..."
 
-#: ytcc/cli.py:413
+#: ytcc/cli.py:421
 msgid "Importing..."
 msgstr "Importieren..."
 
-#: ytcc/cli.py:416
+#: ytcc/cli.py:424
 msgid "Subscriptions"
 msgstr "Abonnements"
 
-#: ytcc/cli.py:422
+#: ytcc/cli.py:430
 msgid "The given file is not valid YouTube export file"
 msgstr "Die gegebene Datei ist keine gültige YouTube Export Datei"
 
-#: ytcc/cli.py:570
+#: ytcc/cli.py:584
 msgid "Bye..."
 msgstr "Tschüss..."
 
-#: ytcc/arguments.py:30
+#: ytcc/arguments.py:29
 msgid "{!r} is not a directory"
 msgstr "{!r} ist kein Verzeichnis"
 
-#: ytcc/arguments.py:40
+#: ytcc/arguments.py:39
 msgid "{!r} is not a valid date"
 msgstr "{!r} ist kein gültiges Datum"
 
-#: ytcc/arguments.py:46
+#: ytcc/arguments.py:45
 msgid ""
 "ytcc is a commandline YouTube client that keeps track of your favorite "
 "channels. The --list, --watch, --download, --mark-watched options can be "
@@ -211,7 +219,7 @@ msgstr ""
 "können mit den Filteroptionen --channel-filter, --include-watched, --since, "
 "--to kombiniert werden"
 
-#: ytcc/arguments.py:52
+#: ytcc/arguments.py:51
 msgid ""
 "add a new channel. NAME is the name displayed by ytcc. URL is the url of the "
 "channel's front page or the URL of any video published by the channel"
@@ -220,25 +228,29 @@ msgstr ""
 "Kanals. URL ist die URL zur Hauptseite des Kanals oder die URL zu "
 "irgendeinem Video des Kanals"
 
-#: ytcc/arguments.py:59
+#: ytcc/arguments.py:58
 msgid "print a list of all subscribed channels"
 msgstr "zeigt eine Liste aller abonnierten Kanäle"
 
-#: ytcc/arguments.py:63
-msgid "unsubscribe from the channel identified by 'ID'"
+#: ytcc/arguments.py:62
+msgid "unsubscribe from the channel identified by 'NAME'"
 msgstr "deabonniert den gegebenen Kanal"
 
-#: ytcc/arguments.py:69
+#: ytcc/arguments.py:68
+msgid "rename channel 'OLDNAME' to 'NEWNAME'"
+msgstr "benennt den Kanal 'OLDNAME' in 'NEWNAME' um"
+
+#: ytcc/arguments.py:74
 msgid "update the video list"
 msgstr "aktualisiert die Videoliste"
 
-#: ytcc/arguments.py:73
+#: ytcc/arguments.py:78
 msgid ""
 "print a list of videos that match the criteria given by the filter options"
 msgstr ""
 "zeigt eine Liste von Videos an, die den gegebenen Kriterien entsprechen"
 
-#: ytcc/arguments.py:78
+#: ytcc/arguments.py:83
 msgid ""
 "play the videos identified by 'ID'. Omitting the ID will play all videos "
 "specified by the filter options"
@@ -246,7 +258,7 @@ msgstr ""
 "spielt das Video mit der gegebenen 'ID' ab. Wird keine ID angegeben, werden "
 "alle Videos abgespielt, die auf die Filteroptionen zutreffen"
 
-#: ytcc/arguments.py:85
+#: ytcc/arguments.py:90
 msgid ""
 "download the videos identified by 'ID'. The videos are saved in $HOME/"
 "Downloads by default. Omitting the ID will download all videos that match "
@@ -257,7 +269,7 @@ msgstr ""
 "angegeben, werden alle Videos heruntergeladen, die auf die Filteroptionen "
 "zutreffen"
 
-#: ytcc/arguments.py:93
+#: ytcc/arguments.py:98
 msgid ""
 "mark videos identified by ID as watched. Omitting the ID will mark all "
 "videos that match the criteria given by the filter options as watched"
@@ -266,7 +278,7 @@ msgstr ""
 "angegeben, werden alle Videos als gesehen markiert, die auf die "
 "Filteroptionen zutreffen"
 
-#: ytcc/arguments.py:101
+#: ytcc/arguments.py:106
 msgid ""
 "plays, lists, marks, downloads only videos from channels defined in the "
 "filter"
@@ -275,33 +287,33 @@ msgstr ""
 "gegebenen Kanälen abgespielt / heruntergeladen / aufgelistet / als gesehen "
 "markiert"
 
-#: ytcc/arguments.py:108
+#: ytcc/arguments.py:113
 msgid "include already watched videos to filter rules"
 msgstr ""
 "standardmäßig werden bei Suchen und den Filteroptionen bereits gesehene "
 "Videos ignoriert. Diese Option ermöglicht, dass auch bereits gesehene Videos "
 "berücksichtigt werden."
 
-#: ytcc/arguments.py:112
+#: ytcc/arguments.py:117
 msgid "includes only videos published after the given date"
 msgstr ""
 "filtert nach Videos, die nach dem gegebenen Datum veröffentlicht wurden"
 
-#: ytcc/arguments.py:117
+#: ytcc/arguments.py:122
 msgid "includes only videos published before the given date"
 msgstr "filtert nach Videos, die vor dem gegebenen Datum veröffentlicht wurden"
 
-#: ytcc/arguments.py:122
+#: ytcc/arguments.py:127
 msgid "set the download path to PATH"
 msgstr "setzt den Download Pfad"
 
-#: ytcc/arguments.py:127
+#: ytcc/arguments.py:132
 msgid "do not print the video description before playing the video"
 msgstr ""
 "deaktiviert die Videobeschreibung, die vor dem Abspielen des Videos "
 "angezeigt wird"
 
-#: ytcc/arguments.py:131
+#: ytcc/arguments.py:136
 #, python-brace-format
 msgid ""
 "specifies which columns will be printed when listing videos. COL can be any "
@@ -311,20 +323,20 @@ msgstr ""
 "werden. Mögliche Spalten sind: {columns}. Alle Spalten können mit 'all' "
 "aktiviert werden"
 
-#: ytcc/arguments.py:139
+#: ytcc/arguments.py:144
 msgid "do not print the header of the table when listing videos"
 msgstr "deaktiviert die Kopfzeile der Tabelle der Videoauflistung"
 
-#: ytcc/arguments.py:143
+#: ytcc/arguments.py:148
 msgid "plays or downloads only the audio part of a video"
 msgstr ""
 "spielt nur die Tonspur der Videos ab bzw. lädt nur die Tonspur herunter"
 
-#: ytcc/arguments.py:147
+#: ytcc/arguments.py:152
 msgid "disables the interactive mode"
 msgstr "deaktiviert den interaktiven Modus"
 
-#: ytcc/arguments.py:151
+#: ytcc/arguments.py:156
 msgid ""
 "import YouTube channels from YouTube's subscription export (available at "
 "https://www.youtube.com/subscription_manager)"
@@ -332,7 +344,11 @@ msgstr ""
 "importiert die YouTube Kanäle aus YouTubes Abo Export (verfügbar hier: "
 "https://www.youtube.com/subscription_manager)"
 
-#: ytcc/arguments.py:157
+#: ytcc/arguments.py:162
+msgid "export YouTube channels in opml format"
+msgstr "exportiert abonnierte Kanäle als OPML Datei"
+
+#: ytcc/arguments.py:167
 msgid ""
 "removes old videos from the database and shrinks the size of the database "
 "file"
@@ -340,11 +356,11 @@ msgstr ""
 "löscht alte Videos aus der Datenbank und reduziert die Größe der "
 "Datenbankdatei"
 
-#: ytcc/arguments.py:162
+#: ytcc/arguments.py:172
 msgid "output version information and exit"
 msgstr "Versionsinformationen anzeigen und beenden"
 
-#: ytcc/arguments.py:166
+#: ytcc/arguments.py:176
 msgid "print info to include in a bug report"
 msgstr "zeigt Informationen für einen Bugreport"
 
