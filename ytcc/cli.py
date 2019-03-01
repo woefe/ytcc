@@ -97,8 +97,8 @@ class Interactive:
 
     def __init__(self, videos: List[Video]):
         self.videos = videos
-        self.previous_action = Action.PLAY_VIDEO
-        self.action = Action.PLAY_VIDEO
+        self.previous_action = Action.PLAY_AUDIO if NO_VIDEO else Action.PLAY_VIDEO
+        self.action = self.previous_action
 
         def makef(arg):
             return lambda: self.set_action(arg)
