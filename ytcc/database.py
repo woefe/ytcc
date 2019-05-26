@@ -34,7 +34,7 @@ class Channel(Base):
     id = Column(Integer, primary_key=True)
     displayname = Column(String, unique=True, nullable=False)
     yt_channelid = Column(String, unique=True, nullable=False)
-
+    is_youtube_dl = Column(Boolean)
     videos = relationship("Video", back_populates="channel",
                           cascade="all, delete, delete-orphan")
 
@@ -51,6 +51,7 @@ class Video(Base):
     watched = Column(Boolean)
 
     channel = relationship("Channel", back_populates="videos")
+    is_youtube_dl = Column(Boolean)
 
 
 class Database:

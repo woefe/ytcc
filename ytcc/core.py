@@ -33,12 +33,13 @@ import youtube_dl
 from lxml import etree
 
 import feedparser
+import datetime
 
 from ytcc.config import Config
 from ytcc.database import Channel, Database, Video
 from ytcc.exceptions import YtccException, BadURLException, ChannelDoesNotExistException, \
     DuplicateChannelException, InvalidSubscriptionFileError
-from ytcc.utils import unpack_optional
+from ytcc.utils import unpack_optional, list_playlist, get_video_information
 
 
 def _get_youtube_rss_url(yt_channel_id: str) -> str:
@@ -134,20 +135,38 @@ class Ytcc:
 
     @staticmethod
     def _update_channel(channel: Channel) -> List[Video]:
-        yt_channel_id = channel.yt_channelid
-        url = _get_youtube_rss_url(yt_channel_id)
-        feed = feedparser.parse(url)
-        return [
-            Video(
-                yt_videoid=str(entry.yt_videoid),
-                title=str(entry.title),
-                description=str(entry.description),
-                publisher=yt_channel_id,
-                publish_date=time.mktime(entry.published_parsed),
-                watched=False
-            )
-            for entry in feed.entries
-        ]
+        if channel.is_youtube_dl:
+            url = channel.yt_channelid
+            videos, playlist_name = list_playlist(url)
+            result = []
+            for video in videos:
+                video_info = get_video_information(video["url"])
+                result.append(Video(
+                    yt_videoid = video["url"],
+                    title = video["title"],
+                    description = video_info["description"],
+                    publisher=url,
+                    publish_date=time.mktime(datetime.datetime.strptime(video_info["upload_date"], "%Y%m%d").timetuple()),
+                    watched=False,
+                    is_youtube_dl=True
+                ))
+            return result
+        else:
+            yt_channel_id = channel.yt_channelid
+            url = _get_youtube_rss_url(yt_channel_id)
+            feed = feedparser.parse(url)
+            return [
+                Video(
+                    yt_videoid=str(entry.yt_videoid),
+                    title=str(entry.title),
+                    description=str(entry.description),
+                    publisher=yt_channel_id,
+                    publish_date=time.mktime(entry.published_parsed),
+                    watched=False,
+                    is_youtube_dl=False
+                )
+                for entry in feed.entries
+            ]
 
     def update_all(self) -> None:
         """Check every channel for new videos."""
@@ -267,7 +286,8 @@ class Ytcc:
         domain = ".".join(domain.split(".")[-2:])
 
         if domain not in known_yt_domains:
-            raise BadURLException(f"{channel_url} is not a valid URL")
+            self.add_channel_youtubeDL(displayname, channel_url)
+            return
 
         url = urlunparse(("https", url_parts.netloc, url_parts.path, url_parts.params,
                           url_parts.query, url_parts.fragment))
@@ -291,9 +311,19 @@ class Ytcc:
         yt_channelid = channel_id_node[0].attrib.get("content")
 
         try:
-            self.database.add_channel(Channel(displayname=displayname, yt_channelid=yt_channelid))
+            self.database.add_channel(Channel(displayname=displayname, yt_channelid=yt_channelid, is_youtube_dl=False))
         except sqlalchemy.exc.IntegrityError:
             raise DuplicateChannelException(f"Channel already subscribed: {displayname}")
+
+    def add_channel_youtubeDL(self, displayname: str, url: str):
+        try:
+            videos, playlist_name = list_playlist(url)
+        except:
+            raise BadURLException(f"{url} is not a valid URL")
+
+        self.database.add_channel(Channel(displayname=displayname, yt_channelid=url, is_youtube_dl = True))
+
+
 
     def import_channels(self, file: TextIO) -> None:
         """Import all channels from YouTube's subscription export file.
