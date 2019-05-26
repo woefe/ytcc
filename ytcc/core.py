@@ -76,16 +76,19 @@ class Ytcc:
         self.database.close()
 
     @staticmethod
-    def get_youtube_video_url(yt_videoid: Optional[str]) -> str:
-        """Return the YouTube URL for the given youtube video ID.
+    def get_video_url(video) -> str:
+        """Return the URL for the given video.
 
-        :param yt_videoid:  The YouTube video ID.
-        :return: The YouTube URL for the given youtube video ID.
+        :param video:  The video.
+        :return: The URL for the given video.
         """
-        if yt_videoid is None:
-            raise YtccException("Video id is none!")
+        if video.yt_videoid is None:
+            raise YtccException("Video id is None!")
 
-        return f"https://www.youtube.com/watch?v={yt_videoid}"
+        if video.is_youtube_dl:
+            return video.yt_videoid
+        else:
+            return f"https://www.youtube.com/watch?v={yt_videoid}"
 
     def set_channel_filter(self, channel_filter: List[str]) -> None:
         """Set the channel filter.
@@ -196,7 +199,7 @@ class Ytcc:
         if video:
             try:
                 mpv_result = subprocess.run(["mpv", *no_video_flag, *self.config.mpv_flags,
-                                             self.get_youtube_video_url(video.yt_videoid)])
+                                             self.get_video_url(video)])
             except FileNotFoundError:
                 raise YtccException("Could not locate the mpv video player!")
 
@@ -254,7 +257,7 @@ class Ytcc:
                 ydl_opts["postprocessors"] = [{"key": "FFmpegEmbedSubtitle"}]
 
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            url = self.get_youtube_video_url(video.yt_videoid)
+            url = self.get_video_url(video)
             try:
                 info = ydl.extract_info(url, download=False, process=False)
                 if info.get("is_live", False) and conf.skip_live_stream:

@@ -310,7 +310,7 @@ def print_videos(videos: Iterable[Video],
             datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M"),
             str(video.channel.displayname),
             str(video.title),
-            ytcc_core.get_youtube_video_url(video.yt_videoid),
+            ytcc_core.get_video_url(video),
             _("Yes") if video.watched else _("No")
         ]
 
