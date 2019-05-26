@@ -1,7 +1,7 @@
-# ytcc - The YouTube channel checker
+# ytcc - The channel checker
 
-Command Line tool to keep track of your favourite YouTube channels without signing up for a Google account.
-
+Command Line tool to keep track of your videos channels (principly youtube) without signing up your account.
+please note that non-youtube channel are really slow to update.
 
 ## Installation
 ### Arch Linux

@@ -24,7 +24,7 @@ def compile_translations():
 
 setup(
     name='ytcc',
-    description='A YouTube subscription tool',
+    description='A videos subscription tool',
     long_description=ytcc.__doc__,
     version=ytcc.__version__,
     url='https://github.com/woefe/ytcc',
