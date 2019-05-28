@@ -19,6 +19,7 @@ import subprocess
 import json
 
 from typing import TypeVar, Optional, Callable
+import youtube_dl
 
 # pylint: disable=invalid-name
 T = TypeVar("T")
@@ -29,16 +30,16 @@ def unpack_optional(elem: Optional[T], default: Callable[[], T]) -> T:
         return default()
     return elem
 
-def list_playlist(playlist_url:str):
-    output = subprocess.check_output(["youtube-dl", playlist_url, "--flat-playlist", "--dump-single-json", "--playlist-end","10"])
-    playlist_json = json.loads(output)
+
+def list_playlist(playlist_url: str):
+    with youtube_dl.YoutubeDL({"extract_flat": True, "playlistend": 10, "quiet": True}) as ydl:
+        playlist_info = ydl.extract_info(playlist_url, download=False)
 
     videos = []
+    assert playlist_info["_type"] == "playlist"
+    playlist_title = playlist_info["title"]
 
-    assert playlist_json["_type"] == "playlist"
-    playlist_title = playlist_json["title"]
-
-    for entry in playlist_json["entries"]:
+    for entry in playlist_info["entries"]:
         videos.append({
             "url": entry["url"],
             "title": entry["title"]
@@ -46,6 +47,8 @@ def list_playlist(playlist_url:str):
 
     return videos, playlist_title
 
+
 def get_video_information(video_url:str):
-    output = subprocess.check_output(["youtube-dl", video_url, "--dump-single-json"])
-    return json.loads(output)
+    with youtube_dl.YoutubeDL({"quiet": True}) as ydl:
+        output = ydl.extract_info(video_url, download=False)
+    return output
