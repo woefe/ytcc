@@ -7,6 +7,9 @@ Command Line tool to keep track of your favourite YouTube channels without signi
 ### Arch Linux
 Install [ytcc](https://aur.archlinux.org/packages/ytcc/) from the AUR.
 
+### NixOS
+Install package `ytcc`.
+
 ### Void Linux
 Install package `ytcc`.
 
