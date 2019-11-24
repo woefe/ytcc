@@ -50,7 +50,7 @@ try:
     COLORS = ytcc_core.config.color
 except BadConfigException:
     print(_("The configuration file has errors!"))
-    exit(1)
+    sys.exit(1)
 
 INTERACTIVE_ENABLED = True
 DESCRIPTION_ENABLED = True
@@ -452,6 +452,7 @@ def export_channels(file: BinaryIO) -> None:
 
 @register_option("version", exit=True)
 def version() -> None:
+    # pylint: disable=import-outside-toplevel
     import ytcc
     print("ytcc version " + ytcc.__version__)
     print()
@@ -463,6 +464,7 @@ def version() -> None:
 
 @register_option("bug_report_info", exit=True)
 def bug_report_info() -> None:
+    # pylint: disable=import-outside-toplevel
     import ytcc
     import youtube_dl.version
     import subprocess
@@ -488,7 +490,7 @@ def bug_report_info() -> None:
     print(sys.version)
     print()
     print("---mpv version---")
-    subprocess.run(["mpv", "--version"])
+    subprocess.run(["mpv", "--version"], check=False)
     print()
     print("---config dump---")
     print(ytcc_core.config)
@@ -597,7 +599,7 @@ def register_signal_handlers() -> None:
         ytcc_core.close()
         print()
         print(_("Bye..."))
-        exit(1)
+        sys.exit(1)
 
     signal.signal(signal.SIGINT, handler)
 

@@ -22,9 +22,11 @@ import os
 import re
 from pathlib import Path
 from typing import Any, Dict, Optional, Iterable
+from sqlalchemy import Column
 
 from ytcc.database import Video, Channel
 from ytcc.exceptions import BadConfigException
+from ytcc.utils import unpack_or_raise
 
 DEFAULTS: Dict[str, Dict[str, Any]] = {
     "YTCC": {
@@ -120,7 +122,7 @@ class Config:
         self.color = _ColorConf(config["color"])
 
     def init_order(self) -> Iterable[Any]:
-        col_mapping = {
+        col_mapping: Dict[str, Column] = {
             "id": Video.id,
             "date": Video.publish_date,
             "channel": Channel.displayname,
@@ -136,12 +138,10 @@ class Config:
             if len(sort_spec) == 2:
                 desc = sort_spec[1]
 
-            column = col_mapping.get(col)
-            if column is not None:
-                column = column.collate("NOCASE")
-                yield column.desc() if desc == "desc" else column
-            else:
-                raise BadConfigException(f"Cannot order by {key.strip()}")
+            column = unpack_or_raise(col_mapping.get(col),
+                                     BadConfigException(f"Cannot order by {key.strip()}"))
+            column = column.collate("NOCASE")
+            yield column.desc() if desc == "desc" else column
 
     def __str__(self) -> str:
         strio = io.StringIO()

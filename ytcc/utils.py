@@ -26,3 +26,8 @@ def unpack_optional(elem: Optional[T], default: Callable[[], T]) -> T:
     if elem is None:
         return default()
     return elem
+
+def unpack_or_raise(elem: Optional[T], exception: Exception) -> T:
+    if elem is None:
+        raise exception
+    return elem

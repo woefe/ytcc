@@ -26,6 +26,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from ytcc.exceptions import ChannelDoesNotExistException, DuplicateChannelException
 
+# pylint: disable=invalid-name
 Base = declarative_base()
 
 
