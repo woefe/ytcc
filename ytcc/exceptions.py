@@ -40,3 +40,9 @@ class InvalidSubscriptionFileError(YtccException):
 
 class BadConfigException(YtccException):
     """Raised when error in config file is encountered."""
+
+class DatabaseOperationalError(YtccException):
+    """Raised when database is locked and no operations can be performed.
+
+    Can happen when two instances of ytcc are running at the same time.
+    """

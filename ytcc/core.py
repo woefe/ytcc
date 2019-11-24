@@ -37,7 +37,7 @@ import feedparser
 from ytcc.config import Config
 from ytcc.database import Channel, Database, Video
 from ytcc.exceptions import YtccException, BadURLException, ChannelDoesNotExistException, \
-    DuplicateChannelException, InvalidSubscriptionFileError
+    DuplicateChannelException, InvalidSubscriptionFileError, DatabaseOperationalError
 from ytcc.utils import unpack_optional
 
 
@@ -157,7 +157,10 @@ class Ytcc:
         with Pool(num_workers) as pool:
             videos = chain.from_iterable(pool.map(self._update_channel, channels))
 
-        self.database.add_videos(videos)
+        try:
+            self.database.add_videos(videos)
+        except sqlalchemy.exc.OperationalError as original:
+            raise DatabaseOperationalError() from original
 
     def play_video(self, video: Video, audio_only: bool = False) -> bool:
         """Play the given video with the mpv video player and mark the the video as watched.

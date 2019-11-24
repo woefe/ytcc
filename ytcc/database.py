@@ -112,6 +112,12 @@ class Database:
             raise ChannelDoesNotExistException()
 
     def add_videos(self, videos: Iterable[Video]) -> None:
+        """Add the given videos to the database.
+
+        Already existing videos are silently ignored.
+
+        :param videos: List or other iterable of videos to add.
+        """
         for video in videos:
             query = self.session.query(Video.id).filter(Video.yt_videoid == video.yt_videoid)
             if not self.session.query(query.exists()).scalar():

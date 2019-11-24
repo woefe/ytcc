@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: ytcc 1.8.0\n"
+"Project-Id-Version: ytcc 1.8.1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-03-01 08:57+0100\n"
+"POT-Creation-Date: 2019-11-24 16:50+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -86,99 +86,106 @@ msgstr ""
 msgid "Press Enter to continue"
 msgstr ""
 
-#: ytcc/cli.py:252
-msgid "Video description:"
+#: ytcc/cli.py:259
+msgid "Title:   "
 msgstr ""
 
-#: ytcc/cli.py:262
-#, python-brace-format
-msgid "Playing \"{video.title}\" by \"{video.channel.displayname}\"..."
+#: ytcc/cli.py:261
+msgid "Channel: "
 msgstr ""
 
-#: ytcc/cli.py:266
+#: ytcc/cli.py:268
+msgid "Video description"
+msgstr ""
+
+#: ytcc/cli.py:281
 msgid ""
 "WARNING: The video player terminated with an error.\n"
 "         The last video is not marked as watched!"
 msgstr ""
 
-#: ytcc/cli.py:299
+#: ytcc/cli.py:314
 msgid "Yes"
 msgstr ""
 
-#: ytcc/cli.py:299
+#: ytcc/cli.py:314
 msgid "No"
 msgstr ""
 
-#: ytcc/cli.py:318
+#: ytcc/cli.py:333
 #, python-brace-format
 msgid "Downloading \"{video.title}\" by \"{video.channel.displayname}\"..."
 msgstr ""
 
-#: ytcc/cli.py:321
+#: ytcc/cli.py:336
 msgid "An Error occured while downloading the video"
 msgstr ""
 
-#: ytcc/cli.py:329
+#: ytcc/cli.py:344
 msgid "No videos were marked as watched"
 msgstr ""
 
-#: ytcc/cli.py:335
+#: ytcc/cli.py:350
 msgid "Following videos were marked as watched:"
 msgstr ""
 
-#: ytcc/cli.py:346
+#: ytcc/cli.py:361
 msgid "No videos to watch. No videos match the given criteria."
 msgstr ""
 
-#: ytcc/cli.py:363
+#: ytcc/cli.py:378
 msgid "Updating channels..."
 msgstr ""
 
-#: ytcc/cli.py:371
+#: ytcc/cli.py:382
+msgid "Database error! Check if other processes of ytcc are running!"
+msgstr ""
+
+#: ytcc/cli.py:390
 msgid "No videos to list. No videos match the given criteria."
 msgstr ""
 
-#: ytcc/cli.py:380
+#: ytcc/cli.py:399
 msgid "No channels added, yet."
 msgstr ""
 
-#: ytcc/cli.py:391
+#: ytcc/cli.py:410
 msgid "{!r} is not a valid YouTube URL"
 msgstr ""
 
-#: ytcc/cli.py:393
+#: ytcc/cli.py:412
 msgid "You are already subscribed to {!r}"
 msgstr ""
 
-#: ytcc/cli.py:395
+#: ytcc/cli.py:414
 msgid "The channel {!r} does not exist"
 msgstr ""
 
-#: ytcc/cli.py:408
+#: ytcc/cli.py:427
 msgid "Error: The given channel does not exist."
 msgstr ""
 
-#: ytcc/cli.py:410
+#: ytcc/cli.py:429
 msgid "Error: The new name already exists."
 msgstr ""
 
-#: ytcc/cli.py:415
+#: ytcc/cli.py:434
 msgid "Cleaning up database..."
 msgstr ""
 
-#: ytcc/cli.py:421
+#: ytcc/cli.py:440
 msgid "Importing..."
 msgstr ""
 
-#: ytcc/cli.py:424
+#: ytcc/cli.py:443
 msgid "Subscriptions"
 msgstr ""
 
-#: ytcc/cli.py:430
+#: ytcc/cli.py:449
 msgid "The given file is not valid YouTube export file"
 msgstr ""
 
-#: ytcc/cli.py:584
+#: ytcc/cli.py:605
 msgid "Bye..."
 msgstr ""
 

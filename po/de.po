@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ytcc 1.7.4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-03-01 08:57+0100\n"
-"PO-Revision-Date: 2019-03-01 09:01+0100\n"
+"POT-Creation-Date: 2019-11-24 16:50+0100\n"
+"PO-Revision-Date: 2019-11-24 16:54+0100\n"
 "Last-Translator: Wolfgang Popp <mail@wolfgang-popp.de>\n"
 "Language-Team: German <mail@wolfgang-popp.de>\n"
 "Language: de\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
-"X-Generator: Gtranslator 3.30.1\n"
+"X-Generator: Gtranslator 3.34.0\n"
 
 #: ytcc/cli.py:52
 msgid "The configuration file has errors!"
@@ -97,16 +97,19 @@ msgstr ""
 msgid "Press Enter to continue"
 msgstr "Enter drücken zum Fortfahren"
 
-#: ytcc/cli.py:252
-msgid "Video description:"
-msgstr "Videobeschreibung:"
+#: ytcc/cli.py:259
+msgid "Title:   "
+msgstr "Titel:"
 
-#: ytcc/cli.py:262
-#, python-brace-format
-msgid "Playing \"{video.title}\" by \"{video.channel.displayname}\"..."
-msgstr "Spiele \"{video.title}\" von \"{video.channel.displayname}\" ab..."
+#: ytcc/cli.py:261
+msgid "Channel: "
+msgstr "Kanal:"
 
-#: ytcc/cli.py:266
+#: ytcc/cli.py:268
+msgid "Video description"
+msgstr "Videobeschreibung"
+
+#: ytcc/cli.py:281
 msgid ""
 "WARNING: The video player terminated with an error.\n"
 "         The last video is not marked as watched!"
@@ -114,88 +117,93 @@ msgstr ""
 "WARNUNG: Der Videoplayer wurde fehlerhaft beendet.\n"
 "         Das Video wurde nicht als gesehen markiert!"
 
-#: ytcc/cli.py:299
+#: ytcc/cli.py:314
 msgid "Yes"
 msgstr "Ja"
 
-#: ytcc/cli.py:299
+#: ytcc/cli.py:314
 msgid "No"
 msgstr "Nein"
 
-#: ytcc/cli.py:318
+#: ytcc/cli.py:333
 #, python-brace-format
 msgid "Downloading \"{video.title}\" by \"{video.channel.displayname}\"..."
 msgstr "Lade \"{video.title}\" von \"{video.channel.displayname}\" herunter..."
 
-#: ytcc/cli.py:321
+#: ytcc/cli.py:336
 msgid "An Error occured while downloading the video"
 msgstr "Während des Herunterladens ist ein Fehler aufgetreten"
 
-#: ytcc/cli.py:329
+#: ytcc/cli.py:344
 msgid "No videos were marked as watched"
 msgstr "Keine Videos wurden als gesehen markiert"
 
-#: ytcc/cli.py:335
+#: ytcc/cli.py:350
 msgid "Following videos were marked as watched:"
 msgstr "Die Folgenden Videos wurden als gesehen markiert:"
 
-#: ytcc/cli.py:346
+#: ytcc/cli.py:361
 msgid "No videos to watch. No videos match the given criteria."
 msgstr ""
 "Keine Videos zum abspielen gefunden. Die gegeben Suchkriterien treffen auf "
 "kein Video zu."
 
-#: ytcc/cli.py:363
+#: ytcc/cli.py:378
 msgid "Updating channels..."
 msgstr "Aktualisiere Kanäle..."
 
-#: ytcc/cli.py:371
+#: ytcc/cli.py:382
+msgid "Database error! Check if other processes of ytcc are running!"
+msgstr ""
+"Ein Datenbankfehler ist aufgetreten! Läuft noch ein anderer ytcc Prozess?"
+
+#: ytcc/cli.py:390
 msgid "No videos to list. No videos match the given criteria."
 msgstr ""
 "Keine Videos zum auflisten gefunden. Die gegeben Suchkriterien treffen auf "
 "kein Video zu."
 
-#: ytcc/cli.py:380
+#: ytcc/cli.py:399
 msgid "No channels added, yet."
 msgstr "Bisher wurden noch keine Kanäle abboniert"
 
-#: ytcc/cli.py:391
+#: ytcc/cli.py:410
 msgid "{!r} is not a valid YouTube URL"
 msgstr "{!r} ist keine gültige YouTube URL"
 
-#: ytcc/cli.py:393
+#: ytcc/cli.py:412
 msgid "You are already subscribed to {!r}"
 msgstr "Der Kanal {!r} ist bereits abonniert"
 
-#: ytcc/cli.py:395
+#: ytcc/cli.py:414
 msgid "The channel {!r} does not exist"
 msgstr "Der Kanal {!r} existiert nicht"
 
-#: ytcc/cli.py:408
+#: ytcc/cli.py:427
 msgid "Error: The given channel does not exist."
 msgstr "Fehler: Der angegebene Kanal existiert nicht."
 
-#: ytcc/cli.py:410
+#: ytcc/cli.py:429
 msgid "Error: The new name already exists."
 msgstr "Fehler: Der neue Name existiert bereits."
 
-#: ytcc/cli.py:415
+#: ytcc/cli.py:434
 msgid "Cleaning up database..."
 msgstr "Bereinige die Datenbank..."
 
-#: ytcc/cli.py:421
+#: ytcc/cli.py:440
 msgid "Importing..."
 msgstr "Importieren..."
 
-#: ytcc/cli.py:424
+#: ytcc/cli.py:443
 msgid "Subscriptions"
 msgstr "Abonnements"
 
-#: ytcc/cli.py:430
+#: ytcc/cli.py:449
 msgid "The given file is not valid YouTube export file"
 msgstr "Die gegebene Datei ist keine gültige YouTube Export Datei"
 
-#: ytcc/cli.py:584
+#: ytcc/cli.py:605
 msgid "Bye..."
 msgstr "Tschüss..."
 
@@ -363,6 +371,10 @@ msgstr "Versionsinformationen anzeigen und beenden"
 #: ytcc/arguments.py:176
 msgid "print info to include in a bug report"
 msgstr "zeigt Informationen für einen Bugreport"
+
+#, python-brace-format
+#~ msgid "Playing \"{video.title}\" by \"{video.channel.displayname}\"..."
+#~ msgstr "Spiele \"{video.title}\" von \"{video.channel.displayname}\" ab..."
 
 #~ msgid "Available commands:"
 #~ msgstr "Verfügbare Befehle"

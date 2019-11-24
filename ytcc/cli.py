@@ -35,7 +35,7 @@ from typing import List, Iterable, Optional, TextIO, Any, Set, Tuple, Callable, 
 from ytcc import core, arguments, terminal, _
 from ytcc.database import Video
 from ytcc.exceptions import BadConfigException, ChannelDoesNotExistException, \
-    DuplicateChannelException, BadURLException
+    DuplicateChannelException, BadURLException, DatabaseOperationalError
 from ytcc.terminal import printt, printtln
 from ytcc.utils import unpack_optional
 
@@ -376,7 +376,11 @@ def download(video_ids: List[int]) -> None:
 @register_option("update")
 def update_all() -> None:
     print(_("Updating channels..."))
-    ytcc_core.update_all()
+    try:
+        ytcc_core.update_all()
+    except DatabaseOperationalError:
+        print(_("Database error! Check if other processes of ytcc are running!"))
+        sys.exit(1)
 
 
 @register_option("list")
