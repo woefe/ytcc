@@ -84,6 +84,10 @@ class Action(Enum):
         self.hotkey = hotkey
         self.color = color
 
+    @staticmethod
+    def from_config():
+        return Action.__dict__.get(ytcc_core.config.default_action, Action.PLAY_VIDEO)
+
     SHOW_HELP = (None, terminal.Keys.F1, None)
     PLAY_VIDEO = (_("Play video"), terminal.Keys.F2, COLORS.prompt_play_video)
     PLAY_AUDIO = (_("Play audio"), terminal.Keys.F3, COLORS.prompt_play_audio)
@@ -97,7 +101,7 @@ class Interactive:
 
     def __init__(self, videos: List[Video]):
         self.videos = videos
-        self.previous_action = Action.PLAY_AUDIO if NO_VIDEO else Action.PLAY_VIDEO
+        self.previous_action = Action.PLAY_AUDIO if NO_VIDEO else Action.from_config()
         self.action = self.previous_action
 
         def makef(arg):

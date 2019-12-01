@@ -34,7 +34,8 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
         "DownloadDir": "~/Downloads",
         "mpvFlags": "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best",
         "alphabet": "sdfervghnuiojkl",
-        "orderBy": "channel, date"
+        "orderBy": "channel, date",
+        "defaultAction": "play_video"
     },
     "color": {
         "promptDownloadAudio": 2,
@@ -120,6 +121,19 @@ class Config:
         self.youtube_dl = _YTDLConf(config["youtube-dl"])
         self.order_by = list(self.init_order())
         self.color = _ColorConf(config["color"])
+        self.default_action = self.init_action()
+
+    def init_action(self) -> str:
+        action = self._config["YTCC"]["defaultAction"]
+        if not action:
+            return "PLAY_VIDEO"
+
+        actions = {"PLAY_VIDEO", "PLAY_AUDIO", "MARK_WATCHED", "DOWNLOAD_AUDIO", "DOWNLOAD_VIDEO"}
+        action = action.upper()
+        if action not in actions:
+            raise BadConfigException(f"Unknown action: {action}")
+
+        return action
 
     def init_order(self) -> Iterable[Any]:
         col_mapping: Dict[str, Column] = {

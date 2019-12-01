@@ -102,6 +102,10 @@ alphabet = sdfervghnuiojkl
 # If neither :desc nor :asc are given, it defaults to :asc.
 orderby = channel, date, watched:desc
 
+# Default action of interactive mode.
+# Possible options: play_video, play_audio, mark_watched, download_audio, download_video
+defaultaction = play_video
+
 
 # Prompt and table colors. Supports 256 colors. Hence, values between 0-255 are allowed.
 # See https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit for the color codes.
