@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: ytcc 1.7.4\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2019-11-24 16:50+0100\n"
-"PO-Revision-Date: 2019-11-24 16:54+0100\n"
+"PO-Revision-Date: 2019-11-24 18:04+0100\n"
 "Last-Translator: Wolfgang Popp <mail@wolfgang-popp.de>\n"
 "Language-Team: German <mail@wolfgang-popp.de>\n"
 "Language: de\n"
@@ -99,11 +99,11 @@ msgstr "Enter drücken zum Fortfahren"
 
 #: ytcc/cli.py:259
 msgid "Title:   "
-msgstr "Titel:"
+msgstr "Titel: "
 
 #: ytcc/cli.py:261
 msgid "Channel: "
-msgstr "Kanal:"
+msgstr "Kanal: "
 
 #: ytcc/cli.py:268
 msgid "Video description"
