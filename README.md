@@ -127,6 +127,10 @@ format = bestvideo[height<=?1080]+bestaudio/best
 # Output template (see OUTPUT TEMPLATE in youtube-dl manpage)
 outputtemplate = %(title)s.%(ext)s
 
+# If a merge is required according to format selection, merge to the given container format. One of
+# mkv, mp4, ogg, webm, flv
+mergeoutputformat = mkv
+
 # Loglevel options: quiet, normal, verbose
 loglevel = normal
 

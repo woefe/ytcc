@@ -53,7 +53,8 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
         "retries": 0,
         "subtitles": "off",
         "thumbnail": "on",
-        "skipLiveStream": "yes"
+        "skipLiveStream": "yes",
+        "mergeOutputFormat": "mkv"
     },
     "TableFormat": {
         "ID": "on",
@@ -184,6 +185,7 @@ class _YTDLConf:
         self.subtitles = subconf["subtitles"]
         self.thumbnail = subconf.getboolean("thumbnail")
         self.skip_live_stream = subconf.getboolean("skipLiveStream")
+        self.merge_output_format = subconf["mergeOutputFormat"]
 
         limit = int(subconf["ratelimit"])
         self.ratelimit = limit if limit > 0 else None

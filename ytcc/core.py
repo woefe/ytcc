@@ -219,6 +219,7 @@ class Ytcc:
             "retries": conf.retries,
             "quiet": conf.loglevel == "quiet",
             "verbose": conf.loglevel == "verbose",
+            "merge_output_format": conf.merge_output_format,
             "ignoreerrors": False
         }
 
