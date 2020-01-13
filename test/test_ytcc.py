@@ -184,7 +184,7 @@ class TestYtccPreparedVideos(TestCase):
         ytcc = self.ytcc
         self.assertTrue(ytcc.download_video(self.video))
         self.assertTrue(self.video.watched)
-        self.assertTrue(os.path.isfile(os.path.join(ytcc.config.download_dir, "tmpIXBgjd.webm")))
+        self.assertTrue(os.path.isfile(os.path.join(ytcc.config.download_dir, "tmpIXBgjd.mkv")))
 
     def test_mark_all_watched(self):
         ytcc = self.ytcc
