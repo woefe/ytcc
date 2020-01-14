@@ -220,27 +220,28 @@ class Ytcc:
             "quiet": conf.loglevel == "quiet",
             "verbose": conf.loglevel == "verbose",
             "merge_output_format": conf.merge_output_format,
-            "ignoreerrors": False
+            "ignoreerrors": False,
+            "postprocessors": [
+                {
+                    "key": "FFmpegMetadata"
+                }
+            ]
         }
 
         if audio_only:
             ydl_opts["format"] = "bestaudio/best"
             if conf.thumbnail:
                 ydl_opts["writethumbnail"] = True
-                ydl_opts["postprocessors"] = [
-                    {
-                        'key': 'FFmpegExtractAudio',
-                        'preferredcodec': "m4a"
-                    },
-                    {"key": "EmbedThumbnail"}
-                ]
+                extract_audio_pp = {'key': 'FFmpegExtractAudio', 'preferredcodec': "m4a"}
+                ydl_opts["postprocessors"].insert(0, extract_audio_pp)
+                ydl_opts["postprocessors"].append({"key": "EmbedThumbnail"})
         else:
             ydl_opts["format"] = conf.format
             if conf.subtitles != "off":
                 ydl_opts["subtitleslangs"] = list(map(str.strip, conf.subtitles.split(",")))
                 ydl_opts["writesubtitles"] = True
                 ydl_opts["writeautomaticsub"] = True
-                ydl_opts["postprocessors"] = [{"key": "FFmpegEmbedSubtitle"}]
+                ydl_opts["postprocessors"].append({"key": "FFmpegEmbedSubtitle"})
 
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             url = self.get_youtube_video_url(video.yt_videoid)
