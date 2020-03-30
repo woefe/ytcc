@@ -21,7 +21,8 @@ Ytcc requires python 3.6 or later. Install dependencies: `python3-sqlalchemy`, `
 git clone https://github.com/woefe/ytcc.git
 cd ytcc
 sudo python3 setup.py install
-sudo install -Dm644 zsh/_ytcc /usr/share/zsh/site-functions/_ytcc
+sudo install -Dm644 completions/zsh/_ytcc /usr/share/zsh/site-functions/_ytcc
+sudo install -Dm644 completions/fish/ytcc.fish /usr/share/fish/vendor_completions.d/ytcc.fish
 ```
 
 ### Without installation
