@@ -288,7 +288,7 @@ class Ytcc:
 
         parser = etree.HTMLParser()
         root = etree.parse(StringIO(response), parser).getroot()
-        site_name_node = root.xpath('/html/head/meta[@property="og:site_name"]')
+        site_name_node = root.xpath('//meta[@property="og:site_name"]')
         channel_id_node = root.xpath('//meta[@itemprop="channelId"]')
 
         if not site_name_node or site_name_node[0].attrib.get("content", "") != "YouTube":
