@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Iterable
 from sqlalchemy import Column
 
-from ytcc.database import Video, Channel
+from ytcc.database import Video, Playlist, MappedVideo
 from ytcc.exceptions import BadConfigException
 from ytcc.utils import unpack_or_raise
 
@@ -137,26 +137,7 @@ class Config:
         return action
 
     def init_order(self) -> Iterable[Any]:
-        col_mapping: Dict[str, Column] = {
-            "id": Video.id,
-            "date": Video.publish_date,
-            "channel": Channel.displayname,
-            "title": Video.title,
-            "url": Video.yt_videoid,
-            "watched": Video.watched
-        }
-        for key in self._config["YTCC"]["orderBy"].split(","):
-            sort_spec = list(map(lambda s: s.strip().lower(), key.split(":")))
-            col = sort_spec[0]
-            desc = ""
-
-            if len(sort_spec) == 2:
-                desc = sort_spec[1]
-
-            column = unpack_or_raise(col_mapping.get(col),
-                                     BadConfigException(f"Cannot order by {key.strip()}"))
-            column = column.collate("NOCASE")
-            yield column.desc() if desc == "desc" else column
+        return []
 
     def __str__(self) -> str:
         strio = io.StringIO()

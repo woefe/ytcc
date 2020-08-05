@@ -15,34 +15,87 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
-
-import time
 import datetime
+import hashlib
+import logging
 import os
+import sqlite3
 import subprocess
-from itertools import chain
+import time
 from concurrent.futures import ThreadPoolExecutor as Pool
-from io import StringIO
-from typing import Iterable, List, TextIO, Optional, Any, Dict, BinaryIO
-from urllib.error import URLError
-from urllib.parse import urlparse, urlunparse, parse_qs
-from urllib.request import urlopen
+from typing import Iterable, List, Optional, Any, Dict, FrozenSet
 
-import sqlalchemy
 import youtube_dl
-from lxml import etree
-
-import feedparser
+from youtube_dl import DownloadError
 
 from ytcc.config import Config
-from ytcc.database import Channel, Database, Video
-from ytcc.exceptions import YtccException, BadURLException, ChannelDoesNotExistException, \
-    DuplicateChannelException, InvalidSubscriptionFileError, DatabaseOperationalError
-from ytcc.utils import unpack_optional
+from ytcc.database import Database, Video, Playlist
+from ytcc.exceptions import YtccException, BadURLException, DuplicateChannelException, \
+    DatabaseOperationalError
+from ytcc.utils import unpack_optional, take
 
 
-def _get_youtube_rss_url(yt_channel_id: str) -> str:
-    return f"https://www.youtube.com/feeds/videos.xml?channel_id={yt_channel_id}"
+def extractor_hash(data: Dict[str, str]) -> str:
+    digest = hashlib.sha256()
+    for key in sorted(data.keys()):
+        digest.update(key.encode("utf-8"))
+        digest.update(data[key].encode("utf-8"))
+    return digest.hexdigest()
+
+
+def get_url(entry):
+    url = entry.get("url")
+    if entry.get("ie_key") == "Youtube":
+        return f"https://www.youtube.com/watch?v={entry.get('id')}"
+    if not any(map(url.startswith, ("http://", "https://", "ftp://", "ftps://"))):
+        return None
+    return url
+
+
+class Updater:
+    db_path = None
+
+    @staticmethod
+    def _updater(playlist: Playlist, existing_hashes: FrozenSet[str]) -> Iterable[Video]:
+        max_items = 20
+        ydl_opts = {
+            "playliststart": 1,
+            "playlistend": max_items,
+            "noplaylist": False,
+        }
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(playlist.url, download=False, process=False)
+            for entry in take(max_items, info.get("entries", [])):
+                e_hash = extractor_hash(entry)
+                if e_hash not in existing_hashes:
+                    try:
+                        processed = ydl.process_ie_result(entry, False)
+                        yield Video(
+                            url=processed["webpage_url"],
+                            title=processed["title"],
+                            description=processed.get("description", ""),
+                            publish_date=processed.get("upload_date", ""),
+                            watched=False,
+                            duration=processed.get("duration", -1),
+                            extractor_hash=e_hash
+                        )
+                    except DownloadError as dl:
+                        logging.error(dl)
+
+    @staticmethod
+    def _update_task(playlist: Playlist) -> Iterable[Video]:
+        with Database(Updater.db_path) as db:
+            hashes = frozenset(x.extractor_hash for x in db.list_videos(playlists=[playlist.name]))
+            updates = Updater._updater(playlist, hashes)
+            try:
+                db.add_videos(updates, playlist)
+            except sqlite3.OperationalError as original:
+                raise DatabaseOperationalError() from original
+        return list(Updater._updater(playlist, hashes))
+
+    @staticmethod
+    def run(playlist: Playlist) -> Iterable[Video]:
+        return Updater._update_task(playlist)
 
 
 class Ytcc:
@@ -58,11 +111,20 @@ class Ytcc:
     def __init__(self, override_cfg_file: Optional[str] = None) -> None:
         self.config = Config(override_cfg_file)
         self.database = Database(self.config.db_path)
-        self.video_id_filter: List[int] = []
-        self.channel_filter: List[str] = []
+        self.video_id_filter: Optional[List[int]] = None
+        self.playlist_filter: Optional[List[str]] = None
+        self.tags_filter: Optional[List[str]] = None
         self.date_begin_filter = 0.0
         self.date_end_filter = (0.0, False)
         self.include_watched_filter = False
+
+    def __del__(self):
+        try:
+            db = self.__getattribute__("database")
+        except AttributeError:
+            return
+
+        db.close()
 
     def __enter__(self) -> "Ytcc":
         return self
@@ -74,18 +136,6 @@ class Ytcc:
         """Close open resources like the database connection."""
         self.database.close()
 
-    @staticmethod
-    def get_youtube_video_url(yt_videoid: Optional[str]) -> str:
-        """Return the YouTube URL for the given youtube video ID.
-
-        :param yt_videoid:  The YouTube video ID.
-        :return: The YouTube URL for the given youtube video ID.
-        """
-        if yt_videoid is None:
-            raise YtccException("Video id is none!")
-
-        return f"https://www.youtube.com/watch?v={yt_videoid}"
-
     def set_channel_filter(self, channel_filter: List[str]) -> None:
         """Set the channel filter.
 
@@ -94,8 +144,8 @@ class Ytcc:
 
         :param channel_filter: The list of channel names.
         """
-        self.channel_filter.clear()
-        self.channel_filter.extend(channel_filter)
+        self.playlist_filter.clear()
+        self.playlist_filter.extend(channel_filter)
 
     def set_date_begin_filter(self, begin: datetime.datetime) -> None:
         """Set the time filter.
@@ -120,7 +170,7 @@ class Ytcc:
 
         The results when listing videos will include both watched and unwatched videos.
         """
-        self.include_watched_filter = True
+        self.include_watched_filter = None
 
     def set_video_id_filter(self, ids: Optional[Iterable[int]] = None) -> None:
         """Set the id filter.
@@ -132,35 +182,17 @@ class Ytcc:
         if ids is not None:
             self.video_id_filter.extend(ids)
 
-    @staticmethod
-    def _update_channel(channel: Channel) -> List[Video]:
-        yt_channel_id = channel.yt_channelid
-        url = _get_youtube_rss_url(yt_channel_id)
-        feed = feedparser.parse(url)
-        return [
-            Video(
-                yt_videoid=str(entry.yt_videoid),
-                title=str(entry.title),
-                description=str(entry.description),
-                publisher=yt_channel_id,
-                publish_date=time.mktime(entry.published_parsed),
-                watched=False
-            )
-            for entry in feed.entries
-        ]
+    def set_tags_filter(self, tags: Optional[List[str]] = None) -> None:
+        self.tags_filter = tags
 
-    def update_all(self) -> None:
-        """Check every channel for new videos."""
-        channels = self.database.get_channels()
-        num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 2
+    def update(self) -> None:
+
+        playlists = self.database.list_playlists()
+        num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 4
+        Updater.db_path = self.config.db_path
 
         with Pool(num_workers) as pool:
-            videos = chain.from_iterable(pool.map(self._update_channel, channels))
-
-        try:
-            self.database.add_videos(videos)
-        except sqlalchemy.exc.OperationalError as original:
-            raise DatabaseOperationalError() from original
+            list(pool.map(Updater.run, playlists))
 
     def play_video(self, video: Video, audio_only: bool = False) -> bool:
         """Play the given video with the mpv video player and mark the the video as watched.
@@ -180,8 +212,7 @@ class Ytcc:
         if video:
             try:
                 command = [
-                    "mpv", *no_video_flag, *self.config.mpv_flags,
-                    self.get_youtube_video_url(video.yt_videoid)
+                    "mpv", *no_video_flag, *self.config.mpv_flags, video.url
                 ]
                 subprocess.run(command, check=True)
             except FileNotFoundError:
@@ -190,6 +221,7 @@ class Ytcc:
                 return False
 
             video.watched = True
+            # TODO
             return True
 
         return False
@@ -244,9 +276,8 @@ class Ytcc:
                 ydl_opts["postprocessors"].append({"key": "FFmpegEmbedSubtitle"})
 
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            url = self.get_youtube_video_url(video.yt_videoid)
             try:
-                info = ydl.extract_info(url, download=False, process=False)
+                info = ydl.extract_info(video.url, download=False, process=False)
                 if info.get("is_live", False) and conf.skip_live_stream:
                     return False
 
@@ -256,145 +287,53 @@ class Ytcc:
             except youtube_dl.utils.YoutubeDLError:
                 return False
 
-    def add_channel(self, displayname: str, channel_url: str) -> None:
-        """Subscribe to a channel.
-
-        :param displayname: A human readable name of the channel.
-        :param channel_url: The url to a page that can identify the channel.
-        :raises ChannelDoesNotExistException: If the given URL does not exist.
-        :raises DuplicateChannelException: If the channel already exists in the database.
-        :raises BadURLException: If the given URL does not refer to a YouTube channel.
-        """
-        known_yt_domains = ["youtu.be", "youtube.com", "youtubeeducation.com", "youtubekids.com",
-                            "youtube-nocookie.com", "yt.be", "ytimg.com"]
-
-        url_parts = urlparse(channel_url, scheme="https")
-        if not url_parts.netloc:
-            url_parts = urlparse("https://" + channel_url)
-
-        domain = url_parts.netloc.split(":")[0]
-        domain = ".".join(domain.split(".")[-2:])
-
-        if domain not in known_yt_domains:
-            raise BadURLException(f"{channel_url} is not a valid URL")
-
-        url = urlunparse(("https", url_parts.netloc, url_parts.path, url_parts.params,
-                          url_parts.query, url_parts.fragment))
+    def add_playlist(self, name: str, url: str) -> None:
+        ydl_opts = {
+            "playliststart": 1,
+            "playlistend": 2,
+            "noplaylist": False,
+            "extract_flat": "in_playlist"
+        }
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False, process=True)
+            if not info.get("_type") == "playlist":
+                raise BadURLException("Not a playlist or not supported by youtube-dl")
 
         try:
-            response = urlopen(url).read().decode('utf-8')
-        except URLError:
-            raise BadURLException(f"{channel_url} is not a valid URL")
+            real_url = info.get("webpage_url")
+            if real_url:
+                self.database.add_playlist(name, real_url)
+            # TODO
+        except:
+            raise DuplicateChannelException("Playlist already exists")
 
-        parser = etree.HTMLParser()
-        root = etree.parse(StringIO(response), parser).getroot()
-        site_name_node = root.xpath('/html/head/meta[@property="og:site_name"]')
-        channel_id_node = root.xpath('//meta[@itemprop="channelId"]')
-
-        if not site_name_node or site_name_node[0].attrib.get("content", "") != "YouTube":
-            raise BadURLException(f"{channel_url} does not seem to be a YouTube URL")
-
-        if not channel_id_node:
-            raise ChannelDoesNotExistException(f"{channel_url} does not seem to be a YouTube URL")
-
-        yt_channelid = channel_id_node[0].attrib.get("content")
-
-        try:
-            self.database.add_channel(Channel(displayname=displayname, yt_channelid=yt_channelid))
-        except sqlalchemy.exc.IntegrityError:
-            raise DuplicateChannelException(f"Channel already subscribed: {displayname}")
-
-    def import_channels(self, file: TextIO) -> None:
-        """Import all channels from YouTube's subscription export file.
-
-        :param file: The file to read from.
-        """
-        def _create_channel(elem: etree.Element) -> Channel:
-            rss_url = urlparse(elem.attrib["xmlUrl"])
-            query_dict = parse_qs(rss_url.query, keep_blank_values=False)
-            channel_id = query_dict.get("channel_id", [])
-            if len(channel_id) != 1:
-                message = f"'{file.name}' is not a valid YouTube export file"
-                raise InvalidSubscriptionFileError(message)
-            return Channel(displayname=elem.attrib["title"], yt_channelid=channel_id[0])
-
-        try:
-            root = etree.parse(file)
-        except Exception:
-            raise InvalidSubscriptionFileError(f"'{file.name}' is not a valid YouTube export file")
-
-        elements = root.xpath('//outline[@type="rss"]')
-        self.database.add_channels((_create_channel(e) for e in elements))
-
-    def export_channels(self, outstream: BinaryIO) -> None:
-        """Export all channels as OPML file.
-
-        :param outstream: The file/stream the OPML file will be written to.
-        """
-        opml = etree.Element("opml", version="1.1")
-        body = etree.SubElement(opml, "body")
-        outline = etree.SubElement(body, "outline", text="ytcc subscriptions",
-                                   title="ytcc subscriptions")
-        for channel in self.get_channels():
-            outline.append(etree.Element("outline", text=channel.displayname,
-                                         title=channel.displayname, type="rss",
-                                         xmlUrl=_get_youtube_rss_url(channel.yt_channelid)))
-
-        outstream.write(etree.tostring(opml, pretty_print=True))
-
-    def list_videos(self) -> List[Video]:
+    def list_videos(self) -> Iterable[Video]:
         """Return a list of videos that match the filters set by the set_*_filter methods.
 
         :return: A list of videos.
         """
-        if self.video_id_filter:
-            return self.database.session.query(Video) \
-                .join(Channel, Channel.yt_channelid == Video.publisher) \
-                .filter(Video.id.in_(self.video_id_filter)) \
-                .order_by(*self.config.order_by).all()
-
         if not self.date_end_filter[1]:
             date_end_filter = time.mktime(time.gmtime()) + 20
         else:
             date_end_filter = self.date_end_filter[0]
 
-        query = self.database.session.query(Video) \
-            .join(Channel, Channel.yt_channelid == Video.publisher) \
-            .filter(Video.publish_date > self.date_begin_filter) \
-            .filter(Video.publish_date < date_end_filter)
+        return self.database.list_videos(
+            since=self.date_begin_filter,
+            till=date_end_filter,
+            watched=self.include_watched_filter,
+            tags=self.tags_filter,
+            playlists=self.playlist_filter,
+            ids=self.video_id_filter
+        )
 
-        if self.channel_filter:
-            query = query.filter(Channel.displayname.in_(self.channel_filter))
+    def delete_playlist(self, name: str) -> None:
+        self.database.delete_playlist(name)
 
-        if not self.include_watched_filter:
-            query = query.filter(~Video.watched)
+    def rename_playlist(self, oldname: str, newname: str) -> None:
+        self.database.rename_playlist(oldname, newname)
 
-        query = query.order_by(*self.config.order_by)
-        return query.all()
-
-    def delete_channels(self, displaynames: List[str]) -> None:
-        """Delete (or unsubscribe) channels.
-
-        :param displaynames: The names of channels to delete.
-        """
-        self.database.delete_channels(displaynames)
-
-    def rename_channel(self, oldname: str, newname: str) -> None:
-        """Rename the given channel.
-
-        :param oldname: The name of the channel.
-        :param newname: The new name of the channel.
-        :raises ChannelDoesNotExistException: If the given channel does not exist.
-        :raises DuplicateChannelException: If new name already exists.
-        """
-        self.database.rename_channel(oldname, newname)
-
-    def get_channels(self) -> List[Channel]:
-        """Get the list of all subscribed channels.
-
-        :return: A list of channel names.
-        """
-        return self.database.get_channels()
+    def list_playlists(self) -> Iterable[Playlist]:
+        return self.database.list_playlists()
 
     def cleanup(self) -> None:
         """Delete old videos from the database."""
