@@ -15,16 +15,21 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
+from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import List, Any, Callable, TypeVar, Generic
+from typing import List, Callable, TypeVar, Generic
 
 import click
 
 from ytcc import core
+from ytcc import __version__, __author__
+from ytcc.printer import JSONPrinter, XSVPrinter, VideoPrintable, TablePrinter
 
 T = TypeVar("T")
 
 ytcc = core.Ytcc()
+printer = JSONPrinter()
+
 
 class CommaList(click.ParamType, Generic[T]):
 
@@ -33,16 +38,36 @@ class CommaList(click.ParamType, Generic[T]):
 
     def convert(self, value, param, ctx) -> List[T]:
         try:
-            return list(map(self.validator, value.partition(",")))
+            return [self.validator(elem.strip()) for elem in value.split(",")]
         except:
             self.fail(f"Unexpected value {value}")
 
 
+version_text = f"""%(prog)s, version %(version)s
+
+Copyright (C) 2015-2020  {__author__}
+This program comes with ABSOLUTELY NO WARRANTY; This is free software, and you
+are welcome to redistribute it under certain conditions.  See the GNU General
+Public Licence for details."""
+
+
 @click.group()
-@click.option("--config")
-@click.option("--verbose")
-def cli(config, verbose):
-    pass
+@click.option("--config", type=click.Path())
+@click.option("--verbose", is_flag=True)
+@click.option("--output", type=click.Choice(["json", "table", "xsv"]))
+@click.option("--separator", default=",", show_default=True)
+@click.version_option(version=__version__, prog_name="ytcc", message=version_text)
+def cli(config, verbose, output, separator):
+    global ytcc, printer
+
+    ytcc = core.Ytcc(config)
+
+    if output == "table":
+        printer = TablePrinter()
+    elif output == "json":
+        printer = JSONPrinter()
+    elif output == "xsv":
+        printer = XSVPrinter(separator)
 
 
 @cli.command()
@@ -66,8 +91,8 @@ def rename(old: str, new: str):
 
 
 @cli.command()
-@click.option("--show-tags")
-def subscriptions():
+@click.option("--show-tags", is_flag=True)
+def subscriptions(show_tags: bool):
     print(list(ytcc.list_playlists()))
 
 
@@ -83,24 +108,30 @@ def update():
     ytcc.update()
 
 
-@cli.command()
-@click.option("--all", "-a")
-@click.option("--tags")
-@click.option("--since")
-@click.option("--till")
-@click.option("--channel")
-@click.option("--ids", "-i")
-@click.option("--attributes")
-@click.option("--json")
-@click.option("--separatedby")
-def list(since: datetime, till: datetime, ids: List[int], all: bool, tags: List[str],
-         attributes: List[str], separator: str, ):
-    pass
+@cli.command("list")
+@click.option("--tags", type=CommaList(str))
+@click.option("--since", type=click.DateTime(), default="1970-01-01")
+@click.option("--till", type=click.DateTime(), default="9999-12-31")
+@click.option("--playlists", type=CommaList(str))
+@click.option("--ids", "-i", type=CommaList(int))
+@click.option("--attributes", type=CommaList(str))
+@click.option("--watched", is_flag=True, default=False)
+def list_videos(tags: List[str], since: datetime, till: datetime, playlists: List[str],
+                ids: List[int], attributes: List[str], watched: bool):
+    ytcc.set_tags_filter(tags)
+    ytcc.set_date_begin_filter(since)
+    ytcc.set_date_end_filter(till)
+    ytcc.set_playlist_filter(playlists)
+    ytcc.set_video_id_filter(ids)
+    ytcc.set_include_watched_filter(watched)
+    printer.filter = attributes
+    printer.print(VideoPrintable(ytcc.list_videos()))
 
 
 @cli.command()
+@click.option("--audio-only", is_flag=True, default=False)
 @click.argument("--ids", nargs=-1)
-def play(ids: List[int]):
+def play(ids: List[int], audio_only: bool):
     pass
 
 
@@ -111,7 +142,7 @@ def mark():
 
 
 @cli.command()
-@click.option("--path")
+@click.option("--path", type=click.Path(file_okay=False, dir_okay=True))
 @click.argument("id", nargs=-1)
 def download():
     pass
@@ -129,12 +160,22 @@ def cleanup():
 
 @cli.command()
 def bug_report():
-    pass
-
-
-@cli.command()
-def version():
-    pass
-
-if __name__ == '__main__':
-    cli()
+    # pylint: disable=import-outside-toplevel
+    import youtube_dl.version
+    import subprocess
+    import sys
+    from ytcc import __version__
+    print("---ytcc version---")
+    print(__version__)
+    print()
+    print("---youtube-dl version---")
+    print(youtube_dl.version.__version__)
+    print()
+    print("---python version---")
+    print(sys.version)
+    print()
+    print("---mpv version---")
+    subprocess.run(["mpv", "--version"], check=False)
+    print()
+    print("---config dump---")
+    print(ytcc.config)

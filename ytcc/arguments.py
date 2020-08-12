@@ -20,7 +20,7 @@ import argparse
 import os
 from datetime import datetime
 
-import ytcc.cli
+import ytcc.tui
 from ytcc import _
 
 
@@ -135,10 +135,10 @@ def get_args() -> argparse.Namespace:
     parser.add_argument("-o", "--columns",
                         help=_("specifies which columns will be printed when listing videos. COL "
                                "can be any of {columns}. All columns can be enabled with "
-                               "'all'").format(columns=ytcc.cli.TABLE_HEADER),
+                               "'all'").format(columns=ytcc.tui.TABLE_HEADER),
                         nargs='+',
                         metavar="COL",
-                        choices=["all", *ytcc.cli.TABLE_HEADER])
+                        choices=["all", *ytcc.tui.TABLE_HEADER])
 
     parser.add_argument("--no-header",
                         help=_("do not print the header of the table when listing videos"),

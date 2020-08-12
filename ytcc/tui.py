@@ -287,50 +287,6 @@ def play(video: Video, audio_only: bool) -> None:
         print()
 
 
-def table_print(header: List[str], table: List[List[str]]) -> None:
-    transposed = zip(header, *table)
-    col_widths = [max(map(len, column)) for column in transposed]
-    table_format = "│".join(itertools.repeat(" {{:<{}}} ", len(header))).format(*col_widths)
-
-    if HEADER_ENABLED:
-        header_line = "┼".join("─" * (width + 2) for width in col_widths)
-        printtln(table_format.format(*header), bold=True)
-        print(header_line)
-
-    for i, row in enumerate(table):
-        background = None if i % 2 == 0 else COLORS.table_alternate_background
-        printtln(table_format.format(*row), background=background)
-
-
-def print_videos(videos: Iterable[Video],
-                 quickselect_column: Optional[Iterable[str]] = None) -> None:
-    def row_filter(row: Iterable[str]) -> List[str]:
-        return list(itertools.compress(row, COLUMN_FILTER))
-
-    def video_to_list(video: Video) -> List[str]:
-        timestamp = unpack_optional(video.publish_date, lambda: 0)
-        return [
-            str(video.id),
-            datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M"),
-            str(video.channel.displayname),
-            str(video.title),
-            ytcc_core.get_youtube_video_url(video.yt_videoid),
-            _("Yes") if video.watched else _("No")
-        ]
-
-    def concat_row(tag: str, video: Video) -> List[str]:
-        row = row_filter(video_to_list(video))
-        row.insert(0, tag)
-        return row
-
-    if quickselect_column is None:
-        table = [row_filter(video_to_list(v)) for v in videos]
-        table_print(row_filter(TABLE_HEADER), table)
-    else:
-        table = [concat_row(k, v) for k, v in zip(quickselect_column, videos)]
-        header = row_filter(TABLE_HEADER)
-        header.insert(0, "TAG")
-        table_print(header, table)
 
 
 def download_video(video: Video, audio_only: bool = False) -> None:
@@ -458,51 +414,6 @@ def export_channels(file: BinaryIO) -> None:
     ytcc_core.export_channels(file)
 
 
-@register_option("version", exit=True)
-def version() -> None:
-    # pylint: disable=import-outside-toplevel
-    import ytcc
-    print("ytcc version " + ytcc.__version__)
-    print()
-    print("Copyright (C) 2015-2019  " + ytcc.__author__)
-    print("This program comes with ABSOLUTELY NO WARRANTY; This is free software, and you")
-    print("are welcome to redistribute it under certain conditions.  See the GNU General ")
-    print("Public Licence for details.")
-
-
-@register_option("bug_report_info", exit=True)
-def bug_report_info() -> None:
-    # pylint: disable=import-outside-toplevel
-    import ytcc
-    import youtube_dl.version
-    import subprocess
-    import feedparser
-    import lxml.etree
-    import sqlalchemy
-    print("---ytcc version---")
-    print(ytcc.__version__)
-    print()
-    print("---youtube-dl version---")
-    print(youtube_dl.version.__version__)
-    print()
-    print("---SQLAlchemy version---")
-    print(sqlalchemy.__version__)  # type: ignore
-    print()
-    print("---feedparser version---")
-    print(feedparser.__version__)
-    print()
-    print("---lxml version---")
-    print(lxml.etree.__version__)
-    print()
-    print("---python version---")
-    print(sys.version)
-    print()
-    print("---mpv version---")
-    subprocess.run(["mpv", "--version"], check=False)
-    print()
-    print("---config dump---")
-    print(ytcc_core.config)
-
 
 @register_option("disable_interactive", is_action=False)
 def disable_interactive() -> None:
@@ -551,7 +462,7 @@ def set_include_watched_filter() -> None:
 
 @register_option("channel_filter", is_action=False)
 def set_channel_filter(channels: List[str]) -> None:
-    ytcc_core.set_channel_filter(channels)
+    ytcc_core.set_playlist_filter(channels)
 
 
 @register_option("since", is_action=False)

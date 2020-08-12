@@ -29,7 +29,7 @@ import youtube_dl
 from youtube_dl import DownloadError
 
 from ytcc.config import Config
-from ytcc.database import Database, Video, Playlist
+from ytcc.database import Database, Video, Playlist, MappedVideo
 from ytcc.exceptions import YtccException, BadURLException, DuplicateChannelException, \
     DatabaseOperationalError
 from ytcc.utils import unpack_optional, take
@@ -136,7 +136,7 @@ class Ytcc:
         """Close open resources like the database connection."""
         self.database.close()
 
-    def set_channel_filter(self, channel_filter: List[str]) -> None:
+    def set_playlist_filter(self, channel_filter: List[str]) -> None:
         """Set the channel filter.
 
         The results when listing videos will only include videos by channels specified in the
@@ -144,8 +144,7 @@ class Ytcc:
 
         :param channel_filter: The list of channel names.
         """
-        self.playlist_filter.clear()
-        self.playlist_filter.extend(channel_filter)
+        self.playlist_filter = channel_filter
 
     def set_date_begin_filter(self, begin: datetime.datetime) -> None:
         """Set the time filter.
@@ -165,12 +164,12 @@ class Ytcc:
         """
         self.date_end_filter = (end.timestamp(), True)
 
-    def set_include_watched_filter(self) -> None:
+    def set_include_watched_filter(self, enabled: bool = False) -> None:
         """Set the "watched video" filter.
 
         The results when listing videos will include both watched and unwatched videos.
         """
-        self.include_watched_filter = None
+        self.include_watched_filter = None if enabled else False
 
     def set_video_id_filter(self, ids: Optional[Iterable[int]] = None) -> None:
         """Set the id filter.
@@ -178,9 +177,7 @@ class Ytcc:
         This filter overrides all other filters.
         :param ids: IDs to filter for.
         """
-        self.video_id_filter.clear()
-        if ids is not None:
-            self.video_id_filter.extend(ids)
+        self.video_id_filter = ids
 
     def set_tags_filter(self, tags: Optional[List[str]] = None) -> None:
         self.tags_filter = tags
@@ -282,6 +279,7 @@ class Ytcc:
                     return False
 
                 ydl.process_ie_result(info, download=True)
+                #TODO
                 video.watched = True
                 return True
             except youtube_dl.utils.YoutubeDLError:
@@ -307,7 +305,7 @@ class Ytcc:
         except:
             raise DuplicateChannelException("Playlist already exists")
 
-    def list_videos(self) -> Iterable[Video]:
+    def list_videos(self) -> Iterable[MappedVideo]:
         """Return a list of videos that match the filters set by the set_*_filter methods.
 
         :return: A list of videos.

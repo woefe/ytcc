@@ -133,7 +133,7 @@ class TestYtccPreparedVideos(TestCase):
 
     def test_list_videos_channel_filter(self):
         ytcc = self.ytcc
-        ytcc.set_channel_filter(["Webdriver Torso"])
+        ytcc.set_playlist_filter(["Webdriver Torso"])
         videos = ytcc.list_videos()
         self.assertEqual(len(videos), 3)
         self.assertEqual(videos[0].channel.displayname, "Webdriver Torso")
@@ -159,7 +159,7 @@ class TestYtccPreparedVideos(TestCase):
         ytcc.set_date_begin_filter(datetime.fromtimestamp(1488343000.0))
         ytcc.set_date_end_filter(datetime.fromtimestamp(1488346000.0))
         ytcc.set_include_watched_filter()
-        ytcc.set_channel_filter(["Webdriver Torso"])
+        ytcc.set_playlist_filter(["Webdriver Torso"])
         videos = ytcc.list_videos()
         expected = {"tmppfXKp6", "tmpiM62pN", "tmpIXBgjd"}
         titles = set([v.title for v in videos])

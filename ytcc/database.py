@@ -15,7 +15,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
+import json
 import sqlite3
+from dataclasses import dataclass, asdict
 from datetime import datetime
 from pathlib import Path
 from typing import List, Iterable, Any, NamedTuple, Optional
@@ -23,21 +25,24 @@ from typing import List, Iterable, Any, NamedTuple, Optional
 from ytcc.utils import unpack_optional
 
 
-class Playlist(NamedTuple):
+@dataclass(frozen=True)
+class Playlist:
     name: str
     url: str
 
 
-class Video(NamedTuple):
+@dataclass(frozen=True)
+class Video:
     url: str
     title: str
     description: str
     publish_date: datetime
     watched: bool
     duration: float
-    extractor_hash: Optional[str] = None
+    extractor_hash: str
 
 
+@dataclass(frozen=True)
 class MappedVideo(Video):
     id: int
     playlists: List[Playlist]
@@ -145,15 +150,15 @@ class Database:
             VALUES (:title, :url, :description, :duration, :publish_date, :watched, :extractor_hash);
             """
         insert_playlist = """
-            INSERT OR IGNORE INTO content (playlist_id, video_id)
-            VALUES (?,?);
+            INSERT INTO content (playlist_id, video_id)
+            VALUES (?,(SELECT id from video where extractor_hash = ?));
             """
         with self.connection as con:
             cursor = con.execute("SELECT id from playlist where name = ?", (playlist.name,))
             playlist_id = cursor.fetchone()["id"]
             for video in videos:
-                cursor.execute(insert_video, video._asdict())
-                cursor.execute(insert_playlist, (playlist_id, cursor.lastrowid))
+                cursor.execute(insert_video, asdict(video))
+                cursor.execute(insert_playlist, (playlist_id, video.extractor_hash))
 
     def mark_watched(self, video: MappedVideo) -> None:
         query = "UPDATE video SET watched = 1 where id = ?"
@@ -173,8 +178,9 @@ class Database:
 
         tag_condition = f"and t.name in ({_placeholder(tags)})" if tags is not None else ""
         playlist_condition = f"and p.name in ({_placeholder(playlists)})" if playlists is not None else ""
-        id_condition = f"and v.id in {_placeholder(ids)}()" if ids is not None else ""
-        watched_condition = {None: "", True: "and v.watched", False: "and not v.watched"}.get(watched, "")
+        id_condition = f"and v.id in ({_placeholder(ids)})" if ids is not None else ""
+        watched_condition = {None: "", True: "and v.watched", False: "and not v.watched"}.get(
+            watched, "")
         query = f"""
             SELECT v.id             as id,
                    v.title          as title,
@@ -183,7 +189,9 @@ class Database:
                    v.duration       as duration,
                    v.publish_date   as publish_date,
                    v.watched        as watched,
-                   v.extractor_hash as extractor_hash
+                   v.extractor_hash as extractor_hash,
+                   p.name           as playlist_name,
+                   p.url            as playlist_url
             FROM video as v
                      join content c on v.id = c.video_id
                      join playlist p on p.id = c.playlist_id
@@ -202,17 +210,28 @@ class Database:
         tags = unpack_optional(tags, list)
         ids = unpack_optional(ids, list)
 
+        videos = dict()
         with self.connection as con:
             for row in con.execute(query, [since, till] + ids + tags + playlists):
-                yield Video(
-                    row["url"],
-                    row["title"],
-                    row["description"],
-                    row["publish_date"],
-                    row["watched"],
-                    row["duration"],
-                    row["extractor_hash"]
-                )
+                video = videos.get(row["id"])
+                if video is None:
+                    videos[row["id"]] = MappedVideo(
+                        id=row["id"],
+                        url=row["url"],
+                        title=row["title"],
+                        description=row["description"],
+                        publish_date=row["publish_date"],
+                        watched=row["watched"],
+                        duration=row["duration"],
+                        extractor_hash=row["extractor_hash"],
+                        playlists=[Playlist(row["playlist_name"], row["playlist_url"])]
+                    )
+                else:
+                    videos[row["id"]].playlists.append(
+                        Playlist(row["playlist_name"], row["playlist_url"])
+                    )
+
+        return videos.values()
 
     def cleanup(self) -> None:
         """Delete all videos from all channels, but keeps the 30 latest videos of every channel."""
