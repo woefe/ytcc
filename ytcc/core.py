@@ -23,7 +23,7 @@ import sqlite3
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor as Pool
-from typing import Iterable, List, Optional, Any, Dict, FrozenSet
+from typing import Iterable, List, Optional, Any, Dict, FrozenSet, Tuple
 
 import youtube_dl
 from youtube_dl import DownloadError
@@ -54,48 +54,45 @@ def get_url(entry):
 
 class Updater:
     db_path = None
+    max_items = 20
+    ydl_opts = {
+        "playliststart": 1,
+        "playlistend": max_items,
+        "noplaylist": False,
+    }
 
     @staticmethod
-    def _updater(playlist: Playlist, existing_hashes: FrozenSet[str]) -> Iterable[Video]:
-        max_items = 20
-        ydl_opts = {
-            "playliststart": 1,
-            "playlistend": max_items,
-            "noplaylist": False,
-        }
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(playlist.url, download=False, process=False)
-            for entry in take(max_items, info.get("entries", [])):
-                e_hash = extractor_hash(entry)
-                if e_hash not in existing_hashes:
-                    try:
-                        processed = ydl.process_ie_result(entry, False)
-                        yield Video(
-                            url=processed["webpage_url"],
-                            title=processed["title"],
-                            description=processed.get("description", ""),
-                            publish_date=processed.get("upload_date", ""),
-                            watched=False,
-                            duration=processed.get("duration", -1),
-                            extractor_hash=e_hash
-                        )
-                    except DownloadError as dl:
-                        logging.error(dl)
-
-    @staticmethod
-    def _update_task(playlist: Playlist) -> Iterable[Video]:
+    def get_new_entries(playlist: Playlist) -> List[Tuple[Any, str]]:
         with Database(Updater.db_path) as db:
             hashes = frozenset(x.extractor_hash for x in db.list_videos(playlists=[playlist.name]))
-            updates = Updater._updater(playlist, hashes)
-            try:
-                db.add_videos(updates, playlist)
-            except sqlite3.OperationalError as original:
-                raise DatabaseOperationalError() from original
-        return list(Updater._updater(playlist, hashes))
+
+        result = []
+        with youtube_dl.YoutubeDL(Updater.ydl_opts) as ydl:
+            info = ydl.extract_info(playlist.url, download=False, process=False)
+            for entry in take(Updater.max_items, info.get("entries", [])):
+                h = extractor_hash(entry)
+                if h not in hashes:
+                    result.append((entry, h))
+
+        return result
 
     @staticmethod
-    def run(playlist: Playlist) -> Iterable[Video]:
-        return Updater._update_task(playlist)
+    def process_entry(entry, extractor_hash, playlist) -> Optional[Tuple[Playlist, Video]]:
+        with youtube_dl.YoutubeDL(Updater.ydl_opts) as ydl:
+            try:
+                processed = ydl.process_ie_result(entry, False)
+                return playlist, Video(
+                    url=processed["webpage_url"],
+                    title=processed["title"],
+                    description=processed.get("description", ""),
+                    publish_date=processed.get("upload_date", ""),
+                    watched=False,
+                    duration=processed.get("duration", -1),
+                    extractor_hash=extractor_hash
+                )
+            except DownloadError as dl:
+                #logging.error(dl)
+                return None
 
 
 class Ytcc:
@@ -184,12 +181,22 @@ class Ytcc:
 
     def update(self) -> None:
 
-        playlists = self.database.list_playlists()
+        playlists = list(self.database.list_playlists())
         num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 4
         Updater.db_path = self.config.db_path
 
         with Pool(num_workers) as pool:
-            list(pool.map(Updater.run, playlists))
+            entries = list(pool.map(Updater.get_new_entries, playlists))
+            new_entries = [
+                (entry, e_hash, playlist)
+                for playlist, updates in zip(playlists, entries)
+                for entry, e_hash in updates
+            ]
+            updates = [x for x in pool.map(Updater.process_entry, *zip(*new_entries)) if x]
+
+        with Database(Updater.db_path) as db:
+            for playlist, update in updates:
+                db.add_videos([update], playlist)
 
     def play_video(self, video: Video, audio_only: bool = False) -> bool:
         """Play the given video with the mpv video player and mark the the video as watched.
@@ -279,7 +286,7 @@ class Ytcc:
                     return False
 
                 ydl.process_ie_result(info, download=True)
-                #TODO
+                # TODO
                 video.watched = True
                 return True
             except youtube_dl.utils.YoutubeDLError:
