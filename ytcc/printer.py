@@ -17,21 +17,24 @@
 #  along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 import itertools
 import json
-import operator
 import sys
 from abc import ABC, abstractmethod
-from dataclasses import asdict, fields
-from datetime import datetime
-from typing import List, Iterable, Optional, Dict, Union, Any, NamedTuple
+from dataclasses import asdict
+from typing import List, Iterable, Dict, Any, NamedTuple
 
-from ytcc import config
-from ytcc.database import Video, MappedVideo
+from ytcc.database import MappedVideo
 from ytcc.terminal import printtln
 
 
 class Table(NamedTuple):
     header: List[str]
     data: List[List[str]]
+
+    def apply_filter(self, column_names=List[str]) -> "Table":
+        compressor = [col in column_names for col in self.header]
+        filtered_data = [list(itertools.compress(row, compressor)) for row in self.data]
+        filtered_header = list(itertools.compress(self.header, compressor))
+        return Table(filtered_header, filtered_data)
 
 
 class Printable(ABC):
@@ -94,53 +97,27 @@ class Printer(ABC):
 
 
 class TablePrinter(Printer):
-    pass
 
-    # def print(self, obj: Printable) -> None:
-    #    pass
+    def print(self, obj: Printable) -> None:
+        table = obj.table()
+        if self.filter is not None:
+            table = table.apply_filter(self.filter)
 
-    # def table_print(self, header: List[str], table: List[List[str]]) -> None:
-    #    transposed = zip(header, *table)
-    #    col_widths = [max(map(len, column)) for column in transposed]
-    #    table_format = "│".join(itertools.repeat(" {{:<{}}} ", len(header))).format(*col_widths)
+        self.table_print(table)
 
-    #    header_line = "┼".join("─" * (width + 2) for width in col_widths)
-    #    printtln(table_format.format(*header), bold=True)
-    #    print(header_line)
+    def table_print(self, table: Table) -> None:
+        transposed = zip(table.header, *table.data)
+        col_widths = [max(map(len, column)) for column in transposed]
+        table_format = "│".join(itertools.repeat(" {{:<{}}} ", len(table.header))).format(
+            *col_widths)
 
-    #    for i, row in enumerate(table):
-    #        background = None if i % 2 == 0 else config.color.table_alternate_background
-    #        printtln(table_format.format(*row), background=background)
+        header_line = "┼".join("─" * (width + 2) for width in col_widths)
+        printtln(table_format.format(*table.header), bold=True)
+        print(header_line)
 
-    # def print_videos(self, videos: Iterable[Video],
-    #                 quickselect_column: Optional[Iterable[str]] = None) -> None:
-    #    def row_filter(row: Iterable[str]) -> List[str]:
-    #        return list(itertools.compress(row, COLUMN_FILTER))
-
-    #    def video_to_list(video: Video) -> List[str]:
-    #        timestamp = unpack_optional(video.publish_date, lambda: 0)
-    #        return [
-    #            str(video.id),
-    #            datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M"),
-    #            str(video.displayname),
-    #            str(video.title),
-    #            video.url
-    #            _("Yes") if video.watched else _("No")
-    #        ]
-
-    #    def concat_row(tag: str, video: Video) -> List[str]:
-    #        row = row_filter(video_to_list(video))
-    #        row.insert(0, tag)
-    #        return row
-
-    #    if quickselect_column is None:
-    #        table = [row_filter(video_to_list(v)) for v in videos]
-    #        table_print(row_filter(TABLE_HEADER), table)
-    #    else:
-    #        table = [concat_row(k, v) for k, v in zip(quickselect_column, videos)]
-    #        header = row_filter(TABLE_HEADER)
-    #        header.insert(0, "TAG")
-    #        table_print(header, table)
+        for i, row in enumerate(table.data):
+            background = None if i % 2 == 0 else 244  # config.color.table_alternate_background
+            printtln(table_format.format(*row), background=background)
 
 
 class XSVPrinter(Printer):
@@ -156,12 +133,10 @@ class XSVPrinter(Printer):
     def print(self, obj: Printable) -> None:
         table = obj.table()
         if self.filter is not None:
-            indices = [table.header.index(col) for col in self.filter]
-        else:
-            indices = list(range(len(table.header)))
+            indices = table.apply_filter(self.filter)
 
         for row in table.data:
-            line = self.separator.join(self.escape(row[i]) for i in indices)
+            line = self.separator.join(row)
             print(line)
 
 
