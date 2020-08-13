@@ -22,7 +22,7 @@ from abc import ABC, abstractmethod
 from dataclasses import asdict
 from typing import List, Iterable, Dict, Any, NamedTuple
 
-from ytcc.database import MappedVideo
+from ytcc.database import MappedVideo, MappedPlaylist
 from ytcc.terminal import printtln
 
 
@@ -49,8 +49,6 @@ class Printable(ABC):
 
 
 class VideoPrintable(Printable):
-    header = ["id", "url", "title", "description", "publish_date", "watched", "duration",
-              "extractor_hash", "playlists"]
 
     def __init__(self, videos: Iterable[MappedVideo]):
         self.videos = videos
@@ -60,6 +58,8 @@ class VideoPrintable(Printable):
             yield asdict(video)
 
     def table(self) -> Table:
+        header = ["id", "url", "title", "description", "publish_date", "watched", "duration",
+                  "extractor_hash", "playlists"]
 
         data = []
         for video in self.videos:
@@ -75,7 +75,25 @@ class VideoPrintable(Printable):
                 ", ".join(map(lambda v: v.name, video.playlists))
             ])
 
-        return Table(self.header, data)
+        return Table(header, data)
+
+
+class PlaylistPrintable(Printable):
+
+    def __init__(self, playlists: Iterable[MappedPlaylist]):
+        self.playlists = playlists
+
+    def data(self) -> Iterable[Dict[str, Any]]:
+        for playlist in self.playlists:
+            yield asdict(playlist)
+
+    def table(self) -> Table:
+        header = ["name", "url", "tags"]
+        data = []
+        for playlist in self.playlists:
+            data.append([playlist.name, playlist.url, ", ".join(playlist.tags)])
+
+        return Table(header, data)
 
 
 class Printer(ABC):

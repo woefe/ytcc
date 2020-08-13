@@ -23,7 +23,7 @@ import click
 
 from ytcc import core
 from ytcc import __version__, __author__
-from ytcc.printer import JSONPrinter, XSVPrinter, VideoPrintable, TablePrinter
+from ytcc.printer import JSONPrinter, XSVPrinter, VideoPrintable, TablePrinter, PlaylistPrintable
 
 T = TypeVar("T")
 
@@ -54,7 +54,7 @@ Public Licence for details."""
 @click.group()
 @click.option("--config", type=click.Path())
 @click.option("--verbose", is_flag=True)
-@click.option("--output", type=click.Choice(["json", "table", "xsv"]))
+@click.option("--output", type=click.Choice(["json", "table", "xsv"]), default="table")
 @click.option("--separator", default=",", show_default=True)
 @click.version_option(version=__version__, prog_name="ytcc", message=version_text)
 def cli(config, verbose, output, separator):
@@ -91,16 +91,17 @@ def rename(old: str, new: str):
 
 
 @cli.command()
-@click.option("--show-tags", is_flag=True)
-def subscriptions(show_tags: bool):
-    print(list(ytcc.list_playlists()))
+@click.option("--attributes", type=CommaList(str))
+def subscriptions(attributes: List[str]):
+    printer.filter = attributes
+    printer.print(PlaylistPrintable(ytcc.list_playlists()))
 
 
 @cli.command()
 @click.argument("name")
 @click.argument("tags", nargs=-1)
 def tag(name: str, tags: List[str]):
-    pass
+    ytcc.tag_playlist(name, tags)
 
 
 @cli.command()

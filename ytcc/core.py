@@ -29,7 +29,7 @@ import youtube_dl
 from youtube_dl import DownloadError
 
 from ytcc.config import Config
-from ytcc.database import Database, Video, Playlist, MappedVideo
+from ytcc.database import Database, Video, Playlist, MappedVideo, MappedPlaylist
 from ytcc.exceptions import YtccException, BadURLException, DuplicateChannelException, \
     DatabaseOperationalError
 from ytcc.utils import unpack_optional, take
@@ -337,8 +337,12 @@ class Ytcc:
     def rename_playlist(self, oldname: str, newname: str) -> None:
         self.database.rename_playlist(oldname, newname)
 
-    def list_playlists(self) -> Iterable[Playlist]:
+    def list_playlists(self) -> Iterable[MappedPlaylist]:
         return self.database.list_playlists()
+
+    def tag_playlist(self, name: str, tags: List[str]) -> None:
+        self.database.tag_playlist(name, tags)
+
 
     def cleanup(self) -> None:
         """Delete old videos from the database."""

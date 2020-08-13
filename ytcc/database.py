@@ -48,6 +48,11 @@ class MappedVideo(Video):
     playlists: List[Playlist]
 
 
+@dataclass(frozen=True)
+class MappedPlaylist(Playlist):
+    tags: List[str]
+
+
 class Database:
     def __init__(self, path: str = ":memory:"):
         is_new_db = True
@@ -129,19 +134,31 @@ class Database:
         query = "UPDATE OR ROLLBACK playlist SET name = ? WHERE name = ?"
         self.connection.execute(query, (newname, oldname))
 
-    def list_playlists(self) -> Iterable[Playlist]:
-        query = "SELECT name, url FROM playlist"
+    def list_playlists(self) -> Iterable[MappedPlaylist]:
+        query = """
+        SELECT p.id AS id, p.name AS name, p.url AS url, t.name AS tag
+        FROM playlist AS p
+            LEFT OUTER JOIN tag AS t ON p.id = t.playlist;
+        """
+        playlists = dict()
         for row in self.connection.execute(query):
-            yield Playlist(row["name"], row["url"])
+            playlist = playlists.get(row["id"])
+            if playlist is None:
+                tags = [row["tag"]] if row["tag"] else []
+                playlists[row["id"]] = MappedPlaylist(row["name"], row["url"], tags)
+            else:
+                playlists[row["id"]].tags.append(row["tag"])
 
-    def tag(self, playlist: str, tags: List[str]) -> None:
+        return playlists.values()
+
+    def tag_playlist(self, playlist: str, tags: List[str]) -> None:
         query_pid = "SELECT id FROM playlist where name = ?"
         query_clear = """DELETE FROM tag where playlist = ?"""
-        query_insert = """INSERT OR IGNORE INTO tag VALUES (?, ?)"""
+        query_insert = """INSERT OR IGNORE INTO tag (name, playlist) VALUES (?, ?)"""
         with self.connection as con:
-            pid = int(con.execute(query_pid, (playlist,)).fetchone())
+            pid = int(con.execute(query_pid, (playlist,)).fetchone()["id"])
             con.execute(query_clear, (pid,))
-            con.executemany(query_insert, ((pid, tag) for tag in tags))
+            con.executemany(query_insert, ((tag, pid) for tag in tags))
 
     def add_videos(self, videos: Iterable[Video], playlist: Playlist) -> None:
         insert_video = """
