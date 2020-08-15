@@ -163,20 +163,20 @@ class Database:
 
     def add_videos(self, videos: Iterable[Video], playlist: Playlist) -> None:
         insert_video = """
-            INSERT OR IGNORE INTO video
+            REPLACE INTO video
             (title, url, description, duration, publish_date, watched, extractor_hash)
             VALUES (:title, :url, :description, :duration, :publish_date, :watched, :extractor_hash);
             """
         insert_playlist = """
             INSERT INTO content (playlist_id, video_id)
-            VALUES (?,(SELECT id from video where extractor_hash = ?));
+            VALUES (?,(SELECT id from video where url = ?));
             """
         with self.connection as con:
             cursor = con.execute("SELECT id from playlist where name = ?", (playlist.name,))
             playlist_id = cursor.fetchone()["id"]
             for video in videos:
                 cursor.execute(insert_video, asdict(video))
-                cursor.execute(insert_playlist, (playlist_id, video.extractor_hash))
+                cursor.execute(insert_playlist, (playlist_id, video.url))
 
     @singledispatchmethod
     def mark_watched(self, video: Union[List[int], int, MappedVideo]) -> None:

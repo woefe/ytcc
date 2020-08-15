@@ -18,6 +18,7 @@
 import sys
 from abc import ABC, abstractmethod
 from datetime import datetime
+from pathlib import Path
 from typing import List, Callable, TypeVar, Generic, Optional
 
 import click
@@ -54,7 +55,7 @@ Public Licence for details."""
 
 
 @click.group()
-@click.option("--config", type=click.Path())
+@click.option("--config", type=click.Path(), envvar="YTCC_CONFIG")
 @click.option("--verbose", is_flag=True)
 @click.option("--output", type=click.Choice(["json", "table", "xsv"]), default="table")
 @click.option("--separator", default=",", show_default=True)
@@ -179,10 +180,17 @@ def mark(ids: Optional[List[int]]):
 
 
 @cli.command()
-@click.option("--path", type=click.Path(file_okay=False, dir_okay=True))
+@click.option("--path", type=click.Path(file_okay=False, dir_okay=True), default="")
+@click.option("--audio-only", is_flag=True, default=False)
+@click.option("--mark/--no-mark", is_flag=True, default=True)
 @click.argument("ids", nargs=-1)
-def download():
-    pass
+def download(ids: Optional[int], path: Path, audio_only: bool, mark: bool):
+    ytcc.set_video_id_filter(_get_ids(ids))
+    videos = ytcc.list_videos()
+
+    for video in videos:
+        if ytcc.download_video(video, str(path), audio_only) and mark:
+            ytcc.mark_watched(video)
 
 
 @cli.command()
