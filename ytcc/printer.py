@@ -140,7 +140,7 @@ class TablePrinter(Printer):
 
 class XSVPrinter(Printer):
 
-    def __init__(self, separator: str):
+    def __init__(self, separator: str = ","):
         super().__init__()
         self.separator = separator
 
@@ -151,10 +151,10 @@ class XSVPrinter(Printer):
     def print(self, obj: Printable) -> None:
         table = obj.table()
         if self.filter is not None:
-            indices = table.apply_filter(self.filter)
+            table = table.apply_filter(self.filter)
 
         for row in table.data:
-            line = self.separator.join(row)
+            line = self.separator.join(self.escape(cell) for cell in row)
             print(line)
 
 

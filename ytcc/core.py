@@ -23,7 +23,7 @@ import sqlite3
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor as Pool
-from typing import Iterable, List, Optional, Any, Dict, FrozenSet, Tuple
+from typing import Iterable, List, Optional, Any, Dict, FrozenSet, Tuple, Union
 
 import youtube_dl
 from youtube_dl import DownloadError
@@ -199,7 +199,7 @@ class Ytcc:
                 db.add_videos([update], playlist)
 
     def play_video(self, video: Video, audio_only: bool = False) -> bool:
-        """Play the given video with the mpv video player and mark the the video as watched.
+        """Play the given video with the mpv video player.
 
         The video will not be marked as watched, if the player exits unexpectedly (i.e. exits with
         non-zero exit code) or another error occurs.
@@ -224,14 +224,12 @@ class Ytcc:
             except subprocess.CalledProcessError:
                 return False
 
-            video.watched = True
-            # TODO
             return True
 
         return False
 
     def download_video(self, video: Video, path: str = "", audio_only: bool = False) -> bool:
-        """Download the given video with youtube-dl and mark it as watched.
+        """Download the given video with youtube-dl.
 
         If the path is not given, the path is read from the config file.
 
@@ -286,8 +284,6 @@ class Ytcc:
                     return False
 
                 ydl.process_ie_result(info, download=True)
-                # TODO
-                video.watched = True
                 return True
             except youtube_dl.utils.YoutubeDLError:
                 return False
@@ -331,6 +327,9 @@ class Ytcc:
             ids=self.video_id_filter
         )
 
+    def mark_watched(self, video: Union[List[int], int, MappedVideo]) -> None:
+        self.database.mark_watched(video)
+
     def delete_playlist(self, name: str) -> None:
         self.database.delete_playlist(name)
 
@@ -342,7 +341,6 @@ class Ytcc:
 
     def tag_playlist(self, name: str, tags: List[str]) -> None:
         self.database.tag_playlist(name, tags)
-
 
     def cleanup(self) -> None:
         """Delete old videos from the database."""

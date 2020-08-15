@@ -19,8 +19,9 @@ import json
 import sqlite3
 from dataclasses import dataclass, asdict
 from datetime import datetime
+from functools import singledispatchmethod
 from pathlib import Path
-from typing import List, Iterable, Any, NamedTuple, Optional
+from typing import List, Iterable, Any, NamedTuple, Optional, Union
 
 from ytcc.utils import unpack_optional
 
@@ -177,10 +178,23 @@ class Database:
                 cursor.execute(insert_video, asdict(video))
                 cursor.execute(insert_playlist, (playlist_id, video.extractor_hash))
 
-    def mark_watched(self, video: MappedVideo) -> None:
+    @singledispatchmethod
+    def mark_watched(self, video: Union[List[int], int, MappedVideo]) -> None:
+        raise NotImplementedError("Cannot mark as watched")
+
+    @mark_watched.register
+    def _mark_watched_list(self, videos: list) -> None:
         query = "UPDATE video SET watched = 1 where id = ?"
         with self.connection as con:
-            con.execute(query, (video.id,))
+            con.executemany(query, ((int(video),) for video in videos))
+
+    @mark_watched.register
+    def _(self, video: int) -> None:
+        self._mark_watched_list([video])
+
+    @mark_watched.register
+    def _(self, video: MappedVideo) -> None:
+        self._mark_watched_list([video.id])
 
     def list_videos(self,
                     since: Optional[float] = None,
