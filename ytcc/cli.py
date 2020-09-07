@@ -16,15 +16,14 @@
 #  You should have received a copy of the GNU General Public License
 #  along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 import sys
-from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
 from typing import List, Callable, TypeVar, Generic, Optional
 
 import click
 
-from ytcc import core
 from ytcc import __version__, __author__
+from ytcc import core, config
 from ytcc.printer import JSONPrinter, XSVPrinter, VideoPrintable, TablePrinter, PlaylistPrintable
 from ytcc.tui import print_meta
 
@@ -55,15 +54,20 @@ Public Licence for details."""
 
 
 @click.group()
-@click.option("--config", type=click.Path(), envvar="YTCC_CONFIG")
+@click.option("--conf", type=click.Path(), envvar="YTCC_CONFIG")
 @click.option("--verbose", is_flag=True)
 @click.option("--output", type=click.Choice(["json", "table", "xsv"]), default="table")
 @click.option("--separator", default=",", show_default=True)
 @click.version_option(version=__version__, prog_name="ytcc", message=version_text)
-def cli(config, verbose, output, separator):
+def cli(conf, verbose, output, separator):
     global ytcc, printer
 
-    ytcc = core.Ytcc(config)
+    if conf is None:
+        config.load()
+    else:
+        config.load(str(conf))
+
+    ytcc = core.Ytcc()
 
     if output == "table":
         printer = TablePrinter()
@@ -96,7 +100,10 @@ def rename(old: str, new: str):
 @cli.command()
 @click.option("--attributes", type=CommaList(str))
 def subscriptions(attributes: List[str]):
-    printer.filter = attributes
+    if not filter:
+        printer.filter = config.ytcc.playlist_attrs
+    else:
+        printer.filter = attributes
     printer.print(PlaylistPrintable(ytcc.list_playlists()))
 
 
@@ -128,7 +135,10 @@ def list_videos(tags: List[str], since: datetime, till: datetime, playlists: Lis
     ytcc.set_playlist_filter(playlists)
     ytcc.set_video_id_filter(ids)
     ytcc.set_include_watched_filter(watched)
-    printer.filter = attributes
+    if attributes:
+        printer.filter = attributes
+    else:
+        printer.filter = config.ytcc.video_attrs
     printer.print(VideoPrintable(ytcc.list_videos()))
 
 
@@ -223,4 +233,4 @@ def bug_report():
     subprocess.run(["mpv", "--version"], check=False)
     print()
     print("---config dump---")
-    print(ytcc.config)
+    print(config.dumps())

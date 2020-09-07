@@ -17,21 +17,18 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 import datetime
 import hashlib
-import logging
 import os
-import sqlite3
 import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor as Pool
-from typing import Iterable, List, Optional, Any, Dict, FrozenSet, Tuple, Union
+from typing import Iterable, List, Optional, Any, Dict, Tuple, Union
 
 import youtube_dl
 from youtube_dl import DownloadError
 
-from ytcc.config import Config
+from ytcc import config
 from ytcc.database import Database, Video, Playlist, MappedVideo, MappedPlaylist
-from ytcc.exceptions import YtccException, BadURLException, DuplicateChannelException, \
-    DatabaseOperationalError
+from ytcc.exceptions import YtccException, BadURLException, DuplicateChannelException
 from ytcc.utils import unpack_optional, take
 
 
@@ -91,7 +88,7 @@ class Updater:
                     extractor_hash=extractor_hash
                 )
             except DownloadError as dl:
-                #logging.error(dl)
+                # logging.error(dl)
                 return None
 
 
@@ -106,8 +103,7 @@ class Ytcc:
     """
 
     def __init__(self, override_cfg_file: Optional[str] = None) -> None:
-        self.config = Config(override_cfg_file)
-        self.database = Database(self.config.db_path)
+        self.database = Database(config.ytcc.db_path)
         self.video_id_filter: Optional[List[int]] = None
         self.playlist_filter: Optional[List[str]] = None
         self.tags_filter: Optional[List[str]] = None
@@ -183,7 +179,7 @@ class Ytcc:
 
         playlists = list(self.database.list_playlists())
         num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 4
-        Updater.db_path = self.config.db_path
+        Updater.db_path = config.ytcc.db_path
 
         with Pool(num_workers) as pool:
             entries = list(pool.map(Updater.get_new_entries, playlists))
@@ -214,9 +210,10 @@ class Ytcc:
             no_video_flag.append("--no-video")
 
         if video:
+            mpv_flags = (x for s in config.ytcc.mpv_flags.split() if (x := s.strip()))
             try:
                 command = [
-                    "mpv", *no_video_flag, *self.config.mpv_flags, video.url
+                    "mpv", *no_video_flag, *mpv_flags, video.url
                 ]
                 subprocess.run(command, check=True)
             except FileNotFoundError:
@@ -240,19 +237,19 @@ class Ytcc:
         """
         if path:
             download_dir = path
-        elif self.config.download_dir:
-            download_dir = self.config.download_dir
+        elif config.ytcc.download_dir:
+            download_dir = config.ytcc.download_dir
         else:
             download_dir = ""
 
-        conf = self.config.youtube_dl
+        conf = config.youtube_dl
 
         ydl_opts: Dict[str, Any] = {
             "outtmpl": os.path.join(download_dir, conf.output_template),
             "ratelimit": conf.ratelimit,
             "retries": conf.retries,
-            "quiet": conf.loglevel == "quiet",
-            "verbose": conf.loglevel == "verbose",
+            "quiet": config.ytcc.loglevel == "quiet",
+            "verbose": config.ytcc.loglevel == "verbose",
             "merge_output_format": conf.merge_output_format,
             "ignoreerrors": False,
             "postprocessors": [
@@ -271,8 +268,8 @@ class Ytcc:
                 ydl_opts["postprocessors"].append({"key": "EmbedThumbnail"})
         else:
             ydl_opts["format"] = conf.format
-            if conf.subtitles != "off":
-                ydl_opts["subtitleslangs"] = list(map(str.strip, conf.subtitles.split(",")))
+            if conf.subtitles != ["off"]:
+                ydl_opts["subtitleslangs"] = conf.subtitles
                 ydl_opts["writesubtitles"] = True
                 ydl_opts["writeautomaticsub"] = True
                 ydl_opts["postprocessors"].append({"key": "FFmpegEmbedSubtitle"})
