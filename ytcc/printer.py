@@ -18,7 +18,7 @@
 import itertools
 import json
 import sys
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, ABCMeta
 from dataclasses import asdict
 from typing import List, Iterable, Dict, Any, NamedTuple
 
@@ -37,15 +37,20 @@ class Table(NamedTuple):
         return Table(filtered_header, filtered_data)
 
 
-class Printable(ABC):
+class TableData(ABC):
+    @abstractmethod
+    def table(self) -> Table:
+        pass
 
+
+class DictData(ABC):
     @abstractmethod
     def data(self) -> Iterable[Dict[str, Any]]:
         pass
 
-    @abstractmethod
-    def table(self) -> Table:
-        pass
+
+class Printable(DictData, TableData, metaclass=ABCMeta):
+    pass
 
 
 class VideoPrintable(Printable):
@@ -116,7 +121,7 @@ class Printer(ABC):
 
 class TablePrinter(Printer):
 
-    def print(self, obj: Printable) -> None:
+    def print(self, obj: TableData) -> None:
         table = obj.table()
         if self.filter is not None:
             table = table.apply_filter(self.filter)
@@ -148,7 +153,7 @@ class XSVPrinter(Printer):
         s = s.replace("\\", "\\\\")
         return s.replace(self.separator, "\\" + self.separator)
 
-    def print(self, obj: Printable) -> None:
+    def print(self, obj: TableData) -> None:
         table = obj.table()
         if self.filter is not None:
             table = table.apply_filter(self.filter)
@@ -160,5 +165,5 @@ class XSVPrinter(Printer):
 
 class JSONPrinter(Printer):
 
-    def print(self, obj: Printable) -> None:
+    def print(self, obj: DictData) -> None:
         json.dump(list(obj.data()), sys.stdout, indent=2)

@@ -25,7 +25,7 @@ import click
 from ytcc import __version__, __author__
 from ytcc import core, config
 from ytcc.printer import JSONPrinter, XSVPrinter, VideoPrintable, TablePrinter, PlaylistPrintable
-from ytcc.tui import print_meta
+from ytcc.tui import print_meta, Interactive
 
 T = TypeVar("T")
 
@@ -205,7 +205,7 @@ def download(ids: Optional[int], path: Path, audio_only: bool, mark: bool):
 
 @cli.command()
 def tui():
-    pass
+    Interactive(ytcc).run()
 
 
 @cli.command()

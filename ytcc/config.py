@@ -98,7 +98,7 @@ class ytcc(BaseConfig):
 
 class tui(BaseConfig):
     alphabet: str = "sdfervghnuiojkl"
-    default_action: Action = Action.play_audio
+    default_action: Action = Action.play_video
 
 
 class theme(BaseConfig):

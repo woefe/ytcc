@@ -18,13 +18,13 @@
 
 import shutil
 import textwrap as wrap
-from collections import OrderedDict
 from enum import Enum
-from typing import List, Optional, Set, Tuple, Callable, NamedTuple
+from typing import List, Optional, Tuple, Callable, NamedTuple, FrozenSet
 
 from ytcc import terminal, _, config
 from ytcc.core import Ytcc
-from ytcc.database import Video, MappedVideo
+from ytcc.database import MappedVideo
+from ytcc.printer import Table, TableData, VideoPrintable, TablePrinter
 from ytcc.terminal import printt, printtln
 
 
@@ -43,7 +43,7 @@ class Action(Enum):
 
     @staticmethod
     def from_config():
-        return Action.__dict__.get(config.tui.default_action.value().upper(), Action.PLAY_VIDEO)
+        return Action.__dict__.get(config.tui.default_action.value.upper(), Action.PLAY_VIDEO)
 
     SHOW_HELP = (None, terminal.Keys.F1, None)
     PLAY_VIDEO = (_("Play video"), terminal.Keys.F2, config.theme.prompt_play_video)
@@ -54,26 +54,15 @@ class Action(Enum):
     DOWNLOAD_VIDEO = (_("Download video"), terminal.Keys.F6, config.theme.prompt_download_video)
 
 
-class Interactive:
-
-    def __init__(self, videos: List[Video], core: Ytcc):
-        self.core = core
-        self.videos = videos
-        self.previous_action = Action.from_config()
-        self.action = self.previous_action
-
-        def makef(arg):
-            return lambda: self.set_action(arg)
-
-        self.hooks = {action.hotkey: makef(action) for action in list(Action)}
-
-    def set_action(self, action: Action) -> bool:
-        self.previous_action = self.action
-        self.action = action
-        return action in (Action.SHOW_HELP, Action.REFRESH)
+class VideoSelection(TableData, dict):
+    def __init__(self, alphabet: str, videos: List[MappedVideo]):
+        super().__init__()
+        codes = self._prefix_codes(frozenset(alphabet), len(videos))
+        for code, video in zip(codes, videos):
+            self[code] = video
 
     @staticmethod
-    def _prefix_codes(alphabet: Set[str], count: int) -> List[str]:
+    def _prefix_codes(alphabet: FrozenSet[str], count: int) -> List[str]:
         codes = list(alphabet)
 
         if len(codes) < 2:
@@ -97,13 +86,37 @@ class Interactive:
                 first = codes.pop(0)
         return codes
 
+    def table(self) -> Table:
+        table = VideoPrintable(self.values()).table()
+        data = [[code] + row for code, row in zip(self.keys(), table.data)]
+        return Table(["key"] + table.header, data)
+
+
+class Interactive:
+
+    def __init__(self, core: Ytcc):
+        self.core = core
+        self.videos = core.list_videos()
+        self.previous_action = Action.from_config()
+        self.action = self.previous_action
+
+        def makef(arg):
+            return lambda: self.set_action(arg)
+
+        self.hooks = {action.hotkey: makef(action) for action in list(Action)}
+
+    def set_action(self, action: Action) -> bool:
+        self.previous_action = self.action
+        self.action = action
+        return action in (Action.SHOW_HELP, Action.REFRESH)
+
     def get_prompt_text(self) -> str:
         return self.action.text
 
     def get_prompt_color(self) -> Optional[int]:
         return self.action.color
 
-    def command_line(self, tags: List[str], alphabet: Set[str]) -> Tuple[str, bool]:
+    def command_line(self, tags: List[str]) -> Tuple[str, bool]:
         def print_prompt():
             prompt_format = "{prompt_text} > "
             prompt = prompt_format.format(prompt_text=self.get_prompt_text())
@@ -132,7 +145,7 @@ class Interactive:
 
             if char == "\x7f":  # DEL
                 tag = tag[:-1]
-            elif char in alphabet:
+            elif char:
                 tag += char
 
             print_prompt()
@@ -142,44 +155,43 @@ class Interactive:
         return tag, hook_triggered
 
     def run(self) -> None:
-        alphabet = set(config.tui.alphabet)
-        tags = self._prefix_codes(alphabet, len(self.videos))
-        index = OrderedDict(zip(tags, self.videos))
+        selectable = VideoSelection(config.tui.alphabet, self.videos)
+        printer = TablePrinter()
+        printer.filter = ["key"] + config.ytcc.video_attrs
 
-        while index:
-            remaining_tags = list(index.keys())
-            remaining_videos = index.values()
+        while selectable:
+            remaining_tags = list(selectable.keys())
 
             # Clear display and set cursor to (1,1). Allows scrolling back in some terminals
             terminal.clear_screen()
-            print_videos(remaining_videos, quickselect_column=remaining_tags)
+            printer.print(selectable)
 
-            tag, hook_triggered = self.command_line(remaining_tags, alphabet)
-            video = index.get(tag)
+            tag, hook_triggered = self.command_line(remaining_tags)
+            video = selectable.get(tag)
 
             if video is None and not hook_triggered:
                 break
 
             if video is not None:
                 if self.action is Action.MARK_WATCHED:
-                    video.watched = True
-                    del index[tag]
+                    self.core.mark_watched(video)
+                    del selectable[tag]
                 elif self.action is Action.DOWNLOAD_AUDIO:
                     print()
                     self.download_video(video, True)
-                    del index[tag]
+                    del selectable[tag]
                 elif self.action is Action.DOWNLOAD_VIDEO:
                     print()
                     self.download_video(video, False)
-                    del index[tag]
+                    del selectable[tag]
                 elif self.action is Action.PLAY_AUDIO:
                     print()
                     self.play(video, True)
-                    del index[tag]
+                    del selectable[tag]
                 elif self.action is Action.PLAY_VIDEO:
                     print()
                     self.play(video, False)
-                    del index[tag]
+                    del selectable[tag]
             elif self.action is Action.SHOW_HELP:
                 self.action = self.previous_action
                 terminal.clear_screen()
@@ -205,13 +217,17 @@ class Interactive:
 
     def play(self, video: MappedVideo, audio_only: bool) -> None:
         print_meta(video)
-        self.core.play_video(video, audio_only)
+        if self.core.play_video(video, audio_only):
+            self.core.mark_watched(video)
+        else:
+            pass  # TODO Print error
 
-    def download_video(self, video: Video, audio_only: bool = False) -> None:
+    def download_video(self, video: MappedVideo, audio_only: bool = False) -> None:
         print(_('Downloading "{video.title}" by "{video.channel.displayname}"...').format(
             video=video))
-        success = self.core.download_video(video=video, audio_only=audio_only)
-        if not success:
+        if self.core.download_video(video=video, audio_only=audio_only):
+            self.core.mark_watched(video)
+        else:
             print(_("An Error occured while downloading the video"))
 
 

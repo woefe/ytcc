@@ -15,13 +15,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
-import json
 import sqlite3
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from functools import singledispatchmethod
 from pathlib import Path
-from typing import List, Iterable, Any, NamedTuple, Optional, Union
+from typing import List, Iterable, Any, Optional, Union
 
 from ytcc.utils import unpack_optional
 
@@ -268,7 +267,7 @@ class Database:
         """Delete all videos from all channels, but keeps the 30 latest videos of every channel."""
         sql = """
             delete
-            from video as v
+            from video v
             where (select count(*)
                    from video w
                    where v.publish_date < w.publish_date
