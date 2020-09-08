@@ -58,9 +58,15 @@ class VideoPrintable(Printable):
     def __init__(self, videos: Iterable[MappedVideo]):
         self.videos = videos
 
+    @staticmethod
+    def _format_duration(duration: float) -> str:
+        return f"{duration // 60: 3.0f}:{duration % 60:02.0f}"
+
     def data(self) -> Iterable[Dict[str, Any]]:
         for video in self.videos:
-            yield asdict(video)
+            d = asdict(video)
+            d["duration"] = self._format_duration(video.duration)
+            yield d
 
     def table(self) -> Table:
         header = ["id", "url", "title", "description", "publish_date", "watched", "duration",
@@ -75,7 +81,7 @@ class VideoPrintable(Printable):
                 video.description,
                 str(video.publish_date),
                 str(video.watched),
-                str(video.duration),
+                self._format_duration(video.duration),
                 video.extractor_hash,
                 ", ".join(map(lambda v: v.name, video.playlists))
             ])
