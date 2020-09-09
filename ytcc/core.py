@@ -134,6 +134,11 @@ class Ytcc:
 
     @staticmethod
     def _update_channel(channel: Channel) -> List[Video]:
+        def gettime(entry) -> float:
+            now_tuple = datetime.datetime.now().timetuple()
+            publish_tuple = entry.get("published_parsed", entry.get("updated_parsed", now_tuple))
+            return time.mktime(publish_tuple)
+
         yt_channel_id = channel.yt_channelid
         url = _get_youtube_rss_url(yt_channel_id)
         feed = feedparser.parse(url)
@@ -143,7 +148,7 @@ class Ytcc:
                 title=str(entry.title),
                 description=str(entry.description),
                 publisher=yt_channel_id,
-                publish_date=time.mktime(entry.published_parsed),
+                publish_date=gettime(entry),
                 watched=False
             )
             for entry in feed.entries
@@ -309,6 +314,7 @@ class Ytcc:
 
         :param file: The file to read from.
         """
+
         def _create_channel(elem: etree.Element) -> Channel:
             rss_url = urlparse(elem.attrib["xmlUrl"])
             query_dict = parse_qs(rss_url.query, keep_blank_values=False)
