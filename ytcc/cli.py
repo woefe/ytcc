@@ -63,8 +63,8 @@ Public Licence for details."""
 @click.option("--output", "-o", type=click.Choice(["json", "table", "xsv"]), default="table",
               show_default=True,
               help="Set output format. `json` prints in JSON format, which is usually not filtered"
-                   "by --attribute options of commands. `table` prints a human readable table."
-                   "`xsv` prints x-separated values, where x can be set with the -s option.")
+                   " by --attribute options of commands. `table` prints a human readable table."
+                   " `xsv` prints x-separated values, where x can be set with the -s option.")
 @click.option("--separator", "-s", default=",", show_default=True,
               help="Set the delimiter used in XSV format.")
 @click.version_option(version=__version__, prog_name="ytcc", message=version_text)
@@ -179,7 +179,7 @@ def update(max_fail: Optional[int], max_backlog: Optional[int]):
 @click.option("--watched", "-w", is_flag=True, default=False,
               help="Listed videos include watched videos.")
 @click.option("--attributes", "-a", type=CommaList(VideoAttr.from_str),
-              help="Attributes of videos to be included in the output."
+              help="Attributes of videos to be included in the output. "
                    f"Some of [{', '.join(map(lambda x: x.value, list(VideoAttr)))}].")
 def list_videos(tags: List[str], since: datetime, till: datetime, playlists: List[str],
                 ids: List[int], attributes: List[str], watched: bool):
