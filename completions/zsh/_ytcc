@@ -1,70 +1,32 @@
 #compdef ytcc
 
-_ytcc_channels() {
-    local _channel_list
-    _channel_list=( "${(@f)$(ytcc -c)}" )
-    _describe -t values 'channel' _channel_list || compadd "$@"
-}
+_ytcc_completion() {
+    local -a completions
+    local -a completions_with_descriptions
+    local -a response
+    (( ! $+commands[ytcc] )) && return 1
 
-_ytcc_videos() {
-    local _video_list
-    _video_list=( "${(@f)$(ytcc -lo ID Channel Title --no-header | sed -r "s/ *([0-9]+) *│/\1:/")}" )
-    _describe -t values 'videos' _video_list || compadd "$@"
-}
+    response=("${(@f)$( env COMP_WORDS="${words[*]}" \
+                        COMP_CWORD=$((CURRENT-1)) \
+                        _YTCC_COMPLETE="complete_zsh" \
+                        ytcc )}")
 
-_ytcc_mark() {
-    local _video_list
-    _video_list=( "${(@f)$(ytcc -lo ID Channel Title --no-header | sed -r "s/ *([0-9]+) *│/\1:/")}" )
-    if [[ ${_video_list[1]} == "No videos to list. No videos match the given criteria." ]]; then
-        _video_list=( )
+    for key descr in ${(kv)response}; do
+      if [[ "$descr" == "_" ]]; then
+          completions+=("$key")
+      else
+          completions_with_descriptions+=("$key":"$descr")
+      fi
+    done
+
+    if [ -n "$completions_with_descriptions" ]; then
+        _describe -V unsorted completions_with_descriptions -U
     fi
-    _describe -t values 'unwatched videos' _video_list || compadd "$@"
 
+    if [ -n "$completions" ]; then
+        compadd -U -V unsorted -a completions
+    fi
+    compstate[insert]="automenu"
 }
 
-_ytcc() {
-    local context state line
-    local -A opt_args
-
-    _arguments \
-        '(-h --help)'{-h,--help}'[show help message and exit]' \
-        '(-a --add-channel)'{-a,--add-channel}'[add a new channel]:2::' \
-        '(-c --list-channels)'{-c,--list-channels}'[print a list of all subscribed channels]' \
-        '(-r --delete-channel)'{-r,--delete-channel}'[unsubscribe from channels]:*: :->channels' \
-        '(--rename)--rename[rename a channel]:*: :->channels' \
-        '(-u --update)'{-u,--update}'[update the videolist]' \
-        '(-l --list)'{-l,--list}'[print a list of videos]' \
-        '(-w --watch)'{-w,--watch}'[play videos]:*: :->videos' \
-        '(-d --download)'{-d,--download}'[download the videos]:*: :->videos' \
-        '(-m --mark-watched)'{-m,--mark-watched}'[mark videos as watched]:*: :->mark' \
-        '(-f --channel-filter)'{-f,--channel-filter}'[apply a filter]:*: :->channels' \
-        '(-n --include-watched)'{-n,--list-recent}'[include watched videos to filter]' \
-        '(-s --since)'{-s,--since}'[set lower limit of date filter]:1::' \
-        '(-t --to)'{-t,--to}'[set upper limit of date filter]:1::' \
-        '(-p --path)'{-p,--path}'[set the download path]::download path:_path_files -/' \
-        '(-g --no-description)'{-g,--no-description}'[do not print the video description]' \
-        '(-o --columns)'{-o,--columns}'[set which columns will be displayed]:*:columns:(ID Date Channel Title URL Watched all)' \
-        '(--no-header)--no-header[do not print table header]' \
-        '(-x --no-video)'{-x,--no-video}'[audio only]' \
-        '(-y --disable-interactive)'{-y,--yes}'[automatically play videos without asking]' \
-        '(--import-from)--import-from[import subscriptions from youtube]::subscription file:_path_files -f' \
-        '(--export-to)--export-to[export subscriptions to OPML]::opml file:_path_files -f' \
-        '(--cleanup)--cleanup[cleanup and shrink database file]' \
-        '(-v --version)'{-v,--version}'[output version information and exit]' \
-        '(--bug-report-info)--bug-report-info[print versions and details]' \
-
-    case $state in
-        (channels)
-            _ytcc_channels
-            ;;
-        (videos)
-            _ytcc_videos
-            ;;
-        (mark)
-            _ytcc_mark
-            ;;
-    esac
-
-}
-
-_ytcc "$@"
+compdef _ytcc_completion ytcc;
