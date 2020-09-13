@@ -34,6 +34,7 @@ printer = JSONPrinter()
 
 
 class CommaList(click.ParamType, Generic[T]):
+    name = "comma separated list"
 
     def __init__(self, validator: Callable[[str], T]):
         self.validator = validator
@@ -42,7 +43,7 @@ class CommaList(click.ParamType, Generic[T]):
         try:
             return [self.validator(elem.strip()) for elem in value.split(",")]
         except:
-            self.fail(f"Unexpected value {value}")
+            self.fail(f"Unexpected value {value} in comma separated list")
 
 
 version_text = f"""%(prog)s, version %(version)s
@@ -54,10 +55,10 @@ Public Licence for details."""
 
 
 @click.group()
-@click.option("--conf", type=click.Path(), envvar="YTCC_CONFIG")
-@click.option("--verbose", is_flag=True)
-@click.option("--output", type=click.Choice(["json", "table", "xsv"]), default="table")
-@click.option("--separator", default=",", show_default=True)
+@click.option("--conf", "-c", type=click.Path(), envvar="YTCC_CONFIG")
+@click.option("--verbose", "-v", is_flag=True)
+@click.option("--output", "-o", type=click.Choice(["json", "table", "xsv"]), default="table")
+@click.option("--separator", "-s", default=",", show_default=True)
 @click.version_option(version=__version__, prog_name="ytcc", message=version_text)
 def cli(conf, verbose, output, separator):
     global ytcc, printer
@@ -98,7 +99,7 @@ def rename(old: str, new: str):
 
 
 @cli.command()
-@click.option("--attributes", type=CommaList(str))
+@click.option("--attributes", "-a", type=CommaList(str))
 def subscriptions(attributes: List[str]):
     if not filter:
         printer.filter = config.ytcc.playlist_attrs
@@ -115,19 +116,19 @@ def tag(name: str, tags: List[str]):
 
 
 @cli.command()
-@click.option("--max-fail", type=click.INT)
-@click.option("--max-backlog", type=click.INT)
+@click.option("--max-fail", "-f", type=click.INT)
+@click.option("--max-backlog", "-b", type=click.INT)
 def update(max_fail: Optional[int], max_backlog: Optional[int]):
     ytcc.update(max_fail, max_backlog)
 
 
 @cli.command("list")
-@click.option("--tags", type=CommaList(str))
-@click.option("--since", type=click.DateTime(), default="1970-01-01")
-@click.option("--till", type=click.DateTime(), default="9999-12-31")
-@click.option("--playlists", type=CommaList(str))
+@click.option("--tags", "-c", type=CommaList(str))
+@click.option("--since", "-s", type=click.DateTime(["%Y-%m-%d"]), default="1970-01-01")
+@click.option("--till", "-t", type=click.DateTime(["%Y-%m-%d"]), default="9999-12-31")
+@click.option("--playlists", "-p", type=CommaList(str))
 @click.option("--ids", "-i", type=CommaList(int))
-@click.option("--attributes", type=CommaList(str))
+@click.option("--attributes", "-a", type=CommaList(str))
 @click.option("--watched", is_flag=True, default=False)
 def list_videos(tags: List[str], since: datetime, till: datetime, playlists: List[str],
                 ids: List[int], attributes: List[str], watched: bool):
@@ -168,12 +169,13 @@ def _get_videos(ids: Optional[List[int]]):
 
 
 @cli.command()
-@click.option("--audio-only", is_flag=True, default=False)
-@click.option("--meta/--no-meta", is_flag=True, default=True)
-@click.option("--mark/--no-mark", is_flag=True, default=True)
+@click.option("--audio-only", "-a", is_flag=True, default=False)
+@click.option("--no-meta", "-i", is_flag=True, default=False)
+@click.option("--no-mark", "-m", is_flag=True, default=False)
 @click.argument("ids", nargs=-1)
 @click.pass_context
-def play(ctx: click.Context, ids: Optional[List[int]], audio_only: bool, meta: bool, mark: bool):
+def play(ctx: click.Context, ids: Optional[List[int]], audio_only: bool,
+         no_meta: bool, no_mark: bool):
     videos = _get_videos(ids)
 
     if not videos:
@@ -182,11 +184,11 @@ def play(ctx: click.Context, ids: Optional[List[int]], audio_only: bool, meta: b
         ctx.exit(0)
 
     for video in videos:
-        if meta:
+        if not no_meta:
             print_meta(video)
         if ytcc.play_video(video, audio_only) and mark:
             ytcc.mark_watched(video)
-        elif mark:
+        elif not no_mark:
             print()
             print(("WARNING: The video player terminated with an error.\n"
                    "         The last video is not marked as watched!"))
@@ -200,15 +202,15 @@ def mark(ids: Optional[List[int]]):
 
 
 @cli.command()
-@click.option("--path", type=click.Path(file_okay=False, dir_okay=True), default="")
-@click.option("--audio-only", is_flag=True, default=False)
-@click.option("--mark/--no-mark", is_flag=True, default=True)
+@click.option("--path", "-p", type=click.Path(file_okay=False, dir_okay=True), default="")
+@click.option("--audio-only", "-a", is_flag=True, default=False)
+@click.option("--no-mark", "-m", is_flag=True, default=False)
 @click.argument("ids", nargs=-1)
-def download(ids: Optional[int], path: Path, audio_only: bool, mark: bool):
+def download(ids: Optional[int], path: Path, audio_only: bool, no_mark: bool):
     videos = _get_videos(ids)
 
     for video in videos:
-        if ytcc.download_video(video, str(path), audio_only) and mark:
+        if ytcc.download_video(video, str(path), audio_only) and not no_mark:
             ytcc.mark_watched(video)
 
 
