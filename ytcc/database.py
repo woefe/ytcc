@@ -285,32 +285,12 @@ class Database:
         return videos.values()
 
     def cleanup(self) -> None:
-        """Delete all videos from all channels, but keeps the 30 latest videos of every channel."""
+        """Delete all watched videos"""
         sql = """
-            delete
-            from video v
-            where (select count(*)
-                   from video w
-                   where v.publish_date < w.publish_date
-                     and v.publisher = w.publisher) >= 30;
+            DELETE
+            FROM video
+            WHERE watched = 1;
             """
-        self.connection.commit()
-        self.connection.execute(sql)
-
-        # Delete videos without channels.
-        # This happend in older versions, because foreign keys were not enabled.
-        # Also happens if foreign keys cannot be enabled due to missing compile flags.
-        delete_dangling_sql = """
-            delete
-            from video
-            where id in (
-              select v.id
-              from video v
-                     left join channel c on v.publisher = c.yt_channelid
-              where c.yt_channelid is null
-            );
-        """
-        self.connection.execute(delete_dangling_sql)
-
+        with self.connection as con:
+            con.execute(sql)
         self.connection.execute("vacuum;")
-        self.connection.commit()
