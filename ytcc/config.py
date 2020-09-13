@@ -68,11 +68,25 @@ class VideoAttr(str, Enum):
     extractor_hash = "extractor_hash"
     playlists = "playlists"
 
+    @staticmethod
+    def from_str(string: str) -> "VideoAttr":
+        v_attr = VideoAttr.__members__.get(string)
+        if v_attr is not None:
+            return v_attr
+        raise ValueError(f"{string} cannot be converted to VideoAttr")
+
 
 class PlaylistAttr(str, Enum):
     name = "name"
     url = "url"
     tags = "tags"
+
+    @staticmethod
+    def from_str(string: str) -> "PlaylistAttr":
+        p_attr = PlaylistAttr.__members__.get(string)
+        if p_attr is not None:
+            return p_attr
+        raise ValueError(f"{string} cannot be converted to PlaylistAttr")
 
 
 class DateFormatStr(str):
