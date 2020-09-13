@@ -158,6 +158,15 @@ def _get_ids(ids) -> Optional[List[int]]:
     return list(ids) if ids else None
 
 
+def _get_videos(ids: Optional[List[int]]):
+    ids = _get_ids(ids)
+    if ids is not None:
+        ytcc.set_video_id_filter(ids)
+        ytcc.set_include_watched_filter(True)
+
+    return ytcc.list_videos()
+
+
 @cli.command()
 @click.option("--audio-only", is_flag=True, default=False)
 @click.option("--meta/--no-meta", is_flag=True, default=True)
@@ -165,8 +174,7 @@ def _get_ids(ids) -> Optional[List[int]]:
 @click.argument("ids", nargs=-1)
 @click.pass_context
 def play(ctx: click.Context, ids: Optional[List[int]], audio_only: bool, meta: bool, mark: bool):
-    ytcc.set_video_id_filter(_get_ids(ids))
-    videos = ytcc.list_videos()
+    videos = _get_videos(ids)
 
     if not videos:
         # TODO
@@ -197,8 +205,7 @@ def mark(ids: Optional[List[int]]):
 @click.option("--mark/--no-mark", is_flag=True, default=True)
 @click.argument("ids", nargs=-1)
 def download(ids: Optional[int], path: Path, audio_only: bool, mark: bool):
-    ytcc.set_video_id_filter(_get_ids(ids))
-    videos = ytcc.list_videos()
+    videos = _get_videos(ids)
 
     for video in videos:
         if ytcc.download_video(video, str(path), audio_only) and mark:
