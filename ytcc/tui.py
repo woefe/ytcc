@@ -96,7 +96,7 @@ class Interactive:
 
     def __init__(self, core: Ytcc):
         self.core = core
-        self.videos = core.list_videos()
+        self.videos = list(core.list_videos())
         self.previous_action = Action.from_config()
         self.action = self.previous_action
 
@@ -157,7 +157,7 @@ class Interactive:
     def run(self) -> None:
         selectable = VideoSelection(config.tui.alphabet, self.videos)
         printer = TablePrinter()
-        printer.filter = ["key"] + config.ytcc.video_attrs
+        printer.filter = ["key", *config.ytcc.video_attrs]
 
         while selectable:
             remaining_tags = list(selectable.keys())

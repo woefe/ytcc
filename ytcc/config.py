@@ -22,11 +22,10 @@ import inspect
 import io
 import os
 import sys
+import typing
 from enum import Enum, EnumMeta
 from pathlib import Path
-from typing import Optional, TextIO, Type, Any, List
-
-import typing
+from typing import Optional, TextIO, Type, Any, List, Callable
 
 from ytcc.exceptions import BadConfigException
 
@@ -44,29 +43,29 @@ class Color(int):
 
 
 class Action(str, Enum):
-    play_video = "play_video"
-    play_audio = "play_audio"
-    mark_watched = "mark_watched"
-    download_audio = "download_audio"
-    download_video = "download_video"
+    PLAY_VIDEO = "play_video"
+    PLAY_AUDIO = "play_audio"
+    MARK_WATCHED = "mark_watched"
+    DOWNLOAD_AUDIO = "download_audio"
+    DOWNLOAD_VIDEO = "download_video"
 
 
 class LogLevel(str, Enum):
-    normal = "normal"
-    quiet = "quiet"
-    verbose = "verbose"
+    NORMAL = "normal"
+    QUIET = "quiet"
+    VERBOSE = "verbose"
 
 
 class VideoAttr(str, Enum):
-    id = "id"
-    url = "url"
-    title = "title"
-    description = "description"
-    publish_date = "publish_date"
-    watched = "watched"
-    duration = "duration"
-    extractor_hash = "extractor_hash"
-    playlists = "playlists"
+    ID = "id"
+    URL = "url"
+    TITLE = "title"
+    DESCRIPTION = "description"
+    PUBLISH_DATE = "publish_date"
+    WATCHED = "watched"
+    DURATION = "duration"
+    EXTRACTOR_HASH = "extractor_hash"
+    PLAYLISTS = "playlists"
 
     @staticmethod
     def from_str(string: str) -> "VideoAttr":
@@ -77,9 +76,9 @@ class VideoAttr(str, Enum):
 
 
 class PlaylistAttr(str, Enum):
-    name = "name"
-    url = "url"
-    tags = "tags"
+    NAME = "name"
+    URL = "url"
+    TAGS = "tags"
 
     @staticmethod
     def from_str(string: str) -> "PlaylistAttr":
@@ -90,17 +89,17 @@ class PlaylistAttr(str, Enum):
 
 
 class DateFormatStr(str):
-    def __new__(cls, arg: str):
+    def __new__(cls, *arg):
         datechars = "aAwdbBmyYjUWx%"
-        it = iter(arg)
+        iterator = iter(arg[0])
 
-        while char := next(it, ""):
+        while char := next(iterator, ""):
             if char == "%":
-                next_char = next(it, "$")
+                next_char = next(iterator, "$")
                 if next_char not in datechars:
                     raise ValueError(f"Invalid date format specifier '%{next_char}'")
 
-        return super().__new__(cls, arg)
+        return super().__new__(cls, *arg)
 
 
 class BaseConfig:
@@ -108,40 +107,40 @@ class BaseConfig:
         raise AttributeError("Attribute is immutable")
 
 
-class ytcc(BaseConfig):
+class ytcc(BaseConfig):  # pylint: disable=invalid-name
     download_dir: str = "~/Downloads"
     mpv_flags: str = "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best"
-    order_by: List[VideoAttr] = [VideoAttr.playlists, VideoAttr.publish_date]
+    order_by: List[VideoAttr] = [VideoAttr.PLAYLISTS, VideoAttr.PUBLISH_DATE]
     video_attrs: List[VideoAttr] = [
-        VideoAttr.id,
-        VideoAttr.title,
-        VideoAttr.publish_date,
-        VideoAttr.duration,
-        VideoAttr.playlists
+        VideoAttr.ID,
+        VideoAttr.TITLE,
+        VideoAttr.PUBLISH_DATE,
+        VideoAttr.DURATION,
+        VideoAttr.PLAYLISTS
     ]
     playlist_attrs: List[PlaylistAttr] = list(PlaylistAttr)
     db_path: str = "~/.local/share/ytcc/ytcc.db"
-    loglevel: LogLevel = "normal"
-    date_format: DateFormatStr = "%Y-%m-%d"
+    loglevel: LogLevel = LogLevel.NORMAL
+    date_format: DateFormatStr = DateFormatStr("%Y-%m-%d")
     max_update_fail: int = 5
     max_update_backlog: int = 20
 
 
-class tui(BaseConfig):
+class tui(BaseConfig):  # pylint: disable=invalid-name
     alphabet: str = "sdfervghnuiojkl"
-    default_action: Action = Action.play_video
+    default_action: Action = Action.PLAY_VIDEO
 
 
-class theme(BaseConfig):
-    prompt_download_audio: Color = 2
-    prompt_download_video: Color = 4
-    prompt_play_audio: Color = 2
-    prompt_play_video: Color = 4
-    prompt_mark_watched: Color = 1
-    table_alternate_background: Color = 245
+class theme(BaseConfig):  # pylint: disable=invalid-name
+    prompt_download_audio: Color = Color(2)
+    prompt_download_video: Color = Color(4)
+    prompt_play_audio: Color = Color(2)
+    prompt_play_video: Color = Color(4)
+    prompt_mark_watched: Color = Color(1)
+    table_alternate_background: Color = Color(245)
 
 
-class youtube_dl(BaseConfig):
+class youtube_dl(BaseConfig):  # pylint: disable=invalid-name
     format: str = "bestvideo[height<=?1080]+bestaudio/best"
     output_template: str = "%(title)s.%(ext)s"
     ratelimit: int = 0
@@ -199,29 +198,31 @@ _config_classes = inspect.getmembers(sys.modules[__name__], _is_config_class)
 
 
 def load(override_cfg_file: Optional[str] = None):
-    cp = _get_config(override_cfg_file)
+    conf_parser = _get_config(override_cfg_file)
 
     def enum_from_str(e_class: EnumMeta, str_val: str) -> Enum:
-        for e in e_class:
-            converted_val = _convert(e.value.__class__, str_val)  # Might also raise a ValueError
-            if e.value == converted_val:
-                return e
+        field: Any
+        for field in e_class:
+            # Might also raise a ValueError
+            converted_val = _convert(field.value.__class__, str_val)
+            if field.value == converted_val:
+                return field
 
         raise ValueError(f"{str_val} is not a valid {e_class}")
 
-    def bool_from_str(s: str) -> bool:
-        b = _BOOLEAN_STATES.get(s.lower())
-        if b is None:
-            ValueError(f"{s} cannot be converted to bool")
-        return b
+    def bool_from_str(string: str) -> bool:
+        bool_state = _BOOLEAN_STATES.get(string.lower())
+        if bool_state is None:
+            raise ValueError(f"{string} cannot be converted to bool")
+        return bool_state
 
     def list_from_str(elem_type: Type, list_str: str) -> List[Any]:
         return [_convert(elem_type, elem.strip()) for elem in list_str.split(",")]
 
-    def _convert(typ: Type, string: str):
+    def _convert(typ: Type[Any], string: str) -> Any:
         if typing.get_origin(typ) is list:
             elem_conv = typing.get_args(typ)[0]
-            from_str = functools.partial(list_from_str, elem_conv)
+            from_str: Callable[[str], Any] = functools.partial(list_from_str, elem_conv)
         elif issubclass(typ, Enum):
             from_str = functools.partial(enum_from_str, typ)
         elif issubclass(typ, bool):
@@ -237,40 +238,45 @@ def load(override_cfg_file: Optional[str] = None):
         for prop, conv in typing.get_type_hints(config_class).items():
 
             try:
-                str_val = cp.get(class_name, prop, raw=True)
+                str_val = conf_parser.get(class_name, prop, raw=True)
             except configparser.Error:
                 continue
 
             try:
                 val = _convert(conv, str_val)
                 setattr(config_class, prop, val)
-            except ValueError:
-                raise BadConfigException(f"Value {str_val} for {class_name}.{prop} is invalid")
+            except ValueError as err:
+                message = f"Value {str_val} for {class_name}.{prop} is invalid"
+                raise BadConfigException(message) from err
 
 
 def dumps() -> str:
-    cp = configparser.ConfigParser(interpolation=None)
+    conf_parser = configparser.ConfigParser(interpolation=None)
     strio = io.StringIO()
 
-    def _serialize(v):
-        if isinstance(v, Enum):
-            return v.value
-        if isinstance(v, list):
-            return ", ".join(map(_serialize, v))
-        if isinstance(v, bool):
-            return str(v).lower()
+    def _serialize(val):
+        if isinstance(val, Enum):
+            return val.value
+        if isinstance(val, list):
+            return ", ".join(map(_serialize, val))
+        if isinstance(val, bool):
+            return str(val).lower()
 
-        return v
+        return val
 
     for name, clazz in _config_classes:
-        cp[name] = {k: _serialize(v) for k, v in clazz.__dict__.items() if not k.startswith("__")}
+        conf_parser[name] = {
+            k: _serialize(v)
+            for k, v in clazz.__dict__.items()
+            if not k.startswith("__")
+        }
 
-    cp.write(strio)
+    conf_parser.write(strio)
     return strio.getvalue()
 
 
-def dump(fd: TextIO) -> None:
-    fd.write(dumps())
+def dump(txt_io: TextIO) -> None:
+    txt_io.write(dumps())
 
 
 load()

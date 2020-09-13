@@ -19,6 +19,7 @@ import datetime
 import hashlib
 import itertools
 import os
+import sqlite3
 import subprocess
 import time
 from collections import defaultdict
@@ -64,22 +65,25 @@ class Updater:
         }
 
     def get_new_entries(self, playlist: Playlist) -> List[Tuple[Any, str, Playlist]]:
-        with Database(self.db_path) as db:
-            hashes = frozenset(x.extractor_hash for x in db.list_videos(playlists=[playlist.name]))
+        with Database(self.db_path) as database:
+            hashes = frozenset(
+                x.extractor_hash
+                for x in database.list_videos(playlists=[playlist.name])
+            )
 
         result = []
         with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
             info = ydl.extract_info(playlist.url, download=False, process=False)
             for entry in take(self.max_items, info.get("entries", [])):
-                h = extractor_hash(entry)
-                if h not in hashes:
-                    result.append((entry, h, playlist))
+                e_hash = extractor_hash(entry)
+                if e_hash not in hashes:
+                    result.append((entry, e_hash, playlist))
 
         return result
 
     def process_entry(self, e_hash: str, entry: Any) -> Tuple[str, Optional[Video]]:
-        with Database(self.db_path) as db:
-            if db.get_extractor_fail_count(e_hash) >= self.max_fail:
+        with Database(self.db_path) as database:
+            if database.get_extractor_fail_count(e_hash) >= self.max_fail:
                 return e_hash, None
 
         with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
@@ -98,15 +102,14 @@ class Updater:
                     duration=processed.get("duration", -1),
                     extractor_hash=e_hash
                 )
-            except DownloadError as dl:
-                # logging.error(dl)
+            except DownloadError:
                 return e_hash, None
 
     def update(self):
         num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 4
 
-        with Pool(num_workers) as pool, Database(self.db_path) as db:
-            playlists = db.list_playlists()
+        with Pool(num_workers) as pool, Database(self.db_path) as database:
+            playlists = database.list_playlists()
             raw_entries = dict()
             playlists_mapping = defaultdict(list)
             full_content = pool.map(self.get_new_entries, playlists)
@@ -119,9 +122,9 @@ class Updater:
             for key in raw_entries:
                 for playlist in playlists_mapping[key]:
                     if results[key] is not None:
-                        db.add_videos([results[key]], playlist)
+                        database.add_videos([results[key]], playlist)
                     else:
-                        db.increase_extractor_fail_count(key, max_fail=self.max_fail)
+                        database.increase_extractor_fail_count(key, max_fail=self.max_fail)
 
 
 class Ytcc:
@@ -134,22 +137,22 @@ class Ytcc:
     * ``set_include_watched_filter``
     """
 
-    def __init__(self, override_cfg_file: Optional[str] = None) -> None:
+    def __init__(self) -> None:
         self.database = Database(config.ytcc.db_path)
         self.video_id_filter: Optional[List[int]] = None
         self.playlist_filter: Optional[List[str]] = None
         self.tags_filter: Optional[List[str]] = None
         self.date_begin_filter = 0.0
         self.date_end_filter = (0.0, False)
-        self.include_watched_filter = False
+        self.include_watched_filter: Optional[bool] = False
 
     def __del__(self):
         try:
-            db = self.__getattribute__("database")
+            database = self.__getattribute__("database")
         except AttributeError:
             return
 
-        db.close()
+        database.close()
 
     def __enter__(self) -> "Ytcc":
         return self
@@ -196,7 +199,7 @@ class Ytcc:
         """
         self.include_watched_filter = None if enabled else False
 
-    def set_video_id_filter(self, ids: Optional[Iterable[int]] = None) -> None:
+    def set_video_id_filter(self, ids: Optional[List[int]] = None) -> None:
         """Set the id filter.
 
         This filter overrides all other filters.
@@ -238,8 +241,8 @@ class Ytcc:
                     "mpv", *no_video_flag, *mpv_flags, video.url
                 ]
                 subprocess.run(command, check=True)
-            except FileNotFoundError:
-                raise YtccException("Could not locate the mpv video player!")
+            except FileNotFoundError as fnfe:
+                raise YtccException("Could not locate the mpv video player!") from fnfe
             except subprocess.CalledProcessError:
                 return False
 
@@ -324,9 +327,8 @@ class Ytcc:
             real_url = info.get("webpage_url")
             if real_url:
                 self.database.add_playlist(name, real_url)
-            # TODO
-        except:
-            raise DuplicateChannelException("Playlist already exists")
+        except sqlite3.IntegrityError as integrity_error:
+            raise DuplicateChannelException("Playlist already exists") from integrity_error
 
     def list_videos(self) -> Iterable[MappedVideo]:
         """Return a list of videos that match the filters set by the set_*_filter methods.

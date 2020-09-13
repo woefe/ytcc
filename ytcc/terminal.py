@@ -151,7 +151,7 @@ def printt(*text, foreground: Optional[int] = None, background: Optional[int] = 
         print(esc_bold, end="")
 
     if replace:
-        print(f"\033[2K\r", end="")
+        print("\033[2K\r", end="")
 
     print(*text, sep="", end="")
     print(esc_clear_attrs, flush=True, end="")

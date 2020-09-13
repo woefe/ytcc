@@ -21,7 +21,7 @@ import sys
 from abc import ABC, abstractmethod, ABCMeta
 from dataclasses import asdict
 from datetime import datetime
-from typing import List, Iterable, Dict, Any, NamedTuple
+from typing import List, Iterable, Dict, Any, NamedTuple, Optional
 
 from ytcc import config
 from ytcc.database import MappedVideo, MappedPlaylist
@@ -32,7 +32,7 @@ class Table(NamedTuple):
     header: List[str]
     data: List[List[str]]
 
-    def apply_filter(self, column_names=List[str]) -> "Table":
+    def apply_filter(self, column_names: List[str]) -> "Table":
         compressor = [col in column_names for col in self.header]
         filtered_data = [list(itertools.compress(row, compressor)) for row in self.data]
         filtered_header = list(itertools.compress(self.header, compressor))
@@ -70,10 +70,10 @@ class VideoPrintable(Printable):
 
     def data(self) -> Iterable[Dict[str, Any]]:
         for video in self.videos:
-            d = asdict(video)
-            d["duration"] = self._format_duration(video.duration)
-            d["publish_date"] = self._format_publish_date(video.publish_date)
-            yield d
+            video_dict = asdict(video)
+            video_dict["duration"] = self._format_duration(video.duration)
+            video_dict["publish_date"] = self._format_publish_date(video.publish_date)
+            yield video_dict
 
     def table(self) -> Table:
         header = ["id", "url", "title", "description", "publish_date", "watched", "duration",
@@ -117,14 +117,14 @@ class PlaylistPrintable(Printable):
 class Printer(ABC):
 
     def __init__(self):
-        self._filter = None
+        self._filter: Optional[List[Any]] = None
 
     @property
-    def filter(self):
+    def filter(self) -> Optional[List[Any]]:
         return self._filter
 
     @filter.setter
-    def filter(self, fields: List[str]):
+    def filter(self, fields: List[Any]):
         self._filter = fields
 
     @abstractmethod
@@ -141,7 +141,8 @@ class TablePrinter(Printer):
 
         self.table_print(table)
 
-    def table_print(self, table: Table) -> None:
+    @staticmethod
+    def table_print(table: Table) -> None:
         transposed = zip(table.header, *table.data)
         col_widths = [max(map(len, column)) for column in transposed]
         table_format = "│".join(itertools.repeat(" {{:<{}}} ", len(table.header))).format(
@@ -162,9 +163,9 @@ class XSVPrinter(Printer):
         super().__init__()
         self.separator = separator
 
-    def escape(self, s: str) -> str:
-        s = s.replace("\\", "\\\\")
-        return s.replace(self.separator, "\\" + self.separator)
+    def escape(self, string: str) -> str:
+        string = string.replace("\\", "\\\\")
+        return string.replace(self.separator, "\\" + self.separator)
 
     def print(self, obj: TableData) -> None:
         table = obj.table()

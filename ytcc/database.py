@@ -17,9 +17,8 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 import sqlite3
 from dataclasses import dataclass, asdict
-from functools import singledispatchmethod
 from pathlib import Path
-from typing import List, Iterable, Any, Optional, Union
+from typing import List, Iterable, Any, Optional, Dict, overload
 
 from ytcc.utils import unpack_optional
 
@@ -161,7 +160,7 @@ class Database:
         FROM playlist AS p
             LEFT OUTER JOIN tag AS t ON p.id = t.playlist;
         """
-        playlists = dict()
+        playlists: Dict[int, MappedPlaylist] = dict()
         for row in self.connection.execute(query):
             playlist = playlists.get(row["id"])
             if playlist is None:
@@ -198,23 +197,31 @@ class Database:
                 cursor.execute(insert_video, asdict(video))
                 cursor.execute(insert_playlist, (playlist_id, video.url))
 
-    @singledispatchmethod
-    def mark_watched(self, video: Union[List[int], int, MappedVideo]) -> None:
-        raise NotImplementedError("Cannot mark as watched")
+    @overload
+    def mark_watched(self, video: List[int]) -> None:
+        ...
 
-    @mark_watched.register
-    def _mark_watched_list(self, videos: list) -> None:
+    @overload
+    def mark_watched(self, video: int) -> None:
+        ...
+
+    @overload
+    def mark_watched(self, video: MappedVideo) -> None:
+        ...
+
+    def mark_watched(self, video) -> None:
+        if isinstance(video, int):
+            videos = [video]
+        elif isinstance(video, list):
+            videos = video
+        elif isinstance(video, MappedVideo):
+            videos = [video.id]
+        else:
+            raise TypeError(f"Cannot mark object of type {type(video)} as watched.")
+
         query = "UPDATE video SET watched = 1 where id = ?"
         with self.connection as con:
             con.executemany(query, ((int(video),) for video in videos))
-
-    @mark_watched.register
-    def _(self, video: int) -> None:
-        self._mark_watched_list([video])
-
-    @mark_watched.register
-    def _(self, video: MappedVideo) -> None:
-        self._mark_watched_list([video.id])
 
     def list_videos(self,
                     since: Optional[float] = None,
@@ -228,10 +235,18 @@ class Database:
             return ",".join("?" * len(elements))
 
         tag_condition = f"and t.name in ({_placeholder(tags)})" if tags is not None else ""
-        playlist_condition = f"and p.name in ({_placeholder(playlists)})" if playlists is not None else ""
         id_condition = f"and v.id in ({_placeholder(ids)})" if ids is not None else ""
-        watched_condition = {None: "", True: "and v.watched", False: "and not v.watched"}.get(
-            watched, "")
+
+        playlist_condition = ""
+        if playlists is not None:
+            playlist_condition = f"and p.name in ({_placeholder(playlists)})"
+
+        watched_condition = {
+            None: "",
+            True: "and v.watched",
+            False: "and not v.watched"
+        }.get(watched, "")
+
         query = f"""
             SELECT v.id             as id,
                    v.title          as title,
@@ -261,9 +276,10 @@ class Database:
         tags = unpack_optional(tags, list)
         ids = unpack_optional(ids, list)
 
-        videos = dict()
+        videos: Dict[int, MappedVideo] = dict()
         with self.connection as con:
-            for row in con.execute(query, [since, till] + ids + tags + playlists):
+            params: List[Any] = [since, till, *ids, *tags, *playlists]
+            for row in con.execute(query, params):
                 video = videos.get(row["id"])
                 if video is None:
                     videos[row["id"]] = MappedVideo(

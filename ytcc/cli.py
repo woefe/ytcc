@@ -25,13 +25,14 @@ import click
 from ytcc import __version__, __author__
 from ytcc import core, config
 from ytcc.config import PlaylistAttr, VideoAttr
-from ytcc.printer import JSONPrinter, XSVPrinter, VideoPrintable, TablePrinter, PlaylistPrintable
+from ytcc.printer import JSONPrinter, XSVPrinter, VideoPrintable, TablePrinter, \
+    PlaylistPrintable, Printer
 from ytcc.tui import print_meta, Interactive
 
-T = TypeVar("T")
 
-ytcc = core.Ytcc()
-printer = JSONPrinter()
+T = TypeVar("T")  # pylint: disable=invalid-name
+ytcc: core.Ytcc
+printer: Printer
 
 
 class CommaList(click.ParamType, Generic[T]):
@@ -43,7 +44,7 @@ class CommaList(click.ParamType, Generic[T]):
     def convert(self, value, param, ctx) -> List[T]:
         try:
             return [self.validator(elem.strip()) for elem in value.split(",")]
-        except:
+        except ValueError:
             self.fail(f"Unexpected value {value} in comma separated list")
 
 
@@ -76,7 +77,7 @@ def cli(conf, verbose, output, separator):
 
     To show the detailed help of a COMMAND run `ytcc COMMAND --help`.
     """
-    global ytcc, printer
+    global ytcc, printer  # pylint: disable=global-statement,invalid-name
 
     if conf is None:
         config.load()
@@ -201,16 +202,16 @@ def list_videos(tags: List[str], since: datetime, till: datetime, playlists: Lis
 
 
 @cli.command("ls")
-def ls():
+def ls():  # pylint: disable=invalid-name
     """List IDs of unwatched videos in XSV format.
 
     Basically an alias for `ytcc --output xsv list --attributes id`. This alias can be useful for
     piping into the download, play, and mark commands. E.g: `ytcc ls | ytcc watch`
     """
     ytcc.set_include_watched_filter(False)
-    p = XSVPrinter()
-    p.filter = ["id"]
-    p.print(VideoPrintable(ytcc.list_videos()))
+    xsv_printer = XSVPrinter()
+    xsv_printer.filter = ["id"]
+    xsv_printer.print(VideoPrintable(ytcc.list_videos()))
 
 
 def _get_ids(ids) -> Optional[List[int]]:
@@ -285,7 +286,7 @@ def mark(ids: Optional[List[int]]):
 @click.option("--no-mark", "-m", is_flag=True, default=False,
               help="Don't mark the video as watched after downloading it.")
 @click.argument("ids", nargs=-1)
-def download(ids: Optional[int], path: Path, audio_only: bool, no_mark: bool):
+def download(ids: Optional[List[int]], path: Path, audio_only: bool, no_mark: bool):
     """Download videos.
 
     Downloads the videos identified by the given video IDs. If no IDs are given, ytcc tries to read
@@ -329,8 +330,6 @@ def bug_report():
     # pylint: disable=import-outside-toplevel
     import youtube_dl.version
     import subprocess
-    import sys
-    from ytcc import __version__
     print("---ytcc version---")
     print(__version__)
     print()
