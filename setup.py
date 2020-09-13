@@ -31,9 +31,12 @@ setup(
     author=ytcc.__author__,
     author_email=ytcc.__email__,
     license=ytcc.__license__,
-    scripts=['scripts/ytcc'],
     packages=['ytcc'],
     install_requires=['lxml', 'feedparser>=5.2.0', 'youtube_dl', 'SQLAlchemy'],
+    entry_points="""
+        [console_scripts]
+        ytcc=ytcc.cli:cli
+        """,
     package_data={
         'ytcc': compile_translations()
     },
