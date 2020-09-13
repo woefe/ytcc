@@ -68,7 +68,7 @@ class VideoSelection(TableData, dict):
         if len(codes) < 2:
             raise ValueError("alphabet must have at least two characters")
 
-        if count <= 0:
+        if count < 0:
             raise ValueError("count must not be negative")
 
         if len(codes) >= count:
