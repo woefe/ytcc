@@ -17,9 +17,11 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 import datetime
 import hashlib
+import itertools
 import os
 import subprocess
 import time
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor as Pool
 from typing import Iterable, List, Optional, Any, Dict, Tuple, Union
 
@@ -50,50 +52,76 @@ def get_url(entry):
 
 
 class Updater:
-    db_path = None
-    max_items = 20
-    ydl_opts = {
-        "playliststart": 1,
-        "playlistend": max_items,
-        "noplaylist": False,
-    }
+    def __init__(self, db_path: str, max_backlog=20, max_fail=5):
+        self.db_path = db_path
+        self.max_items = max_backlog
+        self.max_fail = max_fail
 
-    @staticmethod
-    def get_new_entries(playlist: Playlist) -> List[Tuple[Any, str]]:
-        with Database(Updater.db_path) as db:
+        self.ydl_opts = {
+            "playliststart": 1,
+            "playlistend": max_backlog,
+            "noplaylist": False,
+        }
+
+    def get_new_entries(self, playlist: Playlist) -> List[Tuple[Any, str, Playlist]]:
+        with Database(self.db_path) as db:
             hashes = frozenset(x.extractor_hash for x in db.list_videos(playlists=[playlist.name]))
 
         result = []
-        with youtube_dl.YoutubeDL(Updater.ydl_opts) as ydl:
+        with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
             info = ydl.extract_info(playlist.url, download=False, process=False)
-            for entry in take(Updater.max_items, info.get("entries", [])):
+            for entry in take(self.max_items, info.get("entries", [])):
                 h = extractor_hash(entry)
                 if h not in hashes:
-                    result.append((entry, h))
+                    result.append((entry, h, playlist))
 
         return result
 
-    @staticmethod
-    def process_entry(entry, extractor_hash, playlist) -> Optional[Tuple[Playlist, Video]]:
-        with youtube_dl.YoutubeDL(Updater.ydl_opts) as ydl:
+    def process_entry(self, e_hash: str, entry: Any) -> Tuple[str, Optional[Video]]:
+        with Database(self.db_path) as db:
+            if db.get_extractor_fail_count(e_hash) >= self.max_fail:
+                return e_hash, None
+
+        with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
             try:
                 processed = ydl.process_ie_result(entry, False)
                 publish_date = 0.0
                 date_str = processed.get("upload_date")
                 if date_str:
                     publish_date = datetime.datetime.strptime(date_str, "%Y%m%d").timestamp()
-                return playlist, Video(
+                return e_hash, Video(
                     url=processed["webpage_url"],
                     title=processed["title"],
                     description=processed.get("description", ""),
                     publish_date=publish_date,
                     watched=False,
                     duration=processed.get("duration", -1),
-                    extractor_hash=extractor_hash
+                    extractor_hash=e_hash
                 )
             except DownloadError as dl:
                 # logging.error(dl)
-                return None
+                return e_hash, None
+
+    def update(self):
+        num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 4
+
+        with Pool(num_workers) as pool, Database(self.db_path) as db:
+            playlists = db.list_playlists()
+            raw_entries = dict()
+            playlists_mapping = defaultdict(list)
+            full_content = pool.map(self.get_new_entries, playlists)
+            for entry, e_hash, playlist in itertools.chain.from_iterable(full_content):
+                raw_entries[e_hash] = entry
+                playlists_mapping[e_hash].append(playlist)
+
+            results = dict(pool.map(self.process_entry, *zip(*raw_entries.items())))
+
+            for key in raw_entries:
+                for playlist in playlists_mapping[key]:
+                    if results[key] is not None:
+                        db.add_videos([results[key]], playlist)
+                    else:
+                        db.increase_extractor_fail_count(key, max_fail=self.max_fail)
 
 
 class Ytcc:
@@ -179,26 +207,16 @@ class Ytcc:
     def set_tags_filter(self, tags: Optional[List[str]] = None) -> None:
         self.tags_filter = tags
 
-    def update(self) -> None:
+    @staticmethod
+    def update(max_fail: Optional[int] = None, max_backlog: Optional[int] = None) -> None:
+        Updater(
+            db_path=config.ytcc.db_path,
+            max_fail=max_fail or config.ytcc.max_update_fail,
+            max_backlog=max_backlog or config.ytcc.max_update_backlog
+        ).update()
 
-        playlists = list(self.database.list_playlists())
-        num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 4
-        Updater.db_path = config.ytcc.db_path
-
-        with Pool(num_workers) as pool:
-            entries = list(pool.map(Updater.get_new_entries, playlists))
-            new_entries = [
-                (entry, e_hash, playlist)
-                for playlist, updates in zip(playlists, entries)
-                for entry, e_hash in updates
-            ]
-            updates = [x for x in pool.map(Updater.process_entry, *zip(*new_entries)) if x]
-
-        with Database(Updater.db_path) as db:
-            for playlist, update in updates:
-                db.add_videos([update], playlist)
-
-    def play_video(self, video: Video, audio_only: bool = False) -> bool:
+    @staticmethod
+    def play_video(video: Video, audio_only: bool = False) -> bool:
         """Play the given video with the mpv video player.
 
         The video will not be marked as watched, if the player exits unexpectedly (i.e. exits with
@@ -229,7 +247,8 @@ class Ytcc:
 
         return False
 
-    def download_video(self, video: Video, path: str = "", audio_only: bool = False) -> bool:
+    @staticmethod
+    def download_video(video: Video, path: str = "", audio_only: bool = False) -> bool:
         """Download the given video with youtube-dl.
 
         If the path is not given, the path is read from the config file.

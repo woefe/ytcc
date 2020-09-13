@@ -17,7 +17,6 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 import sqlite3
 from dataclasses import dataclass, asdict
-from datetime import datetime
 from functools import singledispatchmethod
 from pathlib import Path
 from typing import List, Iterable, Any, Optional, Union
@@ -114,9 +113,31 @@ class Database:
                 extractor_hash VARCHAR UNIQUE
             );
 
+            CREATE TABLE extractor_meta
+            (
+                extractor_hash VARCHAR PRIMARY KEY,
+                failure_count INTEGER
+            );
+
             PRAGMA USER_VERSION = 1;
             """
         self.connection.executescript(script)
+
+    def get_extractor_fail_count(self, e_hash) -> int:
+        query = "SELECT failure_count from extractor_meta where extractor_hash = ?"
+        count = self.connection.execute(query, (e_hash,)).fetchone()
+        if count is None:
+            return 0
+        return int(count[0])
+
+    def increase_extractor_fail_count(self, e_hash, max_fail=(1 << 63) - 1) -> None:
+        query = """
+        INSERT INTO extractor_meta VALUES (:e_hash,1)
+            ON CONFLICT (extractor_hash) DO UPDATE
+                SET failure_count = failure_count + 1
+                WHERE extractor_hash = :e_hash and failure_count < :max_fail
+        """
+        self.connection.execute(query, {"e_hash": e_hash, "max_fail": max_fail})
 
     def close(self) -> None:
         self.connection.commit()

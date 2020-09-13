@@ -115,8 +115,10 @@ def tag(name: str, tags: List[str]):
 
 
 @cli.command()
-def update():
-    ytcc.update()
+@click.option("--max-fail", type=click.INT)
+@click.option("--max-backlog", type=click.INT)
+def update(max_fail: Optional[int], max_backlog: Optional[int]):
+    ytcc.update(max_fail, max_backlog)
 
 
 @cli.command("list")

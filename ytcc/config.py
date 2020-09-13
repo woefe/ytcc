@@ -109,6 +109,8 @@ class ytcc(BaseConfig):
     db_path: str = "~/.local/share/ytcc/ytcc.db"
     loglevel: LogLevel = "normal"
     date_format: DateFormatStr = "%Y-%m-%d"
+    max_update_fail: int = 5
+    max_update_backlog: int = 20
 
 
 class tui(BaseConfig):
