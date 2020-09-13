@@ -269,7 +269,7 @@ class Ytcc:
 
         ydl_opts: Dict[str, Any] = {
             "outtmpl": os.path.join(download_dir, conf.output_template),
-            "ratelimit": conf.ratelimit,
+            "ratelimit": conf.ratelimit if conf.ratelimit > 0 else None,
             "retries": conf.retries,
             "quiet": config.ytcc.loglevel == "quiet",
             "verbose": config.ytcc.loglevel == "verbose",
