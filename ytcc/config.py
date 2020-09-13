@@ -37,7 +37,7 @@ _BOOLEAN_STATES = {'1': True, 'yes': True, 'true': True, 'on': True,
 class Color(int):
     def __new__(cls, val):
         i = super().__new__(cls, val)
-        if 0 <= i <= 255:
+        if 0 >= i >= 255:
             raise ValueError(f"{val} is not a valid color. "
                              "Must be in greater than 0 and less than 255")
         return i
@@ -161,7 +161,7 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
 
 
 def _is_config_class(member) -> bool:
-    return inspect.isclass(member) and issubclass(member, BaseConfig)
+    return inspect.isclass(member) and member is not BaseConfig and issubclass(member, BaseConfig)
 
 
 _config_classes = inspect.getmembers(sys.modules[__name__], _is_config_class)
@@ -179,7 +179,7 @@ def load(override_cfg_file: Optional[str] = None):
         raise ValueError(f"{str_val} is not a valid {e_class}")
 
     def bool_from_str(s: str) -> bool:
-        b = _BOOLEAN_STATES.get(s)
+        b = _BOOLEAN_STATES.get(s.lower())
         if b is None:
             ValueError(f"{s} cannot be converted to bool")
         return b
@@ -188,13 +188,13 @@ def load(override_cfg_file: Optional[str] = None):
         return [_convert(elem_type, elem.strip()) for elem in list_str.split(",")]
 
     def _convert(typ: Type, string: str):
-        if issubclass(typ, Enum):
+        if typing.get_origin(typ) is list:
+            elem_conv = typing.get_args(typ)[0]
+            from_str = functools.partial(list_from_str, elem_conv)
+        elif issubclass(typ, Enum):
             from_str = functools.partial(enum_from_str, typ)
         elif issubclass(typ, bool):
             from_str = bool_from_str
-        elif typing.get_origin(typ) is list:
-            elem_conv = typing.get_args(typ)[0]
-            from_str = functools.partial(list_from_str, elem_conv)
         elif next((c for c in {int, float, str} if issubclass(typ, c)), None):
             from_str = typ
         else:
@@ -218,10 +218,21 @@ def load(override_cfg_file: Optional[str] = None):
 
 
 def dumps() -> str:
-    cp = configparser.ConfigParser()
+    cp = configparser.ConfigParser(interpolation=None)
     strio = io.StringIO()
+
+    def _serialize(v):
+        if isinstance(v, Enum):
+            return v.value
+        if isinstance(v, list):
+            return ", ".join(map(_serialize, v))
+        if isinstance(v, bool):
+            return str(v).lower()
+
+        return v
+
     for name, clazz in _config_classes:
-        cp[name] = {k: v for k, v in clazz.__dict__.items() if not k.startswith("__")}
+        cp[name] = {k: _serialize(v) for k, v in clazz.__dict__.items() if not k.startswith("__")}
 
     cp.write(strio)
     return strio.getvalue()
