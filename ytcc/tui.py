@@ -245,10 +245,10 @@ def print_meta(video: MappedVideo) -> None:
             printtln(sep * (padding + (sep_len % 2)))
 
     print_separator("Playing now", fat=True)
-    printt(_("Title:   "))
+    printt(_("         Title: "))
     printtln(video.title, bold=True)
-    printt(_("Channel: "))
-    printtln(video.playlists, bold=True)
+    printt(_("In playlist(s): "))
+    printtln(", ".join(v.name for v in video.playlists), bold=True)
 
     description = video.description
     if description is not None:
