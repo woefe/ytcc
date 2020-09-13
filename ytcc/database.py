@@ -36,7 +36,7 @@ class Video:
     url: str
     title: str
     description: str
-    publish_date: datetime
+    publish_date: float
     watched: bool
     duration: float
     extractor_hash: str

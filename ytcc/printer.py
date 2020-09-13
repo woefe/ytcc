@@ -20,8 +20,10 @@ import json
 import sys
 from abc import ABC, abstractmethod, ABCMeta
 from dataclasses import asdict
+from datetime import datetime
 from typing import List, Iterable, Dict, Any, NamedTuple
 
+from ytcc import config
 from ytcc.database import MappedVideo, MappedPlaylist
 from ytcc.terminal import printtln
 
@@ -62,10 +64,15 @@ class VideoPrintable(Printable):
     def _format_duration(duration: float) -> str:
         return f"{duration // 60: 3.0f}:{duration % 60:02.0f}"
 
+    @staticmethod
+    def _format_publish_date(timestamp: float) -> str:
+        return datetime.fromtimestamp(timestamp).strftime(config.ytcc.date_format)
+
     def data(self) -> Iterable[Dict[str, Any]]:
         for video in self.videos:
             d = asdict(video)
             d["duration"] = self._format_duration(video.duration)
+            d["publish_date"] = self._format_publish_date(video.publish_date)
             yield d
 
     def table(self) -> Table:
@@ -79,7 +86,7 @@ class VideoPrintable(Printable):
                 video.url,
                 video.title,
                 video.description,
-                str(video.publish_date),
+                self._format_publish_date(video.publish_date),
                 str(video.watched),
                 self._format_duration(video.duration),
                 video.extractor_hash,

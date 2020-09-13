@@ -78,11 +78,15 @@ class Updater:
         with youtube_dl.YoutubeDL(Updater.ydl_opts) as ydl:
             try:
                 processed = ydl.process_ie_result(entry, False)
+                publish_date = 0.0
+                date_str = processed.get("upload_date")
+                if date_str:
+                    publish_date = datetime.datetime.strptime(date_str, "%Y%m%d").timestamp()
                 return playlist, Video(
                     url=processed["webpage_url"],
                     title=processed["title"],
                     description=processed.get("description", ""),
-                    publish_date=processed.get("upload_date", ""),
+                    publish_date=publish_date,
                     watched=False,
                     duration=processed.get("duration", -1),
                     extractor_hash=extractor_hash

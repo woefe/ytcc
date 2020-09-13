@@ -75,6 +75,20 @@ class PlaylistAttr(str, Enum):
     tags = "tags"
 
 
+class DateFormatStr(str):
+    def __new__(cls, arg: str):
+        datechars = "aAwdbBmyYjUWx%"
+        it = iter(arg)
+
+        while char := next(it, ""):
+            if char == "%":
+                next_char = next(it, "$")
+                if next_char not in datechars:
+                    raise ValueError(f"Invalid date format specifier '%{next_char}'")
+
+        return super().__new__(cls, arg)
+
+
 class BaseConfig:
     def __setattr__(self, key, value):
         raise AttributeError("Attribute is immutable")
@@ -94,6 +108,7 @@ class ytcc(BaseConfig):
     playlist_attrs: List[PlaylistAttr] = list(PlaylistAttr)
     db_path: str = "~/.local/share/ytcc/ytcc.db"
     loglevel: LogLevel = "normal"
+    date_format: DateFormatStr = "%Y-%m-%d"
 
 
 class tui(BaseConfig):
