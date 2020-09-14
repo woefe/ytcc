@@ -25,7 +25,7 @@ from ytcc import terminal, _, config
 from ytcc.core import Ytcc
 from ytcc.database import MappedVideo
 from ytcc.printer import Table, TableData, VideoPrintable, TablePrinter
-from ytcc.terminal import printt, printtln
+from ytcc.terminal import printt, printtln, FKeys
 
 
 class Option(NamedTuple):
@@ -45,13 +45,13 @@ class Action(Enum):
     def from_config():
         return Action.__dict__.get(config.tui.default_action.value.upper(), Action.PLAY_VIDEO)
 
-    SHOW_HELP = (None, terminal.Keys.F1, None)
-    PLAY_VIDEO = (_("Play video"), terminal.Keys.F2, config.theme.prompt_play_video)
-    PLAY_AUDIO = (_("Play audio"), terminal.Keys.F3, config.theme.prompt_play_audio)
-    MARK_WATCHED = (_("Mark as watched"), terminal.Keys.F4, config.theme.prompt_mark_watched)
-    REFRESH = (None, terminal.Keys.F5, None)
-    DOWNLOAD_AUDIO = (_("Download audio"), terminal.Keys.F7, config.theme.prompt_download_audio)
-    DOWNLOAD_VIDEO = (_("Download video"), terminal.Keys.F6, config.theme.prompt_download_video)
+    SHOW_HELP = (None, FKeys.F1, None)
+    PLAY_VIDEO = (_("Play video"), FKeys.F2, config.theme.prompt_play_video)
+    PLAY_AUDIO = (_("Play audio"), FKeys.F3, config.theme.prompt_play_audio)
+    MARK_WATCHED = (_("Mark as watched"), FKeys.F4, config.theme.prompt_mark_watched)
+    REFRESH = (None, FKeys.F5, None)
+    DOWNLOAD_AUDIO = (_("Download audio"), FKeys.F7, config.theme.prompt_download_audio)
+    DOWNLOAD_VIDEO = (_("Download video"), FKeys.F6, config.theme.prompt_download_video)
 
 
 class VideoSelection(TableData, dict):
@@ -135,6 +135,8 @@ class Interactive:
                 hook_triggered = True
                 if self.hooks[char]():
                     break
+                else:
+                    char = None
 
             if char in {"\x04", "\x03"}:  # Ctrl+d, Ctrl+d
                 break
@@ -145,7 +147,7 @@ class Interactive:
 
             if char == "\x7f":  # DEL
                 tag = tag[:-1]
-            elif char:
+            elif char and char in config.tui.alphabet:
                 tag += char
 
             print_prompt()
