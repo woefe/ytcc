@@ -23,21 +23,21 @@ def compile_translations():
 
 
 setup(
-    name='ytcc',
-    description='A YouTube subscription tool',
+    name="ytcc",
+    description="A subscription wrapper for youtube-dl playlists",
     long_description=ytcc.__doc__,
     version=ytcc.__version__,
-    url='https://github.com/woefe/ytcc',
+    url="https://github.com/woefe/ytcc",
     author=ytcc.__author__,
     author_email=ytcc.__email__,
     license=ytcc.__license__,
-    packages=['ytcc'],
-    install_requires=['lxml', 'feedparser>=5.2.0', 'youtube_dl', 'SQLAlchemy'],
+    packages=["ytcc"],
+    install_requires=["youtube_dl", "click"],
     entry_points="""
         [console_scripts]
         ytcc=ytcc.cli:cli
         """,
     package_data={
-        'ytcc': compile_translations()
+        "ytcc": compile_translations()
     },
 )
