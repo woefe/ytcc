@@ -124,6 +124,7 @@ class ytcc(BaseConfig):  # pylint: disable=invalid-name
     date_format: DateFormatStr = DateFormatStr("%Y-%m-%d")
     max_update_fail: int = 5
     max_update_backlog: int = 20
+    age_limit: int = 0
 
 
 class tui(BaseConfig):  # pylint: disable=invalid-name

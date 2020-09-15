@@ -62,6 +62,7 @@ class Updater:
             "playliststart": 1,
             "playlistend": max_backlog,
             "noplaylist": False,
+            "age_limit": config.ytcc.age_limit
         }
 
     def get_new_entries(self, playlist: Playlist) -> List[Tuple[Any, str, Playlist]]:
@@ -93,6 +94,10 @@ class Updater:
                 date_str = processed.get("upload_date")
                 if date_str:
                     publish_date = datetime.datetime.strptime(date_str, "%Y%m%d").timestamp()
+
+                if processed.get("age_limit", 0) > config.ytcc.age_limit:
+                    return e_hash, None
+
                 return e_hash, Video(
                     url=processed["webpage_url"],
                     title=processed["title"],
