@@ -15,6 +15,7 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
+import logging
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -29,10 +30,10 @@ from ytcc.printer import JSONPrinter, XSVPrinter, VideoPrintable, TablePrinter, 
     PlaylistPrintable, Printer
 from ytcc.tui import print_meta, Interactive
 
-
 T = TypeVar("T")  # pylint: disable=invalid-name
 ytcc: core.Ytcc
 printer: Printer
+logger = logging.getLogger(__name__)
 
 
 class CommaList(click.ParamType, Generic[T]):
@@ -60,7 +61,8 @@ Public Licence for details."""
 @click.option("--conf", "-c", type=click.Path(file_okay=True, dir_okay=False),
               envvar="YTCC_CONFIG",
               help="Override configuration file.")
-@click.option("--verbose", "-v", is_flag=True, help="Enable verbose output.")
+@click.option("--loglevel", "-l", type=click.Choice(["critical", "info", "debug"]),
+              help="Set the log level. Overrides the log level configured in the config file.")
 @click.option("--output", "-o", type=click.Choice(["json", "table", "xsv"]), default="table",
               show_default=True,
               help="Set output format. `json` prints in JSON format, which is usually not filtered"
@@ -69,7 +71,7 @@ Public Licence for details."""
 @click.option("--separator", "-s", default=",", show_default=True,
               help="Set the delimiter used in XSV format.")
 @click.version_option(version=__version__, prog_name="ytcc", message=version_text)
-def cli(conf, verbose, output, separator):
+def cli(conf: Path, loglevel: str, output: str, separator: str) -> None:
     """Ytcc - the (not only) YouTube channel checker
 
     Ytcc "subscribes" to playlists (supported by youtube-dl) and tracks new videos published to
@@ -83,6 +85,16 @@ def cli(conf, verbose, output, separator):
         config.load()
     else:
         config.load(str(conf))
+
+    debug_format = "[%(created)f] [%(processName)s/%(threadName)s] " \
+                   "%(name)s.%(levelname)s: %(message)s"
+    log_format = "%(levelname)s: %(message)s"
+
+    logging.basicConfig(
+        level=loglevel.upper() if loglevel else config.ytcc.loglevel.value.upper(),
+        stream=sys.stderr,
+        format=debug_format if loglevel == "debug" else log_format
+    )
 
     ytcc = core.Ytcc()
 
@@ -103,6 +115,10 @@ def subscribe(name: str, url: str):
     The NAME argument is the name used to refer to the playlist. The URL argument is the URL to a
     playlist that is supported by youtube-dl.
     """
+    # TODO Handle
+    #  - does not exist/not supported by youtube-dl
+    #  - URL is already subscribed
+    #  - Name already exists
     ytcc.add_playlist(name, url)
 
 
@@ -113,6 +129,8 @@ def unsubscribe(name: str):
 
     Unsubscribes from the playlist identified by NAME.
     """
+    # TODO handle playlist does not exist
+    # TODO confirm?
     ytcc.delete_playlist(name)
 
 
@@ -124,6 +142,7 @@ def rename(old: str, new: str):
 
     Renames the playlist OLD to NEW.
     """
+    # TODO handle NEW exists
     ytcc.rename_playlist(old, new)
 
 
@@ -214,6 +233,7 @@ def ls():  # pylint: disable=invalid-name
     xsv_printer.print(VideoPrintable(ytcc.list_videos()))
 
 
+# TODO improve ID handling (don't crash if ID is not int)
 def _get_ids(ids) -> Optional[List[int]]:
     if not ids and not sys.stdin.isatty():
         ids = [int(line) for line in sys.stdin.readlines()]
@@ -235,7 +255,7 @@ def _get_videos(ids: Optional[List[int]]):
               help="Don't print video metadata and description.")
 @click.option("--no-mark", "-m", is_flag=True, default=False,
               help="Don't mark the video as watched after playing it.")
-@click.argument("ids", nargs=-1)
+@click.argument("ids", nargs=-1, type=click.INT)
 @click.pass_context
 def play(ctx: click.Context, ids: Optional[List[int]], audio_only: bool,
          no_meta: bool, no_mark: bool):
@@ -265,7 +285,7 @@ def play(ctx: click.Context, ids: Optional[List[int]], audio_only: bool,
 
 
 @cli.command()
-@click.argument("ids", nargs=-1)
+@click.argument("ids", nargs=-1, type=click.INT)
 def mark(ids: Optional[List[int]]):
     """Mark videos as watched.
 
@@ -285,7 +305,7 @@ def mark(ids: Optional[List[int]]):
               help="Download only the audio track.")
 @click.option("--no-mark", "-m", is_flag=True, default=False,
               help="Don't mark the video as watched after downloading it.")
-@click.argument("ids", nargs=-1)
+@click.argument("ids", nargs=-1, type=click.INT)
 def download(ids: Optional[List[int]], path: Path, audio_only: bool, no_mark: bool):
     """Download videos.
 
@@ -296,6 +316,11 @@ def download(ids: Optional[List[int]], path: Path, audio_only: bool, no_mark: bo
     videos = _get_videos(ids)
 
     for video in videos:
+        logger.info(
+            "Downloading video '%s' from playlist(s) %s",
+            video.title,
+            ", ".join(f"'{pl.name}'" for pl in video.playlists)
+        )
         if ytcc.download_video(video, str(path), audio_only) and not no_mark:
             ytcc.mark_watched(video)
 

@@ -15,12 +15,20 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
+import logging
 import sqlite3
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import List, Iterable, Any, Optional, Dict, overload
 
 from ytcc.utils import unpack_optional
+
+logger = logging.getLogger(__name__)
+
+
+def logging_cb(querystr: str) -> None:
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug("%s", " ".join(querystr.split()))
 
 
 @dataclass(frozen=True)
@@ -63,6 +71,7 @@ class Database:
         sqlite3.register_converter("integer", int)
         sqlite3.register_converter("float", float)
         self.connection = sqlite3.connect(f"{path}", detect_types=sqlite3.PARSE_DECLTYPES)
+        self.connection.set_trace_callback(logging_cb)
         self.connection.row_factory = sqlite3.Row
         with self.connection as con:
             con.execute("PRAGMA foreign_keys = ON;")
@@ -123,7 +132,7 @@ class Database:
         self.connection.executescript(script)
 
     def get_extractor_fail_count(self, e_hash) -> int:
-        query = "SELECT failure_count from extractor_meta where extractor_hash = ?"
+        query = "SELECT failure_count FROM extractor_meta WHERE extractor_hash = ?"
         count = self.connection.execute(query, (e_hash,)).fetchone()
         if count is None:
             return 0
@@ -134,7 +143,7 @@ class Database:
         INSERT INTO extractor_meta VALUES (:e_hash,1)
             ON CONFLICT (extractor_hash) DO UPDATE
                 SET failure_count = failure_count + 1
-                WHERE extractor_hash = :e_hash and failure_count < :max_fail
+                WHERE extractor_hash = :e_hash AND failure_count < :max_fail
         """
         self.connection.execute(query, {"e_hash": e_hash, "max_fail": max_fail})
 
@@ -172,8 +181,8 @@ class Database:
         return playlists.values()
 
     def tag_playlist(self, playlist: str, tags: List[str]) -> None:
-        query_pid = "SELECT id FROM playlist where name = ?"
-        query_clear = """DELETE FROM tag where playlist = ?"""
+        query_pid = "SELECT id FROM playlist WHERE name = ?"
+        query_clear = """DELETE FROM tag WHERE playlist = ?"""
         query_insert = """INSERT OR IGNORE INTO tag (name, playlist) VALUES (?, ?)"""
         with self.connection as con:
             pid = int(con.execute(query_pid, (playlist,)).fetchone()["id"])
@@ -188,10 +197,10 @@ class Database:
             """
         insert_playlist = """
             INSERT INTO content (playlist_id, video_id)
-            VALUES (?,(SELECT id from video where url = ?));
+            VALUES (?,(SELECT id FROM video WHERE url = ?));
             """
         with self.connection as con:
-            cursor = con.execute("SELECT id from playlist where name = ?", (playlist.name,))
+            cursor = con.execute("SELECT id FROM playlist WHERE name = ?", (playlist.name,))
             playlist_id = cursor.fetchone()["id"]
             for video in videos:
                 cursor.execute(insert_video, asdict(video))
@@ -219,7 +228,7 @@ class Database:
         else:
             raise TypeError(f"Cannot mark object of type {type(video)} as watched.")
 
-        query = "UPDATE video SET watched = 1 where id = ?"
+        query = "UPDATE video SET watched = 1 WHERE id = ?"
         with self.connection as con:
             con.executemany(query, ((int(video),) for video in videos))
 
@@ -234,37 +243,37 @@ class Database:
         def _placeholder(elements: List[Any]) -> str:
             return ",".join("?" * len(elements))
 
-        tag_condition = f"and t.name in ({_placeholder(tags)})" if tags is not None else ""
-        id_condition = f"and v.id in ({_placeholder(ids)})" if ids is not None else ""
+        tag_condition = f"AND t.name IN ({_placeholder(tags)})" if tags is not None else ""
+        id_condition = f"AND v.id IN ({_placeholder(ids)})" if ids is not None else ""
 
         playlist_condition = ""
         if playlists is not None:
-            playlist_condition = f"and p.name in ({_placeholder(playlists)})"
+            playlist_condition = f"AND p.name IN ({_placeholder(playlists)})"
 
         watched_condition = {
             None: "",
-            True: "and v.watched",
-            False: "and not v.watched"
+            True: "AND v.watched",
+            False: "AND not v.watched"
         }.get(watched, "")
 
         query = f"""
-            SELECT v.id             as id,
-                   v.title          as title,
-                   v.url            as url,
-                   v.description    as description,
-                   v.duration       as duration,
-                   v.publish_date   as publish_date,
-                   v.watched        as watched,
-                   v.extractor_hash as extractor_hash,
-                   p.name           as playlist_name,
-                   p.url            as playlist_url
-            FROM video as v
-                     join content c on v.id = c.video_id
-                     join playlist p on p.id = c.playlist_id
-                     left join tag as t on p.id = t.playlist
+            SELECT v.id             AS id,
+                   v.title          AS title,
+                   v.url            AS url,
+                   v.description    AS description,
+                   v.duration       AS duration,
+                   v.publish_date   AS publish_date,
+                   v.watched        AS watched,
+                   v.extractor_hash AS extractor_hash,
+                   p.name           AS playlist_name,
+                   p.url            AS playlist_url
+            FROM video AS v
+                     JOIN content c ON v.id = c.video_id
+                     JOIN playlist p ON p.id = c.playlist_id
+                     LEFT JOIN tag AS t ON p.id = t.playlist
             WHERE
                 v.publish_date > ?
-                and v.publish_date < ?
+                AND v.publish_date < ?
                 {watched_condition}
                 {tag_condition}
                 {id_condition}
@@ -309,4 +318,4 @@ class Database:
             """
         with self.connection as con:
             con.execute(sql)
-        self.connection.execute("vacuum;")
+        self.connection.execute("VACUUM;")

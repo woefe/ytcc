@@ -20,6 +20,7 @@ import configparser
 import functools
 import inspect
 import io
+import logging
 import os
 import sys
 import typing
@@ -28,6 +29,8 @@ from pathlib import Path
 from typing import Optional, TextIO, Type, Any, List, Callable
 
 from ytcc.exceptions import BadConfigException
+
+logger = logging.getLogger(__name__)
 
 _BOOLEAN_STATES = {'1': True, 'yes': True, 'true': True, 'on': True,
                    '0': False, 'no': False, 'false': False, 'off': False}
@@ -51,9 +54,9 @@ class Action(str, Enum):
 
 
 class LogLevel(str, Enum):
-    NORMAL = "normal"
-    QUIET = "quiet"
-    VERBOSE = "verbose"
+    CRITICAL = "critical"
+    INFO = "info"
+    DEBUG = "debug"
 
 
 class VideoAttr(str, Enum):
@@ -120,7 +123,7 @@ class ytcc(BaseConfig):  # pylint: disable=invalid-name
     ]
     playlist_attrs: List[PlaylistAttr] = list(PlaylistAttr)
     db_path: str = "~/.local/share/ytcc/ytcc.db"
-    loglevel: LogLevel = LogLevel.NORMAL
+    loglevel: LogLevel = LogLevel.INFO
     date_format: DateFormatStr = DateFormatStr("%Y-%m-%d")
     max_update_fail: int = 5
     max_update_backlog: int = 20
@@ -181,7 +184,10 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
     if override_cfg_file:
         cfg_file_locations.append(override_cfg_file)
 
+    logger.debug("Reading config from following locations: %s", cfg_file_locations)
+
     if not config.read(cfg_file_locations):
+        logger.debug("No config file found. Creating new config at %s", default_cfg_file)
         path = Path(default_cfg_file)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.touch()

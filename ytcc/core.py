@@ -18,6 +18,7 @@
 import datetime
 import hashlib
 import itertools
+import logging
 import os
 import sqlite3
 import subprocess
@@ -35,21 +36,19 @@ from ytcc.exceptions import YtccException, BadURLException, DuplicateChannelExce
 from ytcc.utils import unpack_optional, take
 
 
+YTDL_COMMON_OPTS = {
+    "logger": logging.getLogger("youtube_dl")
+}
+
+logger = logging.getLogger(__name__)
+
+
 def extractor_hash(data: Dict[str, str]) -> str:
     digest = hashlib.sha256()
     for key in sorted(data.keys()):
         digest.update(key.encode("utf-8"))
         digest.update(data[key].encode("utf-8"))
     return digest.hexdigest()
-
-
-def get_url(entry):
-    url = entry.get("url")
-    if entry.get("ie_key") == "Youtube":
-        return f"https://www.youtube.com/watch?v={entry.get('id')}"
-    if not any(map(url.startswith, ("http://", "https://", "ftp://", "ftps://"))):
-        return None
-    return url
 
 
 class Updater:
@@ -59,6 +58,7 @@ class Updater:
         self.max_fail = max_fail
 
         self.ydl_opts = {
+            **YTDL_COMMON_OPTS,
             "playliststart": 1,
             "playlistend": max_backlog,
             "noplaylist": False,
@@ -74,6 +74,7 @@ class Updater:
 
         result = []
         with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
+            logger.info("Checking playlist '%s'...", playlist.name)
             info = ydl.extract_info(playlist.url, download=False, process=False)
             for entry in take(self.max_items, info.get("entries", [])):
                 e_hash = extractor_hash(entry)
@@ -96,7 +97,10 @@ class Updater:
                     publish_date = datetime.datetime.strptime(date_str, "%Y%m%d").timestamp()
 
                 if processed.get("age_limit", 0) > config.ytcc.age_limit:
+                    logger.warning("Ignoring video '%s' due to age limit", processed.get("title"))
                     return e_hash, None
+
+                logger.info("Processed video '%s'", processed.get("title"))
 
                 return e_hash, Video(
                     url=processed["webpage_url"],
@@ -107,7 +111,8 @@ class Updater:
                     duration=processed.get("duration", -1),
                     extractor_hash=e_hash
                 )
-            except DownloadError:
+            except DownloadError as download_error:
+                logging.warning("Failed to get a video. Youtube-dl said: '%s'", download_error)
                 return e_hash, None
 
     def update(self):
@@ -248,7 +253,9 @@ class Ytcc:
                 subprocess.run(command, check=True)
             except FileNotFoundError as fnfe:
                 raise YtccException("Could not locate the mpv video player!") from fnfe
-            except subprocess.CalledProcessError:
+            except subprocess.CalledProcessError as cpe:
+                logger.debug("MPV failed! Command: %s; Stdout: %s; Stderr %s; Returncode: %s",
+                              cpe.cmd, cpe.stdout, cpe.stderr, cpe.returncode)
                 return False
 
             return True
@@ -276,11 +283,10 @@ class Ytcc:
         conf = config.youtube_dl
 
         ydl_opts: Dict[str, Any] = {
+            **YTDL_COMMON_OPTS,
             "outtmpl": os.path.join(download_dir, conf.output_template),
             "ratelimit": conf.ratelimit if conf.ratelimit > 0 else None,
             "retries": conf.retries,
-            "quiet": config.ytcc.loglevel == "quiet",
-            "verbose": config.ytcc.loglevel == "verbose",
             "merge_output_format": conf.merge_output_format,
             "ignoreerrors": False,
             "postprocessors": [
@@ -309,23 +315,40 @@ class Ytcc:
             try:
                 info = ydl.extract_info(video.url, download=False, process=False)
                 if info.get("is_live", False) and conf.skip_live_stream:
+                    logger.info("Skipping livestream %s", video.url)
                     return False
 
                 ydl.process_ie_result(info, download=True)
                 return True
-            except youtube_dl.utils.YoutubeDLError:
+            except youtube_dl.utils.YoutubeDLError as e:
+                logger.debug("youtube-dl failed with '%s'", e)
                 return False
 
     def add_playlist(self, name: str, url: str) -> None:
         ydl_opts = {
+            **YTDL_COMMON_OPTS,
             "playliststart": 1,
             "playlistend": 2,
             "noplaylist": False,
             "extract_flat": "in_playlist"
         }
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False, process=True)
+            try:
+                info = ydl.extract_info(url, download=False, process=True)
+            except youtube_dl.utils.DownloadError as download_error:
+                logger.debug(
+                    "'%s' is not supported by youtube-dl. Youtube-dl's error: '%s'",
+                    url,
+                    download_error
+                )
+                raise BadURLException("URL is not supported by youtube-dl")
+
             if not info.get("_type") == "playlist":
+                logger.debug(
+                    "'%s' doesn't seem point to a playlist. Extractor info is: '%s'",
+                    url,
+                    info
+                )
                 raise BadURLException("Not a playlist or not supported by youtube-dl")
 
         try:
@@ -333,6 +356,10 @@ class Ytcc:
             if real_url:
                 self.database.add_playlist(name, real_url)
         except sqlite3.IntegrityError as integrity_error:
+            logger.debug(
+                "Cannot subscribe to playlist due to integrity constraint error: %s",
+                integrity_error
+            )
             raise DuplicateChannelException("Playlist already exists") from integrity_error
 
     def list_videos(self) -> Iterable[MappedVideo]:
