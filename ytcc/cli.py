@@ -90,6 +90,7 @@ def cli(conf: Path, loglevel: str, output: str, separator: str) -> None:
         format=debug_format if loglevel == "debug" else log_format
     )
 
+    # TODO handle bad config
     if conf is None:
         config.load()
     else:

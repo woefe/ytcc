@@ -129,14 +129,14 @@ class Interactive:
         tag = ""
         hook_triggered = False
         while tag not in tags:
-            char = terminal.getkey()
+            char: Optional[str] = terminal.getkey()
 
             if char in self.hooks:
                 hook_triggered = True
                 if self.hooks[char]():
                     break
-                else:
-                    char = None
+
+                char = None
 
             if char in {"\x04", "\x03"}:  # Ctrl+d, Ctrl+d
                 break

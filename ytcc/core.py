@@ -320,8 +320,8 @@ class Ytcc:
 
                 ydl.process_ie_result(info, download=True)
                 return True
-            except youtube_dl.utils.YoutubeDLError as e:
-                logger.debug("youtube-dl failed with '%s'", e)
+            except youtube_dl.utils.YoutubeDLError as ydl_err:
+                logger.debug("youtube-dl failed with '%s'", ydl_err)
                 return False
 
     def add_playlist(self, name: str, url: str) -> None:
@@ -341,7 +341,7 @@ class Ytcc:
                     url,
                     download_error
                 )
-                raise BadURLException("URL is not supported by youtube-dl")
+                raise BadURLException("URL is not supported by youtube-dl") from download_error
 
             if not info.get("_type") == "playlist":
                 logger.debug(

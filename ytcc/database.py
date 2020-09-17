@@ -19,7 +19,7 @@ import logging
 import sqlite3
 from dataclasses import dataclass, asdict
 from pathlib import Path
-from typing import List, Iterable, Any, Optional, Dict, overload
+from typing import List, Iterable, Any, Optional, Dict, overload, Tuple
 
 from ytcc import config
 from ytcc.config import Direction, VideoAttr
@@ -31,6 +31,10 @@ logger = logging.getLogger(__name__)
 def logging_cb(querystr: str) -> None:
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug("%s", " ".join(querystr.split()))
+
+
+def _placeholder(elements: List[Any]) -> str:
+    return ",".join("?" * len(elements))
 
 
 @dataclass(frozen=True)
@@ -228,7 +232,7 @@ class Database:
     def mark_watched(self, video: MappedVideo) -> None:
         ...
 
-    def mark_watched(self, video) -> None:
+    def mark_watched(self, video: Any) -> None:
         if isinstance(video, int):
             videos = [video]
         elif isinstance(video, list):
@@ -250,9 +254,6 @@ class Database:
                     playlists: Optional[List[str]] = None,
                     ids: Optional[List[int]] = None) -> Iterable[MappedVideo]:
 
-        def _placeholder(elements: List[Any]) -> str:
-            return ",".join("?" * len(elements))
-
         tag_condition = f"AND t.name IN ({_placeholder(tags)})" if tags is not None else ""
         id_condition = f"AND v.id IN ({_placeholder(ids)})" if ids is not None else ""
 
@@ -266,27 +267,28 @@ class Database:
             False: "AND not v.watched"
         }.get(watched, "")
 
-        column_names = {
-            VideoAttr.ID: "id",
-            VideoAttr.URL: "url",
-            VideoAttr.TITLE: "title",
-            VideoAttr.DESCRIPTION: "description",
-            VideoAttr.PUBLISH_DATE: "publish_date",
-            VideoAttr.WATCHED: "watched",
-            VideoAttr.DURATION: "duration",
-            VideoAttr.EXTRACTOR_HASH: "extractor_hash",
-            VideoAttr.PLAYLISTS: "playlist_name",
-        }
         order_by_clause = ""
         if config.ytcc.order_by:
-            def directions():
+            def directions() -> Tuple[str, str]:
+                column_names = {
+                    VideoAttr.ID: "id",
+                    VideoAttr.URL: "url",
+                    VideoAttr.TITLE: "title",
+                    VideoAttr.DESCRIPTION: "description",
+                    VideoAttr.PUBLISH_DATE: "publish_date",
+                    VideoAttr.WATCHED: "watched",
+                    VideoAttr.DURATION: "duration",
+                    VideoAttr.EXTRACTOR_HASH: "extractor_hash",
+                    VideoAttr.PLAYLISTS: "playlist_name",
+                }
                 for untrusted_col, untrusted_dir in config.ytcc.order_by:
-                    dir = 'ASC' if untrusted_dir == Direction.ASC else 'DESC'
+                    ord_dir = 'ASC' if untrusted_dir == Direction.ASC else 'DESC'
                     col = column_names.get(untrusted_col)
                     if col is not None:
-                        yield col, dir
+                        yield col, ord_dir
 
-            order_by_clause = "ORDER BY " + ", ".join(f"{col} {dir}" for col, dir in directions())
+            order_by_clause = "ORDER BY "
+            order_by_clause += ", ".join(f"{col} {ord_dir}" for col, ord_dir in directions())
 
         query = f"""
             SELECT v.id             AS id,
@@ -320,8 +322,7 @@ class Database:
 
         videos: Dict[int, MappedVideo] = dict()
         with self.connection as con:
-            params: List[Any] = [since, till, *ids, *tags, *playlists]
-            for row in con.execute(query, params):
+            for row in con.execute(query, [since, till, *ids, *tags, *playlists]):
                 video = videos.get(row["id"])
                 if video is None:
                     videos[row["id"]] = MappedVideo(
