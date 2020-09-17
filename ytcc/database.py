@@ -21,6 +21,8 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import List, Iterable, Any, Optional, Dict, overload
 
+from ytcc import config
+from ytcc.config import Direction, VideoAttr
 from ytcc.utils import unpack_optional
 
 logger = logging.getLogger(__name__)
@@ -143,7 +145,7 @@ class Database:
         INSERT INTO extractor_meta VALUES (:e_hash,1)
             ON CONFLICT (extractor_hash) DO UPDATE
                 SET failure_count = failure_count + 1
-                WHERE extractor_hash = :e_hash AND failure_count < :max_fail
+                WHERE failure_count < :max_fail
         """
         self.connection.execute(query, {"e_hash": e_hash, "max_fail": max_fail})
 
@@ -191,9 +193,17 @@ class Database:
 
     def add_videos(self, videos: Iterable[Video], playlist: Playlist) -> None:
         insert_video = """
-            REPLACE INTO video
-            (title, url, description, duration, publish_date, watched, extractor_hash)
-            VALUES (:title, :url, :description, :duration, :publish_date, :watched, :extractor_hash);
+            INSERT INTO video
+                (title, url, description, duration, publish_date, watched, extractor_hash)
+            VALUES
+                (:title, :url, :description, :duration, :publish_date, :watched, :extractor_hash)
+            ON CONFLICT (url) DO UPDATE
+                SET title = :title,
+                    url = :url,
+                    description = :description,
+                    duration = :duration,
+                    publish_date = :publish_date,
+                    extractor_hash = :extractor_hash
             """
         insert_playlist = """
             INSERT INTO content (playlist_id, video_id)
@@ -256,6 +266,28 @@ class Database:
             False: "AND not v.watched"
         }.get(watched, "")
 
+        column_names = {
+            VideoAttr.ID: "id",
+            VideoAttr.URL: "url",
+            VideoAttr.TITLE: "title",
+            VideoAttr.DESCRIPTION: "description",
+            VideoAttr.PUBLISH_DATE: "publish_date",
+            VideoAttr.WATCHED: "watched",
+            VideoAttr.DURATION: "duration",
+            VideoAttr.EXTRACTOR_HASH: "extractor_hash",
+            VideoAttr.PLAYLISTS: "playlist_name",
+        }
+        order_by_clause = ""
+        if config.ytcc.order_by:
+            def directions():
+                for untrusted_col, untrusted_dir in config.ytcc.order_by:
+                    dir = 'ASC' if untrusted_dir == Direction.ASC else 'DESC'
+                    col = column_names.get(untrusted_col)
+                    if col is not None:
+                        yield col, dir
+
+            order_by_clause = "ORDER BY " + ", ".join(f"{col} {dir}" for col, dir in directions())
+
         query = f"""
             SELECT v.id             AS id,
                    v.title          AS title,
@@ -278,6 +310,7 @@ class Database:
                 {tag_condition}
                 {id_condition}
                 {playlist_condition}
+            {order_by_clause}
             """
         since = unpack_optional(since, lambda: 0)
         till = unpack_optional(till, lambda: float("inf"))

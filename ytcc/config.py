@@ -26,7 +26,7 @@ import sys
 import typing
 from enum import Enum, EnumMeta
 from pathlib import Path
-from typing import Optional, TextIO, Type, Any, List, Callable
+from typing import Optional, TextIO, Type, Any, List, Callable, Tuple, Sequence
 
 from ytcc.exceptions import BadConfigException
 
@@ -85,6 +85,11 @@ class PlaylistAttr(str, Enum):
         raise ValueError(f"{string} cannot be converted to PlaylistAttr")
 
 
+class Direction(str, Enum):
+    ASC = "asc"
+    DESC = "desc"
+
+
 class DateFormatStr(str):
     def __new__(cls, *arg):
         datechars = "aAwdbBmyYjUWx%"
@@ -107,7 +112,10 @@ class BaseConfig:
 class ytcc(BaseConfig):  # pylint: disable=invalid-name
     download_dir: str = "~/Downloads"
     mpv_flags: str = "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best"
-    order_by: List[VideoAttr] = [VideoAttr.PLAYLISTS, VideoAttr.PUBLISH_DATE]
+    order_by: List[Tuple[VideoAttr, Direction]] = [
+        (VideoAttr.PLAYLISTS, Direction.ASC),
+        (VideoAttr.PUBLISH_DATE, Direction.DESC),
+    ]
     video_attrs: List[VideoAttr] = [
         VideoAttr.ID,
         VideoAttr.TITLE,
@@ -219,11 +227,20 @@ def load(override_cfg_file: Optional[str] = None):
     def list_from_str(elem_type: Type, list_str: str) -> List[Any]:
         return [_convert(elem_type, elem.strip()) for elem in list_str.split(",")]
 
+    def tuple_from_str(types: Sequence[Type], tuple_str) -> Tuple:
+        elems = tuple_str.split(":")
+        if len(elems) != len(types):
+            raise ValueError(f"{tuple_str} cannot be converted to tuple of type {types}")
+
+        return tuple(_convert(typ, elem) for elem, typ in zip(elems, types))
+
     def _convert(typ: Type[Any], string: str) -> Any:
         if typing.get_origin(typ) is list:
             elem_conv = typing.get_args(typ)[0]
             from_str: Callable[[str], Any] = functools.partial(list_from_str, elem_conv)
-        elif issubclass(typ, Enum):
+        elif typing.get_origin(typ) is tuple:
+            from_str = functools.partial(tuple_from_str, typing.get_args(typ))
+        elif isinstance(typ, EnumMeta):
             from_str = functools.partial(enum_from_str, typ)
         elif issubclass(typ, bool):
             from_str = bool_from_str
@@ -246,7 +263,7 @@ def load(override_cfg_file: Optional[str] = None):
                 val = _convert(conv, str_val)
                 setattr(config_class, prop, val)
             except ValueError as err:
-                message = f"Value {str_val} for {class_name}.{prop} is invalid"
+                message = f"Value '{str_val}' for {class_name}.{prop} is invalid"
                 raise BadConfigException(message) from err
 
 
@@ -261,6 +278,8 @@ def dumps() -> str:
             return ", ".join(map(_serialize, val))
         if isinstance(val, bool):
             return str(val).lower()
+        if isinstance(val, tuple):
+            return ":".join(map(_serialize, val))
 
         return val
 
@@ -277,6 +296,3 @@ def dumps() -> str:
 
 def dump(txt_io: TextIO) -> None:
     txt_io.write(dumps())
-
-
-load()
