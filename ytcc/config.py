@@ -53,12 +53,6 @@ class Action(str, Enum):
     DOWNLOAD_VIDEO = "download_video"
 
 
-class LogLevel(str, Enum):
-    CRITICAL = "critical"
-    INFO = "info"
-    DEBUG = "debug"
-
-
 class VideoAttr(str, Enum):
     ID = "id"
     URL = "url"
@@ -123,7 +117,6 @@ class ytcc(BaseConfig):  # pylint: disable=invalid-name
     ]
     playlist_attrs: List[PlaylistAttr] = list(PlaylistAttr)
     db_path: str = "~/.local/share/ytcc/ytcc.db"
-    loglevel: LogLevel = LogLevel.INFO
     date_format: DateFormatStr = DateFormatStr("%Y-%m-%d")
     max_update_fail: int = 5
     max_update_backlog: int = 20

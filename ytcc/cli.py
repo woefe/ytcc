@@ -61,7 +61,8 @@ Public Licence for details."""
 @click.option("--conf", "-c", type=click.Path(file_okay=True, dir_okay=False),
               envvar="YTCC_CONFIG",
               help="Override configuration file.")
-@click.option("--loglevel", "-l", type=click.Choice(["critical", "info", "debug"]),
+@click.option("--loglevel", "-l", type=click.Choice(["critical", "info", "debug"]), default="info",
+              show_default=True,
               help="Set the log level. Overrides the log level configured in the config file.")
 @click.option("--output", "-o", type=click.Choice(["json", "table", "xsv"]), default="table",
               show_default=True,
@@ -79,23 +80,22 @@ def cli(conf: Path, loglevel: str, output: str, separator: str) -> None:
 
     To show the detailed help of a COMMAND run `ytcc COMMAND --help`.
     """
-    global ytcc, printer  # pylint: disable=global-statement,invalid-name
+    debug_format = "[%(created)f] [%(processName)s/%(threadName)s] " \
+                   "%(name)s.%(levelname)s: %(message)s"
+    log_format = "%(levelname)s: %(message)s"
+
+    logging.basicConfig(
+        level=loglevel.upper(),
+        stream=sys.stderr,
+        format=debug_format if loglevel == "debug" else log_format
+    )
 
     if conf is None:
         config.load()
     else:
         config.load(str(conf))
 
-    debug_format = "[%(created)f] [%(processName)s/%(threadName)s] " \
-                   "%(name)s.%(levelname)s: %(message)s"
-    log_format = "%(levelname)s: %(message)s"
-
-    logging.basicConfig(
-        level=loglevel.upper() if loglevel else config.ytcc.loglevel.value.upper(),
-        stream=sys.stderr,
-        format=debug_format if loglevel == "debug" else log_format
-    )
-
+    global ytcc, printer  # pylint: disable=global-statement,invalid-name
     ytcc = core.Ytcc()
 
     if output == "table":
