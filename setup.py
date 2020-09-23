@@ -35,7 +35,7 @@ setup(
     install_requires=["youtube_dl", "click"],
     entry_points="""
         [console_scripts]
-        ytcc=ytcc.cli:cli
+        ytcc=ytcc.cli:main
         """,
     package_data={
         "ytcc": compile_translations()

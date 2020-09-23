@@ -32,7 +32,8 @@ from youtube_dl import DownloadError
 
 from ytcc import config
 from ytcc.database import Database, Video, Playlist, MappedVideo, MappedPlaylist
-from ytcc.exceptions import YtccException, BadURLException, DuplicateChannelException
+from ytcc.exceptions import YtccException, BadURLException, NameConflictError, \
+    PlaylistDoesNotExistException
 from ytcc.utils import unpack_optional, take
 
 
@@ -148,7 +149,7 @@ class Ytcc:
     """
 
     def __init__(self) -> None:
-        self.database = Database(config.ytcc.db_path)
+        self._database: Optional[Database] = None
         self.video_id_filter: Optional[List[int]] = None
         self.playlist_filter: Optional[List[str]] = None
         self.tags_filter: Optional[List[str]] = None
@@ -157,18 +158,21 @@ class Ytcc:
         self.include_watched_filter: Optional[bool] = False
 
     def __del__(self):
-        try:
-            database = self.__getattribute__("database")
-        except AttributeError:
-            return
-
-        database.close()
+        if self._database is not None:
+            self._database.close()
 
     def __enter__(self) -> "Ytcc":
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Any:
-        self.database.__exit__(exc_type, exc_val, exc_tb)
+        if self._database is not None:
+            self._database.__exit__(exc_type, exc_val, exc_tb)
+
+    @property
+    def database(self) -> Database:
+        if self._database is None:
+            self._database = Database(config.ytcc.db_path)
+        return self._database
 
     def close(self) -> None:
         """Close open resources like the database connection."""
@@ -360,7 +364,7 @@ class Ytcc:
                 "Cannot subscribe to playlist due to integrity constraint error: %s",
                 integrity_error
             )
-            raise DuplicateChannelException("Playlist already exists") from integrity_error
+            raise NameConflictError("Playlist already exists") from integrity_error
 
     def list_videos(self) -> Iterable[MappedVideo]:
         """Return a list of videos that match the filters set by the set_*_filter methods.
@@ -385,7 +389,9 @@ class Ytcc:
         self.database.mark_watched(video)
 
     def delete_playlist(self, name: str) -> None:
-        self.database.delete_playlist(name)
+        if not self.database.delete_playlist(name):
+            raise PlaylistDoesNotExistException(f"Could not remove playlist {name}, because "
+                                                "it does not exist")
 
     def rename_playlist(self, oldname: str, newname: str) -> None:
         self.database.rename_playlist(oldname, newname)

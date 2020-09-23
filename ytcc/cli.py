@@ -19,13 +19,17 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import List, Callable, TypeVar, Generic, Optional
+from sqlite3 import DatabaseError
+from typing import List, Callable, TypeVar, Generic, Optional, Iterable, Tuple
 
 import click
 
 from ytcc import __version__, __author__
 from ytcc import core, config
 from ytcc.config import PlaylistAttr, VideoAttr
+from ytcc.database import MappedVideo
+from ytcc.exceptions import BadConfigException, IncompatibleDatabaseVersion, BadURLException, \
+    NameConflictError, PlaylistDoesNotExistException
 from ytcc.printer import JSONPrinter, XSVPrinter, VideoPrintable, TablePrinter, \
     PlaylistPrintable, Printer
 from ytcc.tui import print_meta, Interactive
@@ -72,7 +76,8 @@ Public Licence for details."""
 @click.option("--separator", "-s", default=",", show_default=True,
               help="Set the delimiter used in XSV format.")
 @click.version_option(version=__version__, prog_name="ytcc", message=version_text)
-def cli(conf: Path, loglevel: str, output: str, separator: str) -> None:
+@click.pass_context
+def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: str) -> None:
     """Ytcc - the (not only) YouTube channel checker
 
     Ytcc "subscribes" to playlists (supported by youtube-dl) and tracks new videos published to
@@ -89,14 +94,17 @@ def cli(conf: Path, loglevel: str, output: str, separator: str) -> None:
         stream=sys.stderr,
         format=debug_format if loglevel == "debug" else log_format
     )
-
-    # TODO handle bad config
-    if conf is None:
-        config.load()
-    else:
-        config.load(str(conf))
+    try:
+        if conf is None:
+            config.load()
+        else:
+            config.load(str(conf))
+    except BadConfigException as e:
+        logger.error(str(e))
+        ctx.exit(1)
 
     global ytcc, printer  # pylint: disable=global-statement,invalid-name
+
     ytcc = core.Ytcc()
 
     if output == "table":
@@ -110,29 +118,44 @@ def cli(conf: Path, loglevel: str, output: str, separator: str) -> None:
 @cli.command()
 @click.argument("name")
 @click.argument("url")
-def subscribe(name: str, url: str):
+@click.pass_context
+def subscribe(ctx: click.Context, name: str, url: str):
     """Subscribe to a playlist.
 
     The NAME argument is the name used to refer to the playlist. The URL argument is the URL to a
     playlist that is supported by youtube-dl.
     """
-    # TODO Handle
-    #  - does not exist/not supported by youtube-dl
-    #  - URL is already subscribed
-    #  - Name already exists
-    ytcc.add_playlist(name, url)
+    try:
+        ytcc.add_playlist(name, url)
+    except BadURLException:
+        logger.error("The given URL does not point to a playlist or is not supported by "
+                     "youtube-dl")
+        ctx.exit(1)
+    except NameConflictError:
+        logger.error("The given name is already used for another playlist "
+                     "or the playlist is already subscribed")
+        ctx.exit(1)
 
 
 @cli.command()
 @click.argument("name")
-def unsubscribe(name: str):
+@click.confirmation_option(
+    prompt="Unsubscribing will remove videos from the database that are not part of another "
+           "playlist. Do you really want to unsubscribe?"
+)
+@click.pass_context
+def unsubscribe(ctx: click.Context, name: str):
     """Unsubscribe from a playlist.
 
     Unsubscribes from the playlist identified by NAME.
     """
-    # TODO handle playlist does not exist
-    # TODO confirm?
-    ytcc.delete_playlist(name)
+    try:
+        ytcc.delete_playlist(name)
+    except PlaylistDoesNotExistException:
+        logger.error("Playlist '%s' does not exist", name)
+        ctx.exit(1)
+    else:
+        logger.info(f"Unsubscribed from {name}")
 
 
 @cli.command()
@@ -234,16 +257,23 @@ def ls():  # pylint: disable=invalid-name
     xsv_printer.print(VideoPrintable(ytcc.list_videos()))
 
 
-# TODO improve ID handling (don't crash if ID is not int)
-def _get_ids(ids) -> Optional[List[int]]:
+def _get_ids(ids: Optional[List[int]]) -> Iterable[int]:
     if not ids and not sys.stdin.isatty():
-        ids = [int(line) for line in sys.stdin.readlines()]
-    return list(ids) if ids else None
+        for line in sys.stdin:
+            line = line.strip()
+            try:
+                yield int(line)
+            except ValueError:
+                logging.error(f"ID '{line}' is not an integer")
+                sys.exit(1)
+
+    elif ids is not None:
+        yield from ids
 
 
-def _get_videos(ids: Optional[List[int]]):
-    ids = _get_ids(ids)
-    if ids is not None:
+def _get_videos(ids: Optional[List[int]]) -> Iterable[MappedVideo]:
+    ids = list(_get_ids(ids))
+    if ids:
         ytcc.set_video_id_filter(ids)
         ytcc.set_include_watched_filter(True)
 
@@ -257,32 +287,28 @@ def _get_videos(ids: Optional[List[int]]):
 @click.option("--no-mark", "-m", is_flag=True, default=False,
               help="Don't mark the video as watched after playing it.")
 @click.argument("ids", nargs=-1, type=click.INT)
-@click.pass_context
-def play(ctx: click.Context, ids: Optional[List[int]], audio_only: bool,
-         no_meta: bool, no_mark: bool):
+def play(ids: Optional[Tuple[int, ...]], audio_only: bool, no_meta: bool, no_mark: bool):
     """Play videos.
 
     Plays the videos identified by the given video IDs. If no IDs are given, ytcc tries to read IDs
     from stdin. If no IDs are given and no IDs were read from stdin, all unwatched videos are
     played.
     """
-    videos = _get_videos(ids)
+    videos = _get_videos(list(ids))
 
-    if not videos:
-        # TODO
-        print("No videos to watch. No videos match the given criteria.")
-        ctx.exit(0)
-
+    loop_executed = False
     for video in videos:
+        loop_executed = True
         if not no_meta:
-            print_meta(video)
+            print_meta(video, sys.stderr)
         if ytcc.play_video(video, audio_only) and mark:
             ytcc.mark_watched(video)
         elif not no_mark:
-            print()
-            print(("WARNING: The video player terminated with an error.\n"
-                   "         The last video is not marked as watched!"))
-            print()
+            logger.warning("The video player terminated with an error. "
+                           "The last video is not marked as watched!")
+
+    if not loop_executed:
+        logger.info("No videos to watch. No videos match the given criteria.")
 
 
 @cli.command()
@@ -294,7 +320,7 @@ def mark(ids: Optional[List[int]]):
     read IDs from stdin. If no IDs are given and no IDs were read from stdin, no videos are marked
     as watched.
     """
-    ids = _get_ids(ids)
+    ids = list(_get_ids(ids))
     if ids:
         ytcc.mark_watched(ids)
 
@@ -314,7 +340,7 @@ def download(ids: Optional[List[int]], path: Path, audio_only: bool, no_mark: bo
     IDs from stdin. If no IDs are given and no IDs were read from stdin, all unwatched videos are
     downloaded.
     """
-    videos = _get_videos(ids)
+    videos = _get_videos(list(ids))
 
     for video in videos:
         logger.info(
@@ -370,3 +396,24 @@ def bug_report():
     print()
     print("---config dump---")
     print(config.dumps())
+
+
+def main():
+    try:
+        cli.main(standalone_mode=False)
+    except DatabaseError as db_err:
+        logger.error("Cannot connect to the database")
+        logger.debug("Unknown database error", exc_info=db_err)
+        sys.exit(1)
+    except IncompatibleDatabaseVersion:
+        # TODO add link to doc
+        logger.error("This version of ytcc is not compatible with the older database versions")
+        sys.exit(1)
+    except click.exceptions.Exit as exc:
+        sys.exit(exc.exit_code)
+    except click.Abort:
+        click.echo("Aborted!", file=sys.stderr)
+        sys.exit(1)
+    except click.ClickException as exc:
+        exc.show()
+        sys.exit(exc.exit_code)

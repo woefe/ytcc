@@ -23,6 +23,7 @@ from typing import List, Iterable, Any, Optional, Dict, overload, Tuple
 
 from ytcc import config
 from ytcc.config import Direction, VideoAttr
+from ytcc.exceptions import IncompatibleDatabaseVersion
 from ytcc.utils import unpack_optional
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,8 @@ class MappedPlaylist(Playlist):
 
 
 class Database:
+    VERSION = 2
+
     def __init__(self, path: str = ":memory:"):
         is_new_db = True
         if path != ":memory:":
@@ -79,11 +82,13 @@ class Database:
         self.connection = sqlite3.connect(f"{path}", detect_types=sqlite3.PARSE_DECLTYPES)
         self.connection.set_trace_callback(logging_cb)
         self.connection.row_factory = sqlite3.Row
-        with self.connection as con:
-            con.execute("PRAGMA foreign_keys = ON;")
+        self.connection.execute("PRAGMA foreign_keys = ON;")
 
         if is_new_db:
             self._populate()
+
+        if int(self.connection.execute("PRAGMA USER_VERSION;").fetchone()[0]) < 2:
+            raise IncompatibleDatabaseVersion("Database Schema 2 or higher is required")
 
     def __enter__(self) -> "Database":
         return self
@@ -92,7 +97,7 @@ class Database:
         self.close()
 
     def _populate(self):
-        script = """CREATE TABLE tag
+        script = f"""CREATE TABLE tag
             (
                 name     VARCHAR NOT NULL,
                 playlist INTEGER REFERENCES playlist (id) ON DELETE CASCADE,
@@ -133,7 +138,7 @@ class Database:
                 failure_count INTEGER
             );
 
-            PRAGMA USER_VERSION = 1;
+            PRAGMA USER_VERSION = {self.VERSION};
             """
         self.connection.executescript(script)
 
@@ -161,12 +166,13 @@ class Database:
         query = "INSERT INTO playlist (name, url) VALUES (?, ?);"
         self.connection.execute(query, (name, url))
 
-    def delete_playlist(self, name: str) -> None:
+    def delete_playlist(self, name: str) -> bool:
         query = "DELETE FROM playlist WHERE name = ?"
-        self.connection.execute(query, (name,))
+        res = self.connection.execute(query, (name,))
+        return res.rowcount > 0
 
     def rename_playlist(self, oldname, newname) -> None:
-        query = "UPDATE OR ROLLBACK playlist SET name = ? WHERE name = ?"
+        query = "UPDATE playlist SET name = ? WHERE name = ?"
         self.connection.execute(query, (newname, oldname))
 
     def list_playlists(self) -> Iterable[MappedPlaylist]:

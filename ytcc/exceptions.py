@@ -18,6 +18,7 @@
 
 """Exceptions in their own module to avoid circular imports."""
 
+
 class YtccException(Exception):
     """A general parent class of all Exceptions that are used in Ytcc."""
 
@@ -26,11 +27,11 @@ class BadURLException(YtccException):
     """Raised when a given URL does not refer to a YouTube channel."""
 
 
-class DuplicateChannelException(YtccException):
+class NameConflictError(YtccException):
     """Raised when trying to subscribe to a channel the second (or more) time."""
 
 
-class ChannelDoesNotExistException(YtccException):
+class PlaylistDoesNotExistException(YtccException):
     """Raised when the url of a given channel does not exist."""
 
 
@@ -41,8 +42,13 @@ class InvalidSubscriptionFileError(YtccException):
 class BadConfigException(YtccException):
     """Raised when error in config file is encountered."""
 
+
 class DatabaseOperationalError(YtccException):
     """Raised when database is locked and no operations can be performed.
 
     Can happen when two instances of ytcc are running at the same time.
     """
+
+
+class IncompatibleDatabaseVersion(YtccException):
+    """Raised when the database has an incompatible version."""

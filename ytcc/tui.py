@@ -17,9 +17,10 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import shutil
+import sys
 import textwrap as wrap
 from enum import Enum
-from typing import List, Optional, Tuple, Callable, NamedTuple, FrozenSet
+from typing import List, Optional, Tuple, Callable, NamedTuple, FrozenSet, TextIO
 
 from ytcc import terminal, _, config
 from ytcc.core import Ytcc
@@ -222,7 +223,8 @@ class Interactive:
         if self.core.play_video(video, audio_only):
             self.core.mark_watched(video)
         else:
-            pass  # TODO Print error
+            print("The video player terminated with an error. "
+                  "The last video is not marked as watched!")
 
     def download_video(self, video: MappedVideo, audio_only: bool = False) -> None:
         print(_('Downloading "{video.title}" by "{video.channel.displayname}"...').format(
@@ -233,12 +235,12 @@ class Interactive:
             print(_("An Error occured while downloading the video"))
 
 
-def print_meta(video: MappedVideo) -> None:
+def print_meta(video: MappedVideo, stream: TextIO = sys.stdout) -> None:
     def print_separator(text: Optional[str] = None, fat: bool = False) -> None:
         columns = shutil.get_terminal_size().columns
         sep = "━" if fat else "─"
         if not text:
-            print(sep * columns)
+            print(sep * columns, file=stream)
         else:
             sep_len = (columns - len(text) - 2)
             padding = sep_len // 2
@@ -259,7 +261,7 @@ def print_meta(video: MappedVideo) -> None:
         print_separator(_("Video description"))
 
         for line in lines:
-            print(wrap.fill(line, width=columns))
+            print(wrap.fill(line, width=columns), file=stream)
 
     print_separator(fat=True)
-    print()
+    print(file=stream)
