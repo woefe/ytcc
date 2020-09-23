@@ -99,8 +99,8 @@ def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: s
             config.load()
         else:
             config.load(str(conf))
-    except BadConfigException as e:
-        logger.error(str(e))
+    except BadConfigException as conf_exc:
+        logger.error(str(conf_exc))
         ctx.exit(1)
 
     global ytcc, printer  # pylint: disable=global-statement,invalid-name
@@ -155,7 +155,7 @@ def unsubscribe(ctx: click.Context, name: str):
         logger.error("Playlist '%s' does not exist", name)
         ctx.exit(1)
     else:
-        logger.info(f"Unsubscribed from {name}")
+        logger.info("Unsubscribed from %s", name)
 
 
 @cli.command()
@@ -187,13 +187,13 @@ def subscriptions(attributes: List[PlaylistAttr]):
 @cli.command()
 @click.argument("name")
 @click.argument("tags", nargs=-1)
-def tag(name: str, tags: List[str]):
+def tag(name: str, tags: Tuple[str, ...]):
     """Set tags of a playlist.
 
     Sets the TAGS associated with the playlist called NAME. If no tags are given, all tags are
     removed from the given playlist.
     """
-    ytcc.tag_playlist(name, tags)
+    ytcc.tag_playlist(name, list(tags))
 
 
 @cli.command()
@@ -257,21 +257,21 @@ def ls():  # pylint: disable=invalid-name
     xsv_printer.print(VideoPrintable(ytcc.list_videos()))
 
 
-def _get_ids(ids: Optional[List[int]]) -> Iterable[int]:
+def _get_ids(ids: List[int]) -> Iterable[int]:
     if not ids and not sys.stdin.isatty():
         for line in sys.stdin:
             line = line.strip()
             try:
                 yield int(line)
             except ValueError:
-                logging.error(f"ID '{line}' is not an integer")
+                logging.error("ID '%s' is not an integer", line)
                 sys.exit(1)
 
     elif ids is not None:
         yield from ids
 
 
-def _get_videos(ids: Optional[List[int]]) -> Iterable[MappedVideo]:
+def _get_videos(ids: List[int]) -> Iterable[MappedVideo]:
     ids = list(_get_ids(ids))
     if ids:
         ytcc.set_video_id_filter(ids)
@@ -287,7 +287,7 @@ def _get_videos(ids: Optional[List[int]]) -> Iterable[MappedVideo]:
 @click.option("--no-mark", "-m", is_flag=True, default=False,
               help="Don't mark the video as watched after playing it.")
 @click.argument("ids", nargs=-1, type=click.INT)
-def play(ids: Optional[Tuple[int, ...]], audio_only: bool, no_meta: bool, no_mark: bool):
+def play(ids: Tuple[int, ...], audio_only: bool, no_meta: bool, no_mark: bool):
     """Play videos.
 
     Plays the videos identified by the given video IDs. If no IDs are given, ytcc tries to read IDs
@@ -313,16 +313,16 @@ def play(ids: Optional[Tuple[int, ...]], audio_only: bool, no_meta: bool, no_mar
 
 @cli.command()
 @click.argument("ids", nargs=-1, type=click.INT)
-def mark(ids: Optional[List[int]]):
+def mark(ids: Tuple[int, ...]):
     """Mark videos as watched.
 
     Marks videos as watched without playing or downloading them. If no IDs are given, ytcc tries to
     read IDs from stdin. If no IDs are given and no IDs were read from stdin, no videos are marked
     as watched.
     """
-    ids = list(_get_ids(ids))
-    if ids:
-        ytcc.mark_watched(ids)
+    processed_ids = list(_get_ids(list(ids)))
+    if processed_ids:
+        ytcc.mark_watched(processed_ids)
 
 
 @cli.command()
@@ -333,7 +333,7 @@ def mark(ids: Optional[List[int]]):
 @click.option("--no-mark", "-m", is_flag=True, default=False,
               help="Don't mark the video as watched after downloading it.")
 @click.argument("ids", nargs=-1, type=click.INT)
-def download(ids: Optional[List[int]], path: Path, audio_only: bool, no_mark: bool):
+def download(ids: Tuple[int, ...], path: Path, audio_only: bool, no_mark: bool):
     """Download videos.
 
     Downloads the videos identified by the given video IDs. If no IDs are given, ytcc tries to read

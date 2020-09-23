@@ -275,7 +275,7 @@ class Database:
 
         order_by_clause = ""
         if config.ytcc.order_by:
-            def directions() -> Tuple[str, str]:
+            def directions() -> Iterable[Tuple[str, str]]:
                 column_names = {
                     VideoAttr.ID: "id",
                     VideoAttr.URL: "url",
