@@ -161,13 +161,17 @@ def unsubscribe(ctx: click.Context, name: str):
 @cli.command()
 @click.argument("old")
 @click.argument("new")
-def rename(old: str, new: str):
+@click.pass_context
+def rename(ctx: click.Context, old: str, new: str):
     """Rename a playlist.
 
     Renames the playlist OLD to NEW.
     """
-    # TODO handle NEW exists
-    ytcc.rename_playlist(old, new)
+    try:
+        ytcc.rename_playlist(old, new)
+    except NameConflictError as nce:
+        logger.error("'%s'", str(nce))
+        ctx.exit(1)
 
 
 @cli.command()
@@ -402,7 +406,7 @@ def main():
     try:
         cli.main(standalone_mode=False)
     except DatabaseError as db_err:
-        logger.error("Cannot connect to the database")
+        logger.error("Cannot connect to the database or query failed unexpectedly")
         logger.debug("Unknown database error", exc_info=db_err)
         sys.exit(1)
     except IncompatibleDatabaseVersion:

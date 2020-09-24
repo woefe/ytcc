@@ -171,9 +171,14 @@ class Database:
         res = self.connection.execute(query, (name,))
         return res.rowcount > 0
 
-    def rename_playlist(self, oldname, newname) -> None:
+    def rename_playlist(self, oldname, newname) -> True:
         query = "UPDATE playlist SET name = ? WHERE name = ?"
-        self.connection.execute(query, (newname, oldname))
+        try:
+            res = self.connection.execute(query, (newname, oldname))
+        except sqlite3.IntegrityError:
+            return False
+
+        return res.rowcount > 0
 
     def list_playlists(self) -> Iterable[MappedPlaylist]:
         query = """

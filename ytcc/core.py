@@ -36,7 +36,6 @@ from ytcc.exceptions import YtccException, BadURLException, NameConflictError, \
     PlaylistDoesNotExistException
 from ytcc.utils import unpack_optional, take
 
-
 YTDL_COMMON_OPTS = {
     "logger": logging.getLogger("youtube_dl")
 }
@@ -259,7 +258,7 @@ class Ytcc:
                 raise YtccException("Could not locate the mpv video player!") from fnfe
             except subprocess.CalledProcessError as cpe:
                 logger.debug("MPV failed! Command: %s; Stdout: %s; Stderr %s; Returncode: %s",
-                              cpe.cmd, cpe.stdout, cpe.stderr, cpe.returncode)
+                             cpe.cmd, cpe.stdout, cpe.stderr, cpe.returncode)
                 return False
 
             return True
@@ -394,7 +393,9 @@ class Ytcc:
                                                 "it does not exist")
 
     def rename_playlist(self, oldname: str, newname: str) -> None:
-        self.database.rename_playlist(oldname, newname)
+        if not self.database.rename_playlist(oldname, newname):
+            raise NameConflictError("Renaming failed. Either the old name does not exist or the "
+                                    "new name is already used.")
 
     def list_playlists(self) -> Iterable[MappedPlaylist]:
         return self.database.list_playlists()
