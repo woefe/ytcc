@@ -23,9 +23,12 @@ import os
 import sqlite3
 import subprocess
 import time
+import xml.etree.ElementTree as ET
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor as Pool
+from pathlib import Path
 from typing import Iterable, List, Optional, Any, Dict, Tuple, Union
+from urllib.parse import parse_qs, urlparse
 
 import youtube_dl
 from youtube_dl import DownloadError
@@ -33,7 +36,7 @@ from youtube_dl import DownloadError
 from ytcc import config
 from ytcc.database import Database, Video, Playlist, MappedVideo, MappedPlaylist
 from ytcc.exceptions import YtccException, BadURLException, NameConflictError, \
-    PlaylistDoesNotExistException
+    PlaylistDoesNotExistException, InvalidSubscriptionFileError
 from ytcc.utils import unpack_optional, take
 
 YTDL_COMMON_OPTS = {
@@ -406,3 +409,34 @@ class Ytcc:
     def cleanup(self) -> None:
         """Delete old videos from the database."""
         self.database.cleanup()
+
+    def import_yt_opml(self, file: Path):
+        def _from_xml_element(elem: ET.Element) -> Tuple[str, str]:
+            rss_url = urlparse(elem.attrib["xmlUrl"])
+            query_dict = parse_qs(rss_url.query, keep_blank_values=False)
+            channel_id = query_dict.get("channel_id", [])
+            if len(channel_id) != 1:
+                message = f"'{file.name}' is not a valid YouTube export file"
+                raise InvalidSubscriptionFileError(message)
+            yt_url = f"https://www.youtube.com/channel/{channel_id[0]}/videos"
+            return elem.attrib["title"], yt_url
+
+        try:
+            tree = ET.parse(file)
+        except Exception as err:
+            raise InvalidSubscriptionFileError(
+                f"'{file.name}' is not a valid YouTube export file"
+            ) from err
+
+        root = tree.getroot()
+        for element in root.findall('.//outline[@type="rss"]'):
+            name, url = _from_xml_element(element)
+            try:
+                self.add_playlist(name, url)
+            except NameConflictError:
+                logger.warning("Ignoring playlist '%s', because it already subscribed", name)
+            except BadURLException:
+                logger.warning("Ignoring playlist '%s', "
+                               "because it is not supported by youtube-dl", name)
+            else:
+                logger.info("Added playlist '%s'", name)

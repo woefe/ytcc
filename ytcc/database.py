@@ -171,7 +171,7 @@ class Database:
         res = self.connection.execute(query, (name,))
         return res.rowcount > 0
 
-    def rename_playlist(self, oldname, newname) -> True:
+    def rename_playlist(self, oldname, newname) -> bool:
         query = "UPDATE playlist SET name = ? WHERE name = ?"
         try:
             res = self.connection.execute(query, (newname, oldname))

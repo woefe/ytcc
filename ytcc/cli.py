@@ -376,6 +376,16 @@ def cleanup():
     ytcc.cleanup()
 
 
+@cli.command("import")
+@click.argument("file", nargs=1, type=click.Path(exists=True, file_okay=True, dir_okay=False))
+def import_(file: Path):
+    """Import YouTube subscriptions from OPML file.
+
+    You can export your YouTube subscriptions at https://www.youtube.com/subscription_manager.
+    """
+    ytcc.import_yt_opml(file)
+
+
 @cli.command()
 def bug_report():
     """Show debug information for bug reports.
