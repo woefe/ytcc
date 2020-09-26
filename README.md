@@ -3,7 +3,8 @@
 Command line tool to keep track of your favourite playlists on YouTube and many other places.
 
 **The first beta release of ytcc 2.0.0 is out!**
-If you are looking for older versions, check the [Release](https://github.com/woefe/ytcc/releases) page and the [v1 branch](https://github.com/woefe/ytcc/tree/v2).
+Read [the migration guide](#migrating-from-version-1) before upgrading to 2.0.0 or later!
+If you are looking for older versions, check the [Release](https://github.com/woefe/ytcc/releases) page and the [v1 branch](https://github.com/woefe/ytcc/tree/v1).
 
 
 ## Installation
@@ -14,14 +15,43 @@ pip install ytcc
 
 ### Arch Linux
 Install [ytcc-git](https://aur.archlinux.org/packages/ytcc-git/) from the AUR.
+The [ytcc](https://aur.archlinux.org/packages/ytcc/) will be upgraded to version 2.0.0, when it has a stable release.
 
 ### Without installation
-Ytcc requires [Python 3.8](https://www.python.org/) or later, [Click](https://click.palletsprojects.com/en/7.x/), [youtube-dl](https://github.com/ytdl-org/youtube-dl), and optionally [mpv](https://mpv.io/) if you want to play audio or video.
 You can start ytcc directly from the cloned repo, if all the requirements are installed.
+
 ```shell script
 ./ytcc.py --help
 ```
 
+Hard requirements:
+- [Python 3.8](https://www.python.org/)
+- [Click](https://click.palletsprojects.com/en/7.x/),
+- [youtube-dl](https://github.com/ytdl-org/youtube-dl)
+
+Optional requirements:
+- [ffmpeg](https://ffmpeg.org/) for youtube-dl's `.mp4` or `.mkv` merging
+- [mpv](https://mpv.io/), if you want to play audio or video
+
+## Migrating from version 1
+Versions 2.0.0 and later are not compatible with previous databases and configuration files!
+You need to follow several steps to migrate your subscriptions to 2.0.0 or later.
+Unfortunately, you will lose the watched status of all videos during this process.
+
+1. Export your subscriptions with ytcc 1.8.5 **before** upgrading to 2.0.0 or later
+    ```shell script
+    ytcc --export-to subscriptions.opml
+    ```
+2. Upgrade ytcc
+3. Rename configuration file and database (e.g. with `mv ~/.config/ytcc ~/.config/ytcc.1`)
+4. Import your subscriptions with v2
+    ```shell script
+    ytcc import subscriptions.opml
+    ```
+---
+**Other options**:
+- If you think the procedure described above is not worth the effort, you can start from scratch by removing the `~/.config/ytcc` directory.
+- If you are not satisfied with the options here, write a migration script! Pull Requests welcome ❤
 
 ## Usage
 
@@ -182,7 +212,7 @@ skip_live_stream = true
 
 ## Reporting issues
 Create a new issue on the [GitHub issue tracker](https://github.com/woefe/ytcc/issues/new).
-Describe the issue as detailed as possible.
+Describe the issue as detailed as possible and please use the issue templates, if possible!
 **Important**: do not forget to include the output of `ytcc bug-report` in bug reports.
 It also might help a lot to run ytcc with the `--loglevel debug` option and include the output in your report.
 
