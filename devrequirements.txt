@@ -1,6 +1,6 @@
 # Devtools
 mypy
-nose
+pytest
 pylint
 pydocstyle
 
