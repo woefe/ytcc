@@ -19,11 +19,12 @@
 import sys
 import tty
 import termios
+from enum import Enum
 
 from typing import Optional
 
 
-class Keys:
+class FKeys(str, Enum):
     """Indetifiers for special key sequences like the F-keys."""
 
     F1 = "<F1>"
@@ -38,29 +39,29 @@ class Keys:
 # https://invisible-island.net/xterm/xterm-function-keys.html
 _KNOWN_KEYS = {
     # vt100
-    "\x1bOP": Keys.F1,
-    "\x1bOQ": Keys.F2,
-    "\x1bOR": Keys.F3,
-    "\x1bOS": Keys.F4,
-    "\x1bOt": Keys.F5,
-    "\x1bOu": Keys.F6,
-    "\x1bOv": Keys.F7,
+    "\x1bOP": FKeys.F1,
+    "\x1bOQ": FKeys.F2,
+    "\x1bOR": FKeys.F3,
+    "\x1bOS": FKeys.F4,
+    "\x1bOt": FKeys.F5,
+    "\x1bOu": FKeys.F6,
+    "\x1bOv": FKeys.F7,
 
     # rxvt
-    "\x1b[11~": Keys.F1,
-    "\x1b[12~": Keys.F2,
-    "\x1b[13~": Keys.F3,
-    "\x1b[14~": Keys.F4,
-    "\x1b[15~": Keys.F5,
-    "\x1b[17~": Keys.F6,
-    "\x1b[18~": Keys.F7,
+    "\x1b[11~": FKeys.F1,
+    "\x1b[12~": FKeys.F2,
+    "\x1b[13~": FKeys.F3,
+    "\x1b[14~": FKeys.F4,
+    "\x1b[15~": FKeys.F5,
+    "\x1b[17~": FKeys.F6,
+    "\x1b[18~": FKeys.F7,
 
     # linux
-    "\x1b[[A": Keys.F1,
-    "\x1b[[B": Keys.F2,
-    "\x1b[[C": Keys.F3,
-    "\x1b[[D": Keys.F4,
-    "\x1b[[E": Keys.F5,
+    "\x1b[[A": FKeys.F1,
+    "\x1b[[B": FKeys.F2,
+    "\x1b[[C": FKeys.F3,
+    "\x1b[[D": FKeys.F4,
+    "\x1b[[E": FKeys.F5,
 }
 
 _PREFIXES = {
@@ -151,7 +152,7 @@ def printt(*text, foreground: Optional[int] = None, background: Optional[int] = 
         print(esc_bold, end="")
 
     if replace:
-        print(f"\033[2K\r", end="")
+        print("\033[2K\r", end="")
 
     print(*text, sep="", end="")
     print(esc_clear_attrs, flush=True, end="")

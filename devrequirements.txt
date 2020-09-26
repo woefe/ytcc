@@ -1,12 +1,9 @@
 # Devtools
-sqlalchemy-stubs
 mypy
 nose
 pylint
 pydocstyle
 
 # Application dependencies
-lxml
-feedparser>=5.2.0
+click
 youtube_dl
-SQLAlchemy

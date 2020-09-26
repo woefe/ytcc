@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import TypeVar, Optional, Callable
+from typing import TypeVar, Optional, Callable, Iterable
 
 # pylint: disable=invalid-name
 T = TypeVar("T")
@@ -27,7 +27,13 @@ def unpack_optional(elem: Optional[T], default: Callable[[], T]) -> T:
         return default()
     return elem
 
+
 def unpack_or_raise(elem: Optional[T], exception: Exception) -> T:
     if elem is None:
         raise exception
     return elem
+
+
+def take(amount: int, iterable: Iterable[T]) -> Iterable[T]:
+    for _, elem in zip(range(amount), iterable):
+        yield elem
