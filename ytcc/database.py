@@ -355,7 +355,7 @@ class Database:
         return videos.values()
 
     def cleanup(self) -> None:
-        """Delete all watched videos"""
+        """Delete all watched videos."""
         sql = """
             DELETE
             FROM video

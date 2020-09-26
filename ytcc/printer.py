@@ -25,6 +25,7 @@ from typing import List, Iterable, Dict, Any, NamedTuple, Optional
 
 from ytcc import config
 from ytcc.database import MappedVideo, MappedPlaylist
+from ytcc.exceptions import YtccException
 from ytcc.terminal import printtln
 
 
@@ -161,6 +162,8 @@ class XSVPrinter(Printer):
 
     def __init__(self, separator: str = ","):
         super().__init__()
+        if len(separator) != 1:
+            raise YtccException("Separator must be a single character")
         self.separator = separator
 
     def escape(self, string: str) -> str:

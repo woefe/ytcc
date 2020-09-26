@@ -66,7 +66,7 @@ class VideoAttr(str, Enum):
 
     @staticmethod
     def from_str(string: str) -> "VideoAttr":
-        v_attr = VideoAttr.__members__.get(string.upper())
+        v_attr = VideoAttr.__members__.get(string.upper())  # pylint: disable=no-member
         if v_attr is not None:
             return v_attr
         raise ValueError(f"{string} cannot be converted to VideoAttr")
@@ -79,7 +79,7 @@ class PlaylistAttr(str, Enum):
 
     @staticmethod
     def from_str(string: str) -> "PlaylistAttr":
-        p_attr = PlaylistAttr.__members__.get(string.upper())
+        p_attr = PlaylistAttr.__members__.get(string.upper())  # pylint: disable=no-member
         if p_attr is not None:
             return p_attr
         raise ValueError(f"{string} cannot be converted to PlaylistAttr")

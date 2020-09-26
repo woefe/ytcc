@@ -78,7 +78,7 @@ Public Licence for details."""
 @click.version_option(version=__version__, prog_name="ytcc", message=version_text)
 @click.pass_context
 def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: str) -> None:
-    """Ytcc - the (not only) YouTube channel checker
+    """Ytcc - the (not only) YouTube channel checker.
 
     Ytcc "subscribes" to playlists (supported by youtube-dl) and tracks new videos published to
     those playlists.
@@ -179,8 +179,7 @@ def rename(ctx: click.Context, old: str, new: str):
               help="Attributes of the playlist to be included in the output. "
                    f"Some of [{', '.join(map(lambda x: x.value, list(PlaylistAttr)))}].")
 def subscriptions(attributes: List[PlaylistAttr]):
-    """List all subscriptions.
-    """
+    """List all subscriptions."""
     if not filter:
         printer.filter = config.ytcc.playlist_attrs
     else:
@@ -265,7 +264,7 @@ def list_ids(tags: List[str], since: datetime, till: datetime, playlists: List[s
     Basically an alias for `ytcc --output xsv list --attributes id`. This alias can be useful for
     piping into the download, play, and mark commands. E.g: `ytcc ls | ytcc watch`
     """
-    global printer
+    global printer  # pylint: disable=global-statement,invalid-name
     printer = XSVPrinter()
     list_videos_impl(tags, since, till, playlists, ids, ["id"], watched)
 
@@ -436,8 +435,9 @@ def main():
         logger.debug("Unknown database error", exc_info=db_err)
         sys.exit(1)
     except IncompatibleDatabaseVersion:
-        # TODO add link to doc
-        logger.error("This version of ytcc is not compatible with the older database versions")
+        logger.error("This version of ytcc is not compatible with the older database versions."
+                     "See https://github.com/woefe/ytcc#migrating-from-version-1 for more "
+                     "details.")
         sys.exit(1)
     except YtccException as exc:
         logger.error("%s", str(exc))
