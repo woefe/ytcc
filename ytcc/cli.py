@@ -29,7 +29,7 @@ from ytcc import core, config
 from ytcc.config import PlaylistAttr, VideoAttr
 from ytcc.database import MappedVideo
 from ytcc.exceptions import BadConfigException, IncompatibleDatabaseVersion, BadURLException, \
-    NameConflictError, PlaylistDoesNotExistException
+    NameConflictError, PlaylistDoesNotExistException, YtccException
 from ytcc.printer import JSONPrinter, XSVPrinter, VideoPrintable, TablePrinter, \
     PlaylistPrintable, Printer
 from ytcc.tui import print_meta, Interactive
@@ -438,6 +438,10 @@ def main():
     except IncompatibleDatabaseVersion:
         # TODO add link to doc
         logger.error("This version of ytcc is not compatible with the older database versions")
+        sys.exit(1)
+    except YtccException as exc:
+        logger.error("%s", str(exc))
+        logger.debug("Unknown ytcc exception", exc_info=exc)
         sys.exit(1)
     except click.exceptions.Exit as exc:
         sys.exit(exc.exit_code)
