@@ -213,28 +213,24 @@ def update(max_fail: Optional[int], max_backlog: Optional[int]):
     ytcc.update(max_fail, max_backlog)
 
 
-@cli.command("list")
-@click.option("--tags", "-c", type=CommaList(str),
-              help="Listed videos must be tagged with one of the given tags.")
-@click.option("--since", "-s", type=click.DateTime(["%Y-%m-%d"]), default="1970-01-01",
-              help="Listed videos must be published after the given date.")
-@click.option("--till", "-t", type=click.DateTime(["%Y-%m-%d"]), default="9999-12-31",
-              help="Listed videos must be published before the given date.")
-@click.option("--playlists", "-p", type=CommaList(str),
-              help="Listed videos must be in on of the given playlists.")
-@click.option("--ids", "-i", type=CommaList(int),
-              help="Listed videos must have the given IDs.")
-@click.option("--watched", "-w", is_flag=True, default=False,
-              help="Listed videos include watched videos.")
-@click.option("--attributes", "-a", type=CommaList(VideoAttr.from_str),
-              help="Attributes of videos to be included in the output. "
-                   f"Some of [{', '.join(map(lambda x: x.value, list(VideoAttr)))}].")
-def list_videos(tags: List[str], since: datetime, till: datetime, playlists: List[str],
-                ids: List[int], attributes: List[str], watched: bool):
-    """List videos.
+common_list_options = [
+    click.Option(["--tags", "-c"], type=CommaList(str),
+                 help="Listed videos must be tagged with one of the given tags."),
+    click.Option(["--since", "-s"], type=click.DateTime(["%Y-%m-%d"]), default="1970-01-01",
+                 help="Listed videos must be published after the given date."),
+    click.Option(["--till", "-t"], type=click.DateTime(["%Y-%m-%d"]), default="9999-12-31",
+                 help="Listed videos must be published before the given date."),
+    click.Option(["--playlists", "-p"], type=CommaList(str),
+                 help="Listed videos must be in on of the given playlists."),
+    click.Option(["--ids", "-i"], type=CommaList(int),
+                 help="Listed videos must have the given IDs."),
+    click.Option(["--watched", "-w"], is_flag=True, default=False,
+                 help="Listed videos include watched videos.")
+]
 
-    Lists videos that match the given filter options. By default, all unwatched videos are listed.
-    """
+
+def list_videos_impl(tags: List[str], since: datetime, till: datetime, playlists: List[str],
+                     ids: List[int], attributes: List[str], watched: bool) -> None:
     ytcc.set_tags_filter(tags)
     ytcc.set_date_begin_filter(since)
     ytcc.set_date_end_filter(till)
@@ -248,17 +244,34 @@ def list_videos(tags: List[str], since: datetime, till: datetime, playlists: Lis
     printer.print(VideoPrintable(ytcc.list_videos()))
 
 
+@cli.command("list")
+@click.option("--attributes", "-a", type=CommaList(VideoAttr.from_str),
+              help="Attributes of videos to be included in the output. "
+                   f"Some of [{', '.join(map(lambda x: x.value, list(VideoAttr)))}].")
+def list_videos(tags: List[str], since: datetime, till: datetime, playlists: List[str],
+                ids: List[int], attributes: List[str], watched: bool):
+    """List videos.
+
+    Lists videos that match the given filter options. By default, all unwatched videos are listed.
+    """
+    list_videos_impl(tags, since, till, playlists, ids, attributes, watched)
+
+
 @cli.command("ls")
-def ls():  # pylint: disable=invalid-name
+def list_ids(tags: List[str], since: datetime, till: datetime, playlists: List[str],
+             ids: List[int], watched: bool):
     """List IDs of unwatched videos in XSV format.
 
     Basically an alias for `ytcc --output xsv list --attributes id`. This alias can be useful for
     piping into the download, play, and mark commands. E.g: `ytcc ls | ytcc watch`
     """
-    ytcc.set_include_watched_filter(False)
-    xsv_printer = XSVPrinter()
-    xsv_printer.filter = ["id"]
-    xsv_printer.print(VideoPrintable(ytcc.list_videos()))
+    global printer
+    printer = XSVPrinter()
+    list_videos_impl(tags, since, till, playlists, ids, ["id"], watched)
+
+
+list_ids.params.extend(common_list_options)
+list_videos.params.extend(common_list_options)
 
 
 def _get_ids(ids: List[int]) -> Iterable[int]:
@@ -406,7 +419,10 @@ def bug_report():
     print(sys.version)
     print()
     print("---mpv version---")
-    subprocess.run(["mpv", "--version"], check=False)
+    try:
+        subprocess.run(["mpv", "--version"], check=False)
+    except FileNotFoundError:
+        print("mpv is not installed")
     print()
     print("---config dump---")
     print(config.dumps())
