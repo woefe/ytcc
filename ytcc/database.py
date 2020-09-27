@@ -222,7 +222,7 @@ class Database:
                     extractor_hash = :extractor_hash
             """
         insert_playlist = """
-            INSERT INTO content (playlist_id, video_id)
+            INSERT OR IGNORE INTO content (playlist_id, video_id)
             VALUES (?,(SELECT id FROM video WHERE url = ?));
             """
         with self.connection as con:
