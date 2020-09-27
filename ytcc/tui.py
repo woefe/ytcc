@@ -162,7 +162,7 @@ class Interactive:
         printer = TablePrinter()
         printer.filter = ["key", *config.ytcc.video_attrs]
 
-        while selectable:
+        while True:
             remaining_tags = list(selectable.keys())
 
             # Clear display and set cursor to (1,1). Allows scrolling back in some terminals
