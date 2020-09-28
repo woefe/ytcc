@@ -70,11 +70,16 @@ class Updater:
         result = []
         with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
             logger.info("Checking playlist '%s'...", playlist.name)
-            info = ydl.extract_info(playlist.url, download=False, process=False)
-            for entry in take(self.max_items, info.get("entries", [])):
-                e_hash = ydl._make_archive_id(entry)  # pylint: disable=protected-access
-                if e_hash not in hashes:
-                    result.append((entry, e_hash, playlist))
+            try:
+                info = ydl.extract_info(playlist.url, download=False, process=False)
+            except DownloadError as download_error:
+                logging.error("Failed to get playlist %s. Youtube-dl said: '%s'",
+                              playlist.name, download_error)
+            else:
+                for entry in take(self.max_items, info.get("entries", [])):
+                    e_hash = ydl._make_archive_id(entry)  # pylint: disable=protected-access
+                    if e_hash not in hashes:
+                        result.append((entry, e_hash, playlist))
 
         return result
 
@@ -86,6 +91,10 @@ class Updater:
         with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
             try:
                 processed = ydl.process_ie_result(entry, False)
+            except DownloadError as download_error:
+                logging.warning("Failed to get a video. Youtube-dl said: '%s'", download_error)
+                return e_hash, None
+            else:
                 publish_date = 0.0
                 date_str = processed.get("upload_date")
                 if date_str:
@@ -106,9 +115,6 @@ class Updater:
                     duration=processed.get("duration", -1),
                     extractor_hash=e_hash
                 )
-            except DownloadError as download_error:
-                logging.warning("Failed to get a video. Youtube-dl said: '%s'", download_error)
-                return e_hash, None
 
     def update(self):
         num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 4
