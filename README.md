@@ -55,7 +55,7 @@ Unfortunately, you will lose the watched status of all videos during this proces
 
 ## Usage
 
-"Subscribe" to a playlists.
+"Subscribe" to playlists.
 ```shell script
 ytcc subscribe "Jupiter Broadcasting" "https://www.youtube.com/user/jupiterbroadcasting"
 ytcc subscribe "NCS: House" "https://www.youtube.com/playlist?list=PLRBp0Fe2GpgmsW46rJyudVFlY6IYjFBIK"
@@ -96,6 +96,11 @@ Listen to some music without limitations.
 ytcc ls -p "NCS: House" | ytcc play --audio-only
 ```
 
+Alternative terminal interface using [fzf](https://github.com/junegunn/fzf).
+Script available [here](https://github.com/woefe/ytcc/tree/master/scripts/ytccf.sh).
+```shell script
+ytccf.sh
+```
 
 ## Configuration
 Ytcc searches for a configuration file at following locations:
