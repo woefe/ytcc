@@ -47,14 +47,6 @@ YTDL_COMMON_OPTS = {
 logger = logging.getLogger(__name__)
 
 
-def extractor_hash(data: Dict[str, str]) -> str:
-    digest = hashlib.sha256()
-    for key in sorted(data.keys()):
-        digest.update(key.encode("utf-8"))
-        digest.update(data[key].encode("utf-8"))
-    return digest.hexdigest()
-
-
 class Updater:
     def __init__(self, db_path: str, max_backlog=20, max_fail=5):
         self.db_path = db_path
@@ -81,7 +73,7 @@ class Updater:
             logger.info("Checking playlist '%s'...", playlist.name)
             info = ydl.extract_info(playlist.url, download=False, process=False)
             for entry in take(self.max_items, info.get("entries", [])):
-                e_hash = extractor_hash(entry)
+                e_hash = ydl._make_archive_id(entry)
                 if e_hash not in hashes:
                     result.append((entry, e_hash, playlist))
 
