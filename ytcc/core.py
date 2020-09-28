@@ -17,7 +17,6 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
-import hashlib
 import itertools
 import logging
 import os
@@ -73,7 +72,7 @@ class Updater:
             logger.info("Checking playlist '%s'...", playlist.name)
             info = ydl.extract_info(playlist.url, download=False, process=False)
             for entry in take(self.max_items, info.get("entries", [])):
-                e_hash = ydl._make_archive_id(entry)
+                e_hash = ydl._make_archive_id(entry)  # pylint: disable=protected-access
                 if e_hash not in hashes:
                     result.append((entry, e_hash, playlist))
 
