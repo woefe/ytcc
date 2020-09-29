@@ -24,7 +24,7 @@ from typing import List, Iterable, Any, Optional, Dict, overload, Tuple
 
 from ytcc import config
 from ytcc.config import Direction, VideoAttr
-from ytcc.exceptions import IncompatibleDatabaseVersion
+from ytcc.exceptions import IncompatibleDatabaseVersion, PlaylistDoesNotExistException
 from ytcc.utils import unpack_optional
 
 logger = logging.getLogger(__name__)
@@ -227,7 +227,11 @@ class Database:
             """
         with self.connection as con:
             cursor = con.execute("SELECT id FROM playlist WHERE name = ?", (playlist.name,))
-            playlist_id = cursor.fetchone()["id"]
+            fetch=cursor.fetchone()
+            if fetch is None:
+                raise PlaylistDoesNotExistException(
+                    f"Playlist \"{playlist.name}\" is not in the database.")
+            playlist_id = fetch["id"]
             for video in videos:
                 cursor.execute(insert_video, asdict(video))
                 cursor.execute(insert_playlist, (playlist_id, video.url))
