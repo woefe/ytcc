@@ -249,7 +249,7 @@ class Ytcc:
             no_video_flag.append("--no-video")
 
         if video:
-            mpv_flags = (x for s in config.ytcc.mpv_flags.split() if (x := s.strip()))
+            mpv_flags = filter(bool, map(str.strip, config.ytcc.mpv_flags.split()))
             try:
                 command = [
                     "mpv", *no_video_flag, *mpv_flags, video.url

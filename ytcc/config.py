@@ -95,11 +95,13 @@ class DateFormatStr(str):
         datechars = "aAwdbBmyYjUWx%"
         iterator = iter(arg[0])
 
-        while char := next(iterator, ""):
+        char = next(iterator, "")
+        while char:
             if char == "%":
                 next_char = next(iterator, "$")
                 if next_char not in datechars:
                     raise ValueError(f"Invalid date format specifier '%{next_char}'")
+            char = next(iterator, "")
 
         return super().__new__(cls, *arg)
 
