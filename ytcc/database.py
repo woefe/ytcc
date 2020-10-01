@@ -227,10 +227,11 @@ class Database:
             """
         with self.connection as con:
             cursor = con.execute("SELECT id FROM playlist WHERE name = ?", (playlist.name,))
-            fetch=cursor.fetchone()
+            fetch = cursor.fetchone()
             if fetch is None:
                 raise PlaylistDoesNotExistException(
-                    f"Playlist \"{playlist.name}\" is not in the database.")
+                    f"Playlist \"{playlist.name}\" is not in the database."
+                )
             playlist_id = fetch["id"]
             for video in videos:
                 cursor.execute(insert_video, asdict(video))
