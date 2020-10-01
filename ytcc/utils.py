@@ -15,8 +15,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
-
-from typing import TypeVar, Optional, Callable, Iterable
+import importlib
+from typing import TypeVar, Optional, Callable, Iterable, Any
 
 # pylint: disable=invalid-name
 T = TypeVar("T")
@@ -37,3 +37,16 @@ def unpack_or_raise(elem: Optional[T], exception: Exception) -> T:
 def take(amount: int, iterable: Iterable[T]) -> Iterable[T]:
     for _, elem in zip(range(amount), iterable):
         yield elem
+
+
+def lazy_import(fullname: str) -> Any:
+    class _LazyLoader:
+        def __init__(self):
+            self._mod = None
+
+        def __getattr__(self, item):
+            if self._mod is None:
+                self._mod = importlib.import_module(fullname)
+            return getattr(self._mod, item)
+
+    return _LazyLoader()

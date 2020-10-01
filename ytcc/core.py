@@ -30,14 +30,13 @@ from pathlib import Path
 from typing import Iterable, List, Optional, Any, Dict, Tuple, Union
 from urllib.parse import parse_qs, urlparse
 
-import youtube_dl
-from youtube_dl import DownloadError
-
 from ytcc import config
 from ytcc.database import Database, Video, Playlist, MappedVideo, MappedPlaylist
 from ytcc.exceptions import YtccException, BadURLException, NameConflictError, \
     PlaylistDoesNotExistException, InvalidSubscriptionFileError
-from ytcc.utils import unpack_optional, take
+from ytcc.utils import unpack_optional, take, lazy_import
+
+youtube_dl = lazy_import("youtube_dl")
 
 YTDL_COMMON_OPTS = {
     "logger": logging.getLogger("youtube_dl")
@@ -72,7 +71,7 @@ class Updater:
             logger.info("Checking playlist '%s'...", playlist.name)
             try:
                 info = ydl.extract_info(playlist.url, download=False, process=False)
-            except DownloadError as download_error:
+            except youtube_dl.DownloadError as download_error:
                 logging.error("Failed to get playlist %s. Youtube-dl said: '%s'",
                               playlist.name, download_error)
             else:
@@ -91,7 +90,7 @@ class Updater:
         with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
             try:
                 processed = ydl.process_ie_result(entry, False)
-            except DownloadError as download_error:
+            except youtube_dl.DownloadError as download_error:
                 logging.warning("Failed to get a video. Youtube-dl said: '%s'", download_error)
                 return e_hash, None
             else:
