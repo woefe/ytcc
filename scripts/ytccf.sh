@@ -24,16 +24,106 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
-make_table="echo; ytcc --output table list --attributes id,title,publish_date,duration,playlists"
+make_table="ytcc --output table list --attributes id,title,publish_date,duration,playlists"
+key_bindings="
+        tab: select/deselect
+      enter: play video(s)
+  alt-enter: play audio track(s)
+      alt-d: download video(s)
+      alt-r: update
+      alt-m: mark selection as watched
+      alt-h: show help"
 
-ytcc update
+check_cmd() {
+    if ! command -v "$1" &> /dev/null; then
+        echo "Command '$1' not found. Aborting."
+        exit 1
+    fi
+}
+
+usage() {
+    cat <<EOF
+Usage: $0 [OPTIONS]
+
+    An interactive terminal user interface for ytcc based on fzf. The options
+    filter which videos are shown. All unwatched videos are shown by default.
+
+OPTIONS:
+  -c, --tags COMMA_SEPARATED_VALUES
+                                  Listed videos must be tagged with one of the
+                                  given tags.
+
+  -s, --since [%Y-%m-%d]          Listed videos must be published after the
+                                  given date.
+
+  -t, --till [%Y-%m-%d]           Listed videos must be published before the
+                                  given date.
+
+  -p, --playlists COMMA_SEPARATED_VALUES
+                                  Listed videos must be in on of the given
+                                  playlists.
+  -w, --watched                   Listed videos include watched videos.
+  -h, --help                      Show this message and exit.
+
+
+KEY BINDINGS:$key_bindings
+
+For more keybindings see fzf(1).
+EOF
+}
+
+
+while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+    -p | --playlists)
+        make_table="$make_table -p '$2'"
+        shift
+        shift
+        ;;
+    -c | --tags)
+        make_table="$make_table -c '$2'"
+        shift
+        shift
+        ;;
+    -s | --since)
+        make_table="$make_table -s '$2'"
+        shift
+        shift
+        ;;
+    -t | --till)
+        make_table="$make_table -t '$2'"
+        shift
+        shift
+        ;;
+    -w | --watched)
+        make_table="$make_table -w"
+        shift
+        ;;
+    -h | --help)
+        usage
+        exit
+        ;;
+    *)
+        echo "Unknown option: $key"
+        echo "Try $0 --help for help."
+        exit 1
+        ;;
+    esac
+done
+
+check_cmd ytcc
+check_cmd fzf
 
 eval "$make_table" |
     fzf --preview "ytcc --output xsv --separator ';' list -a description -i \$(echo {} | cut -d ' ' -f 2)" \
+        --multi \
         --layout reverse \
         --preview-window down:55%:wrap \
-        --bind "alt-r:reload%ytcc update; $make_table%" \
-        --bind "alt-m:reload%echo {} | cut -d ' ' -f 2 | ytcc mark > /dev/null; $make_table%" \
-        --bind "enter:execute%echo {} | cut -d ' ' -f 2 | ytcc play%+reload%$make_table%" \
-        --header "(enter: watch, alt-r: update, alt-m: mark watched)" \
-        --header-lines 3
+        --bind "enter:execute%cut -d ' ' -f 2 {+f} | ytcc play%+reload%$make_table%" \
+        --bind "alt-enter:execute%cut -d ' ' -f 2 {+f} | ytcc play --audio-only%+reload%$make_table%" \
+        --bind "alt-d:execute%cut -d ' ' -f 2 {+f} | ytcc download%+reload%$make_table%" \
+        --bind "alt-r:execute%ytcc update%+reload%$make_table%" \
+        --bind "alt-h:execute%echo 'Key bindings:$key_bindings' | less%+reload%$make_table%" \
+        --bind "alt-m:reload%cut -d ' ' -f 2 {+f} | ytcc mark > /dev/null; $make_table%" \
+        --header-lines 2
