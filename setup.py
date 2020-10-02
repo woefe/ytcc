@@ -42,7 +42,7 @@ setup(
     license=ytcc.__license__,
     packages=find_packages(exclude=["test"]),
     install_requires=["youtube_dl", "click"],
-    python_requires=">=3.8, <4",
+    python_requires=">=3.7, <4",
     entry_points={
         "console_scripts": ["ytcc=ytcc.cli:main"]
     },
@@ -60,6 +60,7 @@ setup(
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Topic :: Multimedia :: Sound/Audio",
         "Topic :: Multimedia :: Video"
