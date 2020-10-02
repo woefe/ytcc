@@ -216,9 +216,11 @@ def update(max_fail: Optional[int], max_backlog: Optional[int]):
 common_list_options = [
     click.Option(["--tags", "-c"], type=CommaList(str),
                  help="Listed videos must be tagged with one of the given tags."),
-    click.Option(["--since", "-s"], type=click.DateTime(["%Y-%m-%d"]), default="1970-01-01",
+    click.Option(["--since", "-s"], type=click.DateTime(["%Y-%m-%d"]),
+                 default="1970-01-03",  # Minimum supported by .timestamp() on Windows
                  help="Listed videos must be published after the given date."),
-    click.Option(["--till", "-t"], type=click.DateTime(["%Y-%m-%d"]), default="9999-12-31",
+    click.Option(["--till", "-t"], type=click.DateTime(["%Y-%m-%d"]),
+                 default="3001-1-19",  # Maximum supported by .timestamp() on Windows (Y3K Bug)
                  help="Listed videos must be published before the given date."),
     click.Option(["--playlists", "-p"], type=CommaList(str),
                  help="Listed videos must be in on of the given playlists."),

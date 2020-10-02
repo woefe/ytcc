@@ -142,11 +142,11 @@ class Interactive:
             if char in {"\x04", "\x03"}:  # Ctrl+d, Ctrl+d
                 break
 
-            if char in {"\r", ""}:
+            if char in {"\r", ""} and tags:
                 tag = tags[0]
                 break
 
-            if char == "\x7f":  # DEL
+            if char == FKeys.DEL:
                 tag = tag[:-1]
             elif char and char in config.tui.alphabet:
                 tag += char

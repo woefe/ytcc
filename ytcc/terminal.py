@@ -17,11 +17,10 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-import tty
-import termios
 from enum import Enum
-
 from typing import Optional
+
+import click
 
 
 class FKeys(str, Enum):
@@ -34,6 +33,7 @@ class FKeys(str, Enum):
     F5 = "<F5>"
     F6 = "<F6>"
     F7 = "<F7>"
+    DEL = "DEL"
 
 
 # https://invisible-island.net/xterm/xterm-function-keys.html
@@ -62,24 +62,20 @@ _KNOWN_KEYS = {
     "\x1b[[C": FKeys.F3,
     "\x1b[[D": FKeys.F4,
     "\x1b[[E": FKeys.F5,
+
+    # Windows
+    "\x00;": FKeys.F1,
+    "\x00<": FKeys.F2,
+    "\x00=": FKeys.F3,
+    "\x00>": FKeys.F4,
+    "\x00?": FKeys.F5,
+    "\x00@": FKeys.F6,
+    "\x00A": FKeys.F7,
+
+    # other
+    "\x7f": FKeys.DEL,  # Linux
+    "\x08": FKeys.DEL,  # Windows
 }
-
-_PREFIXES = {
-    escape_sequence[:i]
-    for escape_sequence in _KNOWN_KEYS
-    for i in range(1, len(escape_sequence) + 1)
-}
-
-
-def _read_sequence(stream) -> str:
-    seq = stream.read(1)
-    if seq == "\x1b":
-        while seq not in _KNOWN_KEYS and seq in _PREFIXES:
-            seq += stream.read(1)
-
-        return _KNOWN_KEYS.get(seq, "Unknown Sequence")
-
-    return seq
 
 
 def getkey() -> str:
@@ -90,21 +86,23 @@ def getkey() -> str:
 
     :return: Character read from stdin.
     """
-    if not sys.stdin.isatty():
-        return ""
-
-    file_descriptor = sys.stdin.fileno()
-    old_settings = termios.tcgetattr(file_descriptor)
     try:
-        tty.setraw(sys.stdin.fileno())
-        char = _read_sequence(sys.stdin)
-    finally:
-        termios.tcsetattr(file_descriptor, termios.TCSADRAIN, old_settings)
-    return char
+        sequence = click.getchar()
+    except EOFError:
+        sequence = "\x04"
+
+    key = _KNOWN_KEYS.get(sequence)
+    if key is not None:
+        return key
+
+    if len(sequence) != 1:
+        return "Unknown Sequence"
+
+    return sequence
 
 
 def clear_screen() -> None:
-    print("\033[2J\033[1;1H", end="")
+    click.clear()
 
 
 def printtln(*text, foreground: Optional[int] = None, background: Optional[int] = None,
@@ -134,7 +132,7 @@ def printt(*text, foreground: Optional[int] = None, background: Optional[int] = 
     :param replace: Replace the current line.
     """
     if not sys.stdout.isatty():
-        print(*text, sep="", end="")
+        print(*text, sep="", end="", flush=True)
         return
 
     esc_color_background = "\033[48;5;{}m"
