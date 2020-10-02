@@ -51,7 +51,9 @@ Unfortunately, you will lose the watched status of all videos during this proces
 ---
 **Other options**:
 - If you think the procedure described above is not worth the effort, you can start from scratch by removing the `~/.config/ytcc` directory.
-- If you are not satisfied with the options here, write a migration script! Pull Requests welcome ❤
+- If you are not satisfied with the options here, write a migration script!
+    See [issue 42](https://github.com/woefe/ytcc/issues/42).
+    Pull Requests welcome ❤
 
 ## Usage
 
@@ -96,10 +98,15 @@ Listen to some music without limitations.
 ytcc ls -p "NCS: House" | ytcc play --audio-only
 ```
 
-Alternative terminal interface using [fzf](https://github.com/junegunn/fzf).
-Script available [here](https://github.com/woefe/ytcc/tree/master/scripts/ytccf.sh).
+**Alternative terminal interface built on [fzf](https://github.com/junegunn/fzf)**.
+Requires fzf version 0.19.0 or newer, preferably after [6f9664d](https://github.com/junegunn/fzf/commit/6f9663da62a84fcce8992c63dad8016f3107364d).
+Otherwise you might experience some issues.
+Script is available [here](https://github.com/woefe/ytcc/tree/master/scripts/ytccf.sh).
 ```shell script
 ytccf.sh
+
+# Show help and key bindings
+ytccf.sh --help
 ```
 
 ## Configuration
@@ -230,7 +237,7 @@ We recommend developing inside a virtualenv.
 Run the following commands before every pull request and fix the warnings or errors they produce.
 ```shell script
 mypy ytcc
-nosetests
+pytest
 pylint ytcc
 pydocstyle ytcc
 ```
