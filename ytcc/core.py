@@ -344,7 +344,9 @@ class Ytcc:
                     url,
                     download_error
                 )
-                raise BadURLException("URL is not supported by youtube-dl") from download_error
+                raise BadURLException(
+                    "URL is not supported by youtube-dl or does not exist"
+                ) from download_error
 
             if not info.get("_type") == "playlist":
                 logger.debug(
