@@ -231,14 +231,19 @@ common_list_options = [
 ]
 
 
-def list_videos_impl(tags: List[str], since: datetime, till: datetime, playlists: List[str],
-                     ids: List[int], attributes: List[str], watched: bool) -> None:
+def apply_filters(tags: List[str], since: datetime, till: datetime, playlists: List[str],
+                  ids: List[int], watched: bool) -> None:
     ytcc.set_tags_filter(tags)
     ytcc.set_date_begin_filter(since)
     ytcc.set_date_end_filter(till)
     ytcc.set_playlist_filter(playlists)
     ytcc.set_video_id_filter(ids)
     ytcc.set_include_watched_filter(watched)
+
+
+def list_videos_impl(tags: List[str], since: datetime, till: datetime, playlists: List[str],
+                     ids: List[int], attributes: List[str], watched: bool) -> None:
+    apply_filters(tags, since, till, playlists, ids, watched)
     if attributes:
         printer.filter = attributes
     else:
@@ -272,8 +277,17 @@ def list_ids(tags: List[str], since: datetime, till: datetime, playlists: List[s
     list_videos_impl(tags, since, till, playlists, ids, ["id"], watched)
 
 
+@cli.command()
+def tui(tags: List[str], since: datetime, till: datetime, playlists: List[str],
+        ids: List[int], watched: bool):
+    """Start an interactive terminal user interface."""
+    apply_filters(tags, since, till, playlists, ids, watched)
+    Interactive(ytcc).run()
+
+
 list_ids.params.extend(common_list_options)
 list_videos.params.extend(common_list_options)
+tui.params.extend(common_list_options)
 
 
 def _get_ids(ids: List[int]) -> Iterable[int]:
@@ -369,12 +383,6 @@ def download(ids: Tuple[int, ...], path: Path, audio_only: bool, no_mark: bool):
         )
         if ytcc.download_video(video, str(path), audio_only) and not no_mark:
             ytcc.mark_watched(video)
-
-
-@cli.command()
-def tui():
-    """Start an interactive terminal user interface."""
-    Interactive(ytcc).run()
 
 
 @cli.command()
