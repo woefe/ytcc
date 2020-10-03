@@ -44,13 +44,14 @@ if __name__=="__main__":
     print("Adding videos")
 
     videos.sort(key=lambda v: v.pl_name)
-    videos=iter(videos)
-    while ((head:=next(videos, None))!=None):
+    video_iter=iter(videos)
+    while ((head:=next(video_iter, None))!=None):
+        # From this point forward, head is never none
         current_pl=head.pl_name
         print(f"Adding videos for {current_pl}")
         key=lambda v: (v.pl_name==current_pl)
-        to_add=itertools.chain([head], itertools.takewhile(key, videos))
-        videos=itertools.dropwhile(key, videos)
+        to_add=itertools.chain([head], itertools.takewhile(key, video_iter))
+        video_iter=itertools.dropwhile(key, video_iter)
         try:
             ytcc2obj.database.add_videos([ytcc.core.Video(video.url, video.title,
                 video.description, video.publish_date, video.watched, 0,
