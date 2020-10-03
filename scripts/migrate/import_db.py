@@ -35,9 +35,9 @@ if __name__=="__main__":
                 ytcc2obj.add_playlist(channel.name,
                                       f"https://www.youtube.com/channel/{channel.channelid}/videos")
         except ytcc.exceptions.BadURLException as ex:
-            print(f"""This channel doesn't exist any more, or has no content.\
-                    Try checking it in the browser:\
-                    https://www.youtube.com/channel/{channel.channelid}/videos""", file=sys.stderr)
+            print("This channel doesn't exist any more, or has no content."
+                + "Try checking it in the browser:"
+                +f"https://www.youtube.com/channel/{channel.channelid}/videos", file=sys.stderr)
     print("Loading videos.pickle")
     with open("videos.pickle", "rb") as videofile:
         videos: List[ExportedVideo] = pickle.load(videofile)
