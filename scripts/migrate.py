@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sqlite3
 #  ytcc - The YouTube channel checker
 #  Copyright (C) 2020  Wolfgang Popp
 #
@@ -18,6 +17,8 @@ import sqlite3
 #
 #  You should have received a copy of the GNU General Public License
 #  along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
+
+import sqlite3
 import sys
 import textwrap
 from pathlib import Path
