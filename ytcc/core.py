@@ -156,10 +156,6 @@ class Ytcc:
         self.date_end_filter = (0.0, False)
         self.include_watched_filter: Optional[bool] = False
 
-    def __del__(self):
-        if self._database is not None:
-            self._database.close()
-
     def __enter__(self) -> "Ytcc":
         return self
 
