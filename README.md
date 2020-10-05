@@ -146,7 +146,7 @@ mpv_flags = --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best
 
 # Defines the order of video listings.
 # Possible options: id, url, title, description, publish_date, watched, duration, extractor_hash,
-# playlists. # Every option must be suffixed with :desc or :asc for descending or ascending sort.
+# playlists. Every option must be suffixed with :desc or :asc for descending or ascending sort.
 order_by = playlists:asc, publish_date:desc
 
 # Default attributes shown in video listings.
