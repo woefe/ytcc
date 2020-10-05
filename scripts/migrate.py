@@ -20,7 +20,6 @@ import sqlite3
 #  along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 import sys
 import textwrap
-from datetime import datetime
 from pathlib import Path
 
 
@@ -46,25 +45,25 @@ def usage():
 
 it = iter(sys.argv[1:])
 arg = next(it, None)
-old_db = None
-new_db = None
+old_db_arg = None
+new_db_arg = None
 
 while arg:
     if arg == "--help":
         usage()
         sys.exit(1)
     elif arg == "--olddb":
-        old_db = next(it, None)
+        old_db_arg = next(it, None)
     elif arg == "--newdb":
-        new_db = next(it, None)
+        new_db_arg = next(it, None)
     arg = next(it, None)
 
-if None in (old_db, new_db):
+if old_db_arg is None or new_db_arg is None:
     error(f"Missing command line option. Try {sys.argv[0]} --help for help.")
     sys.exit(1)
 
-old_db = Path(old_db)
-new_db = Path(new_db)
+old_db = Path(old_db_arg)
+new_db = Path(new_db_arg)
 
 if not old_db.is_file():
     error(f"{old_db} is not a file!")
