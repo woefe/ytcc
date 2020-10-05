@@ -27,9 +27,12 @@ __version__ = "2.0.0b2"
 __author__ = __maintainer__ = "Wolfgang Popp"
 __email__ = "mail@wolfgang-popp.de"
 
-from pathlib import Path
 import gettext
 import sys
+from pathlib import Path
+from ytcc.database import Database, MappedVideo, Video, MappedPlaylist, Playlist
+from ytcc.core import Ytcc
+from ytcc.exceptions import *
 
 
 def _get_translations_path() -> str:
