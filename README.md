@@ -52,8 +52,8 @@ Unfortunately, videos migrated from version 1 always have the duration attribute
     ```
 5. (Optional) Take a look at the [configuration](#configuration) to see what's new and update your config.
 
-###Alternative migrations
-####Channel export and import
+### Alternative migrations
+#### Channel export and import
 1. Export your subscriptions with ytcc 1.8.5 **before** upgrading to 2.0.0 or later
     ```shell script
     ytcc --export-to subscriptions.opml
