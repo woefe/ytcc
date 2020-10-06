@@ -25,7 +25,7 @@ from pathlib import Path
 
 
 def error(message: str):
-    print("Error:", message)
+    print("Error:", message, file=sys.stderr)
 
 
 def usage():
