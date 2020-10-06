@@ -1,6 +1,6 @@
 # ytcc
 
-Command line tool to keep track of your favourite playlists on YouTube and many other places.
+Command line tool to keep track of your favorite playlists on YouTube and many other places.
 
 **The second beta release of ytcc 2.0.0 is out!**
 Read [the migration guide](#migrating-from-version-1) before upgrading to 2.0.0 or later!
@@ -15,10 +15,10 @@ pip install ytcc
 
 ### Arch Linux
 Install [ytcc-git](https://aur.archlinux.org/packages/ytcc-git/) from the AUR.
-The [ytcc](https://aur.archlinux.org/packages/ytcc/) will be upgraded to version 2.0.0, when it has a stable release.
+The [ytcc](https://aur.archlinux.org/packages/ytcc/) package will be upgraded to version 2.0.0, when it has a stable release.
 
 ### Without installation
-You can start ytcc directly from the cloned repo, if all the requirements are installed.
+You can start ytcc directly from the cloned repo, if all requirements are installed.
 
 ```shell script
 ./ytcc.py --help
@@ -36,8 +36,24 @@ Optional requirements:
 ## Migrating from version 1
 Versions 2.0.0 and later are not compatible with previous databases and configuration files!
 You need to follow several steps to migrate your subscriptions to 2.0.0 or later.
-Unfortunately, you will lose the watched status of all videos during this process.
+Unfortunately, videos migrated from version 1 always have the duration attribute set to zero.
 
+*Note: If you adjusted the database location in version 1 you have to adjust the paths used below*
+
+1. Upgrade ytcc to version 2.0.0 or later.
+2. Download the migration script from [here](https://github.com/woefe/ytcc/tree/master/scripts/migrate.py).
+3. Rename your v1 database.
+    ```shell script
+    mv ~/.local/share/ytcc/ytcc.db ~/.local/share/ytcc/ytcc.db.v1
+    ```
+4. Migrate the database.
+    ```shell script
+    python3 path/to/migrate.py --olddb ~/.local/share/ytcc/ytcc.db.v1 --newdb ~/.local/share/ytcc/ytcc.db
+    ```
+5. (Optional) Take a look at the [configuration](#configuration) to see what's new and update your config.
+
+###Alternative migrations
+####Channel export and import
 1. Export your subscriptions with ytcc 1.8.5 **before** upgrading to 2.0.0 or later
     ```shell script
     ytcc --export-to subscriptions.opml
@@ -48,12 +64,11 @@ Unfortunately, you will lose the watched status of all videos during this proces
     ```shell script
     ytcc import subscriptions.opml
     ```
----
-**Other options**:
-- If you think the procedure described above is not worth the effort, you can start from scratch by removing the `~/.config/ytcc` directory.
-- If you are not satisfied with the options here, write a migration script!
-    See [issue 42](https://github.com/woefe/ytcc/issues/42).
-    Pull Requests welcome ❤
+5. (Optional) You might also want to adjust your config to the new format. See [Configuration](#configuration).
+
+#### Start from scratch
+If you think the procedures described above are not worth the effort, you can start from scratch by removing the `~/.config/ytcc` directory.
+
 
 ## Usage
 
@@ -100,7 +115,7 @@ ytcc ls -p "NCS: House" | ytcc play --audio-only
 
 **Alternative terminal interface built on [fzf](https://github.com/junegunn/fzf)**.
 Requires fzf version 0.19.0 or newer, preferably after [6f9664d](https://github.com/junegunn/fzf/commit/6f9663da62a84fcce8992c63dad8016f3107364d).
-Otherwise you might experience some issues.
+Otherwise, you might experience some issues.
 Script is available [here](https://github.com/woefe/ytcc/tree/master/scripts/ytccf.sh).
 ```shell script
 ytccf.sh
@@ -130,8 +145,8 @@ download_dir = ~/Downloads
 mpv_flags = --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best
 
 # Defines the order of video listings.
-# Possible options: id, url, title, description, publish_date, watched, duration, extractor_hash, playlists.
-# Every option must be suffixed with :desc or :asc for descending or ascending sort.
+# Possible options: id, url, title, description, publish_date, watched, duration, extractor_hash,
+# playlists. Every option must be suffixed with :desc or :asc for descending or ascending sort.
 order_by = playlists:asc, publish_date:desc
 
 # Default attributes shown in video listings.
@@ -150,13 +165,13 @@ db_path = ~/.local/share/ytcc/ytcc.db
 date_format = %Y-%m-%d
 
 # Default failure threshold before a video is ignored.
-# When a video could not be updated repeatedly, it will be ignored by ytcc after `max_update_fail` attempts.
-# This setting can be overridden with the --max-fail commandline parameter.
+# When a video could not be updated repeatedly, it will be ignored by ytcc after `max_update_fail`
+# attempts. This setting can be overridden with the --max-fail commandline parameter.
 max_update_fail = 5
 
 # Default update backlog.
-# The update command will only the first `max_update_backlog` videos of a playlist to improve performance.
-# This setting can be overridden with the --max-backlog commandline parameter.
+# The update command will only the first `max_update_backlog` videos of a playlist to improve
+# performance. This setting can be overridden with the --max-backlog commandline parameter.
 max_update_backlog = 20
 
 # Ignore videos that have an age limit higher than the one specified here.
@@ -192,8 +207,8 @@ format = bestvideo[height<=?1080]+bestaudio/best
 # Output template (see OUTPUT TEMPLATE in youtube-dl manpage)
 outputtemplate = %(title)s.%(ext)s
 
-# If a merge is required according to format selection, merge to the given container format. One of
-# mkv, mp4, ogg, webm, flv
+# If a merge is required according to format selection, merge to the given container format.
+# One of mkv, mp4, ogg, webm, flv
 mergeoutputformat = mkv
 
 # Loglevel options: quiet, normal, verbose
