@@ -24,7 +24,8 @@ Add the `erowl-overlay` using `eselect-repository` (or layman):
 eselect repository add erowl-overlay git https://gitlab.com/EmRowlands/erowl-overlay.git
 ```
 
-Install `net-misc/ytcc`.
+Install `net-misc/ytcc`. Currently (October 2020), ytcc v1 is stable and ytcc
+v2 betas are `~arch`. A 9999 ebuild is also avaliable.
 
 ### Without installation
 You can start ytcc directly from the cloned repo, if all requirements are installed.
