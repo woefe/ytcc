@@ -17,6 +17,15 @@ pip install ytcc
 Install [ytcc-git](https://aur.archlinux.org/packages/ytcc-git/) from the AUR.
 The [ytcc](https://aur.archlinux.org/packages/ytcc/) package will be upgraded to version 2.0.0, when it has a stable release.
 
+### Gentoo
+Add the `erowl-overlay` using `eselect-repository` (or layman):
+
+```
+eselect repository add erowl-overlay git https://gitlab.com/EmRowlands/erowl-overlay.git
+```
+
+Install `net-misc/ytcc`.
+
 ### Without installation
 You can start ytcc directly from the cloned repo, if all requirements are installed.
 
