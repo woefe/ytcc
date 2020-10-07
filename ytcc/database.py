@@ -175,17 +175,16 @@ class Database:
         query = "DELETE FROM playlist WHERE name = ?"
         with self.connection:
             res = self.connection.execute(query, (name,))
-        return res.rowcount > 0
+            return res.rowcount > 0
 
     def rename_playlist(self, oldname, newname) -> bool:
         query = "UPDATE playlist SET name = ? WHERE name = ?"
         try:
             with self.connection:
                 res = self.connection.execute(query, (newname, oldname))
+                return res.rowcount > 0
         except sqlite3.IntegrityError:
             return False
-
-        return res.rowcount > 0
 
     def list_playlists(self) -> Iterable[MappedPlaylist]:
         query = """
