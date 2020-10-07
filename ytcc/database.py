@@ -141,7 +141,8 @@ class Database:
 
             PRAGMA USER_VERSION = {self.VERSION};
             """
-        self.connection.executescript(script)
+        with self.connection:
+            self.connection.executescript(script)
 
     def get_extractor_fail_count(self, e_hash) -> int:
         query = "SELECT failure_count FROM extractor_meta WHERE extractor_hash = ?"
@@ -157,7 +158,8 @@ class Database:
                 SET failure_count = failure_count + 1
                 WHERE failure_count < :max_fail
         """
-        self.connection.execute(query, {"e_hash": e_hash, "max_fail": max_fail})
+        with self.connection:
+            self.connection.execute(query, {"e_hash": e_hash, "max_fail": max_fail})
 
     def close(self) -> None:
         self.connection.commit()
@@ -165,17 +167,21 @@ class Database:
 
     def add_playlist(self, name: str, url: str) -> None:
         query = "INSERT INTO playlist (name, url) VALUES (?, ?);"
-        self.connection.execute(query, (name, url))
+        with self.connection:
+            res = self.connection.execute(query, (name, url))
+            return res.rowcount > 0
 
     def delete_playlist(self, name: str) -> bool:
         query = "DELETE FROM playlist WHERE name = ?"
-        res = self.connection.execute(query, (name,))
+        with self.connection:
+            res = self.connection.execute(query, (name,))
         return res.rowcount > 0
 
     def rename_playlist(self, oldname, newname) -> bool:
         query = "UPDATE playlist SET name = ? WHERE name = ?"
         try:
-            res = self.connection.execute(query, (newname, oldname))
+            with self.connection:
+                res = self.connection.execute(query, (newname, oldname))
         except sqlite3.IntegrityError:
             return False
 
