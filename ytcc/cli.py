@@ -24,6 +24,7 @@ from sqlite3 import DatabaseError
 from typing import List, Callable, TypeVar, Generic, Optional, Iterable, Tuple
 
 import click
+from click.exceptions import Exit
 
 from ytcc import __version__, __author__
 from ytcc import core, config
@@ -36,9 +37,9 @@ from ytcc.printer import JSONPrinter, XSVPrinter, VideoPrintable, TablePrinter, 
 from ytcc.tui import print_meta, Interactive
 
 T = TypeVar("T")  # pylint: disable=invalid-name
-ytcc: core.Ytcc
 printer: Printer
 logger = logging.getLogger(__name__)
+pass_ytcc = click.make_pass_decorator(core.Ytcc)
 
 
 class CommaList(click.ParamType, Generic[T]):
@@ -104,9 +105,10 @@ def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: s
         logger.error(str(conf_exc))
         ctx.exit(1)
 
-    global ytcc, printer  # pylint: disable=global-statement,invalid-name
+    global printer  # pylint: disable=global-statement,invalid-name
 
-    ytcc = core.Ytcc()
+    ytcc = ctx.ensure_object(core.Ytcc)
+    ctx.call_on_close(ytcc.close)
 
     if output == "table":
         printer = TablePrinter()
@@ -119,8 +121,8 @@ def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: s
 @cli.command()
 @click.argument("name")
 @click.argument("url")
-@click.pass_context
-def subscribe(ctx: click.Context, name: str, url: str):
+@pass_ytcc
+def subscribe(ytcc: core.Ytcc, name: str, url: str):
     """Subscribe to a playlist.
 
     The NAME argument is the name used to refer to the playlist. The URL argument is the URL to a
@@ -128,14 +130,14 @@ def subscribe(ctx: click.Context, name: str, url: str):
     """
     try:
         ytcc.add_playlist(name, url)
-    except BadURLException:
+    except BadURLException as bad_url:
         logger.error("The given URL does not point to a playlist or is not supported by "
                      "youtube-dl")
-        ctx.exit(1)
-    except NameConflictError:
+        raise Exit(1) from bad_url
+    except NameConflictError as name_conflict:
         logger.error("The given name is already used for another playlist "
                      "or the playlist is already subscribed")
-        ctx.exit(1)
+        raise Exit(1) from name_conflict
 
 
 @cli.command()
@@ -144,17 +146,17 @@ def subscribe(ctx: click.Context, name: str, url: str):
     prompt="Unsubscribing will remove videos from the database that are not part of another "
            "playlist. Do you really want to unsubscribe?"
 )
-@click.pass_context
-def unsubscribe(ctx: click.Context, name: str):
+@pass_ytcc
+def unsubscribe(ytcc: core.Ytcc, name: str):
     """Unsubscribe from a playlist.
 
     Unsubscribes from the playlist identified by NAME.
     """
     try:
         ytcc.delete_playlist(name)
-    except PlaylistDoesNotExistException:
+    except PlaylistDoesNotExistException as err:
         logger.error("Playlist '%s' does not exist", name)
-        ctx.exit(1)
+        raise Exit(1) from err
     else:
         logger.info("Unsubscribed from %s", name)
 
@@ -162,8 +164,8 @@ def unsubscribe(ctx: click.Context, name: str):
 @cli.command()
 @click.argument("old")
 @click.argument("new")
-@click.pass_context
-def rename(ctx: click.Context, old: str, new: str):
+@pass_ytcc
+def rename(ytcc: core.Ytcc, old: str, new: str):
     """Rename a playlist.
 
     Renames the playlist OLD to NEW.
@@ -172,14 +174,15 @@ def rename(ctx: click.Context, old: str, new: str):
         ytcc.rename_playlist(old, new)
     except NameConflictError as nce:
         logger.error("'%s'", str(nce))
-        ctx.exit(1)
+        raise Exit(1) from nce
 
 
 @cli.command()
 @click.option("--attributes", "-a", type=CommaList(PlaylistAttr.from_str),
               help="Attributes of the playlist to be included in the output. "
                    f"Some of [{', '.join(map(lambda x: x.value, list(PlaylistAttr)))}].")
-def subscriptions(attributes: List[PlaylistAttr]):
+@pass_ytcc
+def subscriptions(ytcc: core.Ytcc, attributes: List[PlaylistAttr]):
     """List all subscriptions."""
     if not filter:
         printer.filter = config.ytcc.playlist_attrs
@@ -191,7 +194,8 @@ def subscriptions(attributes: List[PlaylistAttr]):
 @cli.command()
 @click.argument("name")
 @click.argument("tags", nargs=-1)
-def tag(name: str, tags: Tuple[str, ...]):
+@pass_ytcc
+def tag(ytcc: core.Ytcc, name: str, tags: Tuple[str, ...]):
     """Set tags of a playlist.
 
     Sets the TAGS associated with the playlist called NAME. If no tags are given, all tags are
@@ -205,7 +209,8 @@ def tag(name: str, tags: Tuple[str, ...]):
               help="Number of failed updates before a video is not checked for updates any more.")
 @click.option("--max-backlog", "-b", type=click.INT,
               help="Number of videos in a playlist that are checked for updates.")
-def update(max_fail: Optional[int], max_backlog: Optional[int]):
+@pass_ytcc
+def update(ytcc: core.Ytcc, max_fail: Optional[int], max_backlog: Optional[int]):
     """Check if new videos are available.
 
     Downloads metadata of new videos (if any) without playing or downloading the videos.
@@ -231,8 +236,8 @@ common_list_options = [
 ]
 
 
-def apply_filters(tags: List[str], since: datetime, till: datetime, playlists: List[str],
-                  ids: List[int], watched: bool) -> None:
+def apply_filters(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
+                  playlists: List[str], ids: List[int], watched: bool) -> None:
     ytcc.set_tags_filter(tags)
     ytcc.set_date_begin_filter(since)
     ytcc.set_date_end_filter(till)
@@ -241,9 +246,10 @@ def apply_filters(tags: List[str], since: datetime, till: datetime, playlists: L
     ytcc.set_include_watched_filter(watched)
 
 
-def list_videos_impl(tags: List[str], since: datetime, till: datetime, playlists: List[str],
-                     ids: List[int], attributes: List[str], watched: bool) -> None:
-    apply_filters(tags, since, till, playlists, ids, watched)
+def list_videos_impl(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
+                     playlists: List[str], ids: List[int], attributes: List[str],
+                     watched: bool) -> None:
+    apply_filters(ytcc, tags, since, till, playlists, ids, watched)
     if attributes:
         printer.filter = attributes
     else:
@@ -255,18 +261,20 @@ def list_videos_impl(tags: List[str], since: datetime, till: datetime, playlists
 @click.option("--attributes", "-a", type=CommaList(VideoAttr.from_str),
               help="Attributes of videos to be included in the output. "
                    f"Some of [{', '.join(map(lambda x: x.value, list(VideoAttr)))}].")
-def list_videos(tags: List[str], since: datetime, till: datetime, playlists: List[str],
-                ids: List[int], attributes: List[str], watched: bool):
+@pass_ytcc
+def list_videos(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
+                playlists: List[str], ids: List[int], attributes: List[str], watched: bool):
     """List videos.
 
     Lists videos that match the given filter options. By default, all unwatched videos are listed.
     """
-    list_videos_impl(tags, since, till, playlists, ids, attributes, watched)
+    list_videos_impl(ytcc, tags, since, till, playlists, ids, attributes, watched)
 
 
 @cli.command("ls")
-def list_ids(tags: List[str], since: datetime, till: datetime, playlists: List[str],
-             ids: List[int], watched: bool):
+@pass_ytcc
+def list_ids(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
+             playlists: List[str], ids: List[int], watched: bool):
     """List IDs of unwatched videos in XSV format.
 
     Basically an alias for `ytcc --output xsv list --attributes id`. This alias can be useful for
@@ -274,14 +282,15 @@ def list_ids(tags: List[str], since: datetime, till: datetime, playlists: List[s
     """
     global printer  # pylint: disable=global-statement,invalid-name
     printer = XSVPrinter()
-    list_videos_impl(tags, since, till, playlists, ids, ["id"], watched)
+    list_videos_impl(ytcc, tags, since, till, playlists, ids, ["id"], watched)
 
 
 @cli.command()
-def tui(tags: List[str], since: datetime, till: datetime, playlists: List[str],
+@pass_ytcc
+def tui(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime, playlists: List[str],
         ids: List[int], watched: bool):
     """Start an interactive terminal user interface."""
-    apply_filters(tags, since, till, playlists, ids, watched)
+    apply_filters(ytcc, tags, since, till, playlists, ids, watched)
     Interactive(ytcc).run()
 
 
@@ -304,7 +313,7 @@ def _get_ids(ids: List[int]) -> Iterable[int]:
         yield from ids
 
 
-def _get_videos(ids: List[int]) -> Iterable[MappedVideo]:
+def _get_videos(ytcc: core.Ytcc, ids: List[int]) -> Iterable[MappedVideo]:
     ids = list(_get_ids(ids))
     if ids:
         ytcc.set_video_id_filter(ids)
@@ -320,14 +329,15 @@ def _get_videos(ids: List[int]) -> Iterable[MappedVideo]:
 @click.option("--no-mark", "-m", is_flag=True, default=False,
               help="Don't mark the video as watched after playing it.")
 @click.argument("ids", nargs=-1, type=click.INT)
-def play(ids: Tuple[int, ...], audio_only: bool, no_meta: bool, no_mark: bool):
+@pass_ytcc
+def play(ytcc: core.Ytcc, ids: Tuple[int, ...], audio_only: bool, no_meta: bool, no_mark: bool):
     """Play videos.
 
     Plays the videos identified by the given video IDs. If no IDs are given, ytcc tries to read IDs
     from stdin. If no IDs are given and no IDs were read from stdin, all unwatched videos are
     played.
     """
-    videos = _get_videos(list(ids))
+    videos = _get_videos(ytcc, list(ids))
 
     loop_executed = False
     for video in videos:
@@ -346,7 +356,8 @@ def play(ids: Tuple[int, ...], audio_only: bool, no_meta: bool, no_mark: bool):
 
 @cli.command()
 @click.argument("ids", nargs=-1, type=click.INT)
-def mark(ids: Tuple[int, ...]):
+@pass_ytcc
+def mark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
     """Mark videos as watched.
 
     Marks videos as watched without playing or downloading them. If no IDs are given, ytcc tries to
@@ -366,14 +377,15 @@ def mark(ids: Tuple[int, ...]):
 @click.option("--no-mark", "-m", is_flag=True, default=False,
               help="Don't mark the video as watched after downloading it.")
 @click.argument("ids", nargs=-1, type=click.INT)
-def download(ids: Tuple[int, ...], path: Path, audio_only: bool, no_mark: bool):
+@pass_ytcc
+def download(ytcc: core.Ytcc, ids: Tuple[int, ...], path: Path, audio_only: bool, no_mark: bool):
     """Download videos.
 
     Downloads the videos identified by the given video IDs. If no IDs are given, ytcc tries to read
     IDs from stdin. If no IDs are given and no IDs were read from stdin, all unwatched videos are
     downloaded.
     """
-    videos = _get_videos(list(ids))
+    videos = _get_videos(ytcc, list(ids))
 
     for video in videos:
         logger.info(
@@ -389,7 +401,8 @@ def download(ids: Tuple[int, ...], path: Path, audio_only: bool, no_mark: bool):
 @click.confirmation_option(
     prompt="Do you really want to remove all watched videos from the database?"
 )
-def cleanup():
+@pass_ytcc
+def cleanup(ytcc: core.Ytcc):
     """Remove all watched videos from the database.
 
     WARNING!!! This removes all metadata of watched, marked as watched, and downloaded videos from
@@ -401,7 +414,8 @@ def cleanup():
 
 @cli.command("import")
 @click.argument("file", nargs=1, type=click.Path(exists=True, file_okay=True, dir_okay=False))
-def import_(file: Path):
+@pass_ytcc
+def import_(ytcc: core.Ytcc, file: Path):
     """Import YouTube subscriptions from OPML file.
 
     You can export your YouTube subscriptions at https://www.youtube.com/subscription_manager.
