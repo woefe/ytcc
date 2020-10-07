@@ -86,38 +86,37 @@ if not ytcc.__version__.startswith("2"):
     sys.exit(1)
 
 ytcc.config.ytcc.db_path = str(new_db)
-core_v2 = ytcc.Ytcc()
-con_v1 = sqlite3.connect(old_db)
 video_query = """
     SELECT yt_videoid, title, description, publish_date, watched
     FROM video WHERE publisher = ?
     """
 
-for c_name, yt_channelid in con_v1.execute("SELECT displayname, yt_channelid FROM channel"):
-    url = f"https://www.youtube.com/channel/{yt_channelid}/videos"
-    try:
-        core_v2.add_playlist(c_name, url)
-    except ytcc.BadURLException:
-        print(
-            f"Ignoring {c_name}, because it is not supported by "
-            "youtube-dl or does not exist any more"
-        )
-        continue
-    except ytcc.NameConflictError:
-        print(f"{c_name} is already subscribed.")
+with ytcc.Ytcc() as core_v2, sqlite3.connect(old_db) as con_v1:
+    for c_name, yt_channelid in con_v1.execute("SELECT displayname, yt_channelid FROM channel"):
+        url = f"https://www.youtube.com/channel/{yt_channelid}/videos"
+        try:
+            core_v2.add_playlist(c_name, url)
+        except ytcc.BadURLException:
+            print(
+                f"Ignoring {c_name}, because it is not supported by "
+                "youtube-dl or does not exist any more"
+            )
+            continue
+        except ytcc.NameConflictError:
+            print(f"{c_name} is already subscribed.")
 
-    print(f"Adding videos for {c_name}")
-    videos = (
-        ytcc.Video(
-            url=f"https://www.youtube.com/watch?v={yt_videoid}",
-            title=title,
-            description=description,
-            publish_date=float(publish_date),
-            watched=bool(int(watched)),
-            duration=0,
-            extractor_hash=f"youtube {yt_videoid}"
+        print(f"Adding videos for {c_name}")
+        videos = (
+            ytcc.Video(
+                url=f"https://www.youtube.com/watch?v={yt_videoid}",
+                title=title,
+                description=description,
+                publish_date=float(publish_date),
+                watched=bool(int(watched)),
+                duration=0,
+                extractor_hash=f"youtube {yt_videoid}"
+            )
+            for yt_videoid, title, description, publish_date, watched
+            in con_v1.execute(video_query, (yt_channelid,))
         )
-        for yt_videoid, title, description, publish_date, watched
-        in con_v1.execute(video_query, (yt_channelid,))
-    )
-    core_v2.database.add_videos(videos, ytcc.Playlist(c_name, url))
+        core_v2.database.add_videos(videos, ytcc.Playlist(c_name, url))
