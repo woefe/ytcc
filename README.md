@@ -18,6 +18,10 @@ Install [ytcc-git](https://aur.archlinux.org/packages/ytcc-git/) from the AUR.
 The [ytcc](https://aur.archlinux.org/packages/ytcc/) package will be upgraded to version 2.0.0, when it has a stable release.
 
 ### Gentoo
+Note: this is maintained by [@EmRowlands](https://github.com/EmRowlands),
+please report installation errors to the erowl-overlay issue tracker before the
+main ytcc tracker.
+
 Add the `erowl-overlay` using `eselect-repository` (or layman):
 
 ```
