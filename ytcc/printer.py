@@ -155,7 +155,7 @@ class TablePrinter(Printer):
         print(header_line)
 
         for i, row in enumerate(table.data):
-            background = None if i % 2 == 0 else 244  # config.color.table_alternate_background
+            background = None if i % 2 == 0 else config.theme.table_alternate_background
             printtln(table_format.format(*row), background=background)
 
 
