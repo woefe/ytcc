@@ -37,7 +37,7 @@ class Option(NamedTuple):
 
 
 class Action(Enum):
-    def __init__(self, text: str, hotkey: str, color: int):
+    def __init__(self, text: str, hotkey: str, color: Callable[[], int]):
         self.text = text
         self.hotkey = hotkey
         self.color = color
@@ -47,12 +47,12 @@ class Action(Enum):
         return Action.__dict__.get(config.tui.default_action.value.upper(), Action.PLAY_VIDEO)
 
     SHOW_HELP = (None, FKeys.F1, None)
-    PLAY_VIDEO = (_("Play video"), FKeys.F2, config.theme.prompt_play_video)
-    PLAY_AUDIO = (_("Play audio"), FKeys.F3, config.theme.prompt_play_audio)
-    MARK_WATCHED = (_("Mark as watched"), FKeys.F4, config.theme.prompt_mark_watched)
+    PLAY_VIDEO = (_("Play video"), FKeys.F2, lambda: config.theme.prompt_play_video)
+    PLAY_AUDIO = (_("Play audio"), FKeys.F3, lambda: config.theme.prompt_play_audio)
+    MARK_WATCHED = (_("Mark as watched"), FKeys.F4, lambda: config.theme.prompt_mark_watched)
     REFRESH = (None, FKeys.F5, None)
-    DOWNLOAD_AUDIO = (_("Download audio"), FKeys.F7, config.theme.prompt_download_audio)
-    DOWNLOAD_VIDEO = (_("Download video"), FKeys.F6, config.theme.prompt_download_video)
+    DOWNLOAD_AUDIO = (_("Download audio"), FKeys.F7, lambda: config.theme.prompt_download_audio)
+    DOWNLOAD_VIDEO = (_("Download video"), FKeys.F6, lambda: config.theme.prompt_download_video)
 
 
 class VideoSelection(TableData, dict):
@@ -115,7 +115,7 @@ class Interactive:
         return self.action.text
 
     def get_prompt_color(self) -> Optional[int]:
-        return self.action.color
+        return self.action.color()
 
     def command_line(self, tags: List[str]) -> Tuple[str, bool]:
         def print_prompt():
