@@ -35,10 +35,17 @@ class Table(NamedTuple):
     data: List[List[str]]
 
     def apply_filter(self, column_names: List[str]) -> "Table":
-        compressor = [col in column_names for col in self.header]
-        filtered_data = [list(itertools.compress(row, compressor)) for row in self.data]
-        filtered_header = list(itertools.compress(self.header, compressor))
-        return Table(filtered_header, filtered_data)
+        try:
+            indices = [self.header.index(col) for col in column_names]
+        except ValueError as index_err:
+            raise ValueError("Invalid filter") from index_err
+        else:
+            filtered_header = [self.header[i] for i in indices]
+            filtered_data = [
+                [row[i] for i in indices]
+                for row in self.data
+            ]
+            return Table(filtered_header, filtered_data)
 
 
 class TableData(ABC):
