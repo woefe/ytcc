@@ -140,6 +140,7 @@ class Interactive:
                 char = None
 
             if char in {"\x04", "\x03"}:  # Ctrl+d, Ctrl+d
+                hook_triggered = False
                 break
 
             if char in {"\r", ""} and tags:
