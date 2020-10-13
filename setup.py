@@ -41,7 +41,7 @@ setup(
     author_email=ytcc.__email__,
     license=ytcc.__license__,
     packages=find_packages(exclude=["test"]),
-    install_requires=["youtube_dl", "click"],
+    install_requires=["youtube_dl", "click", "wcwidth"],
     python_requires=">=3.7, <4",
     entry_points={
         "console_scripts": ["ytcc=ytcc.cli:main"]

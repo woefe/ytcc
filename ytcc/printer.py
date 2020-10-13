@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
-import itertools
 import json
 import sys
 from abc import ABC, abstractmethod, ABCMeta
@@ -24,10 +23,12 @@ from dataclasses import asdict
 from datetime import datetime
 from typing import List, Iterable, Dict, Any, NamedTuple, Optional
 
+from wcwidth import wcswidth
+
 from ytcc import config
 from ytcc.database import MappedVideo, MappedPlaylist
 from ytcc.exceptions import YtccException
-from ytcc.terminal import printtln
+from ytcc.terminal import printt
 
 
 class Table(NamedTuple):
@@ -151,19 +152,38 @@ class TablePrinter(Printer):
         self.table_print(table)
 
     @staticmethod
+    def print_col(text: str, width: int, background: Optional[int], bold: bool):
+        padding = " " * max(0, (width - wcswidth(text)))
+        padded = text + padding
+        printt(" " + padded + " ", background=background, bold=bold)
+
+    @staticmethod
+    def print_row(columns: List[str], widths: List[int],
+                  bold: bool = False, background: Optional[int] = None) -> None:
+
+        if len(widths) != len(columns) and not columns:
+            raise ValueError("For every column, a width must be specified, "
+                             "and columns must not be empty")
+
+        for column, width in zip(columns[:-1], widths[:-1]):
+            TablePrinter.print_col(column, width, background, bold)
+            printt("│", background=background, bold=False)
+
+        TablePrinter.print_col(columns[-1], widths[-1], background, bold)
+        print()
+
+    @staticmethod
     def table_print(table: Table) -> None:
         transposed = zip(table.header, *table.data)
-        col_widths = [max(map(len, column)) for column in transposed]
-        table_format = "│".join(itertools.repeat(" {{:<{}}} ", len(table.header))).format(
-            *col_widths)
+        col_widths = [max(map(wcswidth, column)) for column in transposed]
 
+        TablePrinter.print_row(table.header, col_widths, bold=True)
         header_line = "┼".join("─" * (width + 2) for width in col_widths)
-        printtln(table_format.format(*table.header), bold=True)
         print(header_line)
 
         for i, row in enumerate(table.data):
             background = None if i % 2 == 0 else config.theme.table_alternate_background
-            printtln(table_format.format(*row), background=background)
+            TablePrinter.print_row(row, col_widths, background=background)
 
 
 class XSVPrinter(Printer):
