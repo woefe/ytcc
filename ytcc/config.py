@@ -30,6 +30,20 @@ from typing import Optional, TextIO, Type, Any, List, Callable, Tuple, Sequence
 
 from ytcc.exceptions import BadConfigException
 
+# typing.get_args was introduced in 3.8
+if hasattr(typing, "get_args"):
+    get_type_args = typing.get_args
+else:
+    def get_type_args(typ):
+        return typ.__args__ if hasattr(typ, "__args__") else None
+
+# typing.get_origin was introduced in 3.8
+if hasattr(typing, "get_origin"):
+    get_type_origin = typing.get_origin
+else:
+    def get_type_origin(typ):
+        return typ.__origin__ if hasattr(typ, "__origin__") else None
+
 logger = logging.getLogger(__name__)
 
 _BOOLEAN_STATES = {'1': True, 'yes': True, 'true': True, 'on': True,
@@ -237,11 +251,11 @@ def load(override_cfg_file: Optional[str] = None):
         return tuple(_convert(typ, elem) for elem, typ in zip(elems, types))
 
     def _convert(typ: Type[Any], string: str) -> Any:
-        if typing.get_origin(typ) is list:
-            elem_conv = typing.get_args(typ)[0]
+        if get_type_origin(typ) is list:
+            elem_conv = get_type_args(typ)[0]
             from_str: Callable[[str], Any] = functools.partial(list_from_str, elem_conv)
-        elif typing.get_origin(typ) is tuple:
-            from_str = functools.partial(tuple_from_str, typing.get_args(typ))
+        elif get_type_origin(typ) is tuple:
+            from_str = functools.partial(tuple_from_str, get_type_args(typ))
         elif isinstance(typ, EnumMeta):
             from_str = functools.partial(enum_from_str, typ)
         elif issubclass(typ, bool):
