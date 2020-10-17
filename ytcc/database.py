@@ -75,7 +75,7 @@ class Database:
         if path != ":memory:":
             expanded_path = Path(path).expanduser()
             expanded_path.parent.mkdir(parents=True, exist_ok=True)
-            is_new_db = not expanded_path.is_file()
+            is_new_db = not expanded_path.is_file() or expanded_path.stat().st_size <= 0
             path = str(expanded_path)
 
         sqlite3.register_converter("integer", int)
