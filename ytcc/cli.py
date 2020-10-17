@@ -460,8 +460,8 @@ def main():
         logger.debug("Unknown database error", exc_info=db_err)
         sys.exit(1)
     except IncompatibleDatabaseVersion:
-        logger.error("This version of ytcc is not compatible with the older database versions."
-                     "See https://github.com/woefe/ytcc#migrating-from-version-1 for more "
+        logger.error("This version of ytcc is not compatible with the older database versions. "
+                     "See https://github.com/woefe/ytcc/blob/master/doc/migrate.md for more "
                      "details.")
         sys.exit(1)
     except YtccException as exc:

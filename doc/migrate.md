@@ -26,7 +26,7 @@ Unfortunately, videos migrated from version 1 always have the duration attribute
     ```shell script
     python3 path/to/migrate.py --olddb ~/.local/share/ytcc/ytcc.db.v1 --newdb ~/.local/share/ytcc/ytcc.db
     ```
-5. (Optional) Take a look at the [configuration](#configuration) to see what's new and update your config.
+5. (Optional) Take a look at the [configuration](../README.md#configuration) to see what's new and update your config.
 
 
 ## Channel export and import
@@ -42,7 +42,7 @@ Warning: with following migration, you will lose the "watched" status of your vi
     ```shell script
     ytcc import subscriptions.opml
     ```
-5. (Optional) You might also want to adjust your config to the new format. See [Configuration](#configuration).
+5. (Optional) You might also want to adjust your config to the new format. See [Configuration](../README.md#configuration).
 
 ## Start from scratch
 If you think the procedures described above are not worth the effort, you can start from scratch by removing the `~/.config/ytcc` directory.
