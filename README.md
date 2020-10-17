@@ -3,86 +3,18 @@
 Command line tool to keep track of your favorite playlists on YouTube and many other places.
 
 **The second beta release of ytcc 2.0.0 is out!**
-Read [the migration guide](#migrating-from-version-1) before upgrading to 2.0.0 or later!
+Read [the migration guide](https://github.com/woefe/ytcc/tree/master/doc/migrate.md) before upgrading to 2.0.0 or later!
 If you are looking for older versions, check the [Release](https://github.com/woefe/ytcc/releases) page and the [v1 branch](https://github.com/woefe/ytcc/tree/v1).
 
 
 ## Installation
-### From PyPI
 ```shell script
 pip install ytcc
 ```
-
-### Arch Linux
-Install [ytcc-git](https://aur.archlinux.org/packages/ytcc-git/) from the AUR.
-The [ytcc](https://aur.archlinux.org/packages/ytcc/) package will be upgraded to version 2.0.0, when it has a stable release.
-
-### Gentoo
-Note: this is maintained by [@EmRowlands](https://github.com/EmRowlands),
-please report installation errors to the erowl-overlay issue tracker before the
-main ytcc tracker.
-
-Add the `erowl-overlay` using `eselect-repository` (or layman):
-
-```
-eselect repository add erowl-overlay git https://gitlab.com/EmRowlands/erowl-overlay.git
-```
-
-Install `net-misc/ytcc`. Currently (October 2020), ytcc v1 is stable and ytcc
-v2 betas are `~arch`. A 9999 ebuild is also avaliable.
-
-### Without installation
-You can start ytcc directly from the cloned repo, if all requirements are installed.
-
-```shell script
-./ytcc.py --help
-```
-
-Hard requirements:
-- [Python 3.8](https://www.python.org/)
-- [Click](https://click.palletsprojects.com/en/7.x/),
-- [youtube-dl](https://github.com/ytdl-org/youtube-dl)
-
-Optional requirements:
-- [ffmpeg](https://ffmpeg.org/) for youtube-dl's `.mp4` or `.mkv` merging
-- [mpv](https://mpv.io/), if you want to play audio or video
+Alternative installation methods are described in the [documentation](https://github.com/woefe/ytcc/tree/master/doc/install.md).
 
 ## Migrating from version 1
-Versions 2.0.0 and later are not compatible with previous databases and configuration files!
-You need to follow several steps to migrate your subscriptions to 2.0.0 or later.
-Unfortunately, videos migrated from version 1 always have the duration attribute set to zero.
-
-*Note: If you adjusted the database location in version 1 you have to adjust the paths used below*
-
-1. Upgrade ytcc to version 2.0.0 or later.
-2. Download the migration script from [here](https://github.com/woefe/ytcc/tree/master/scripts/migrate.py).
-3. Rename your v1 database.
-    ```shell script
-    mv ~/.local/share/ytcc/ytcc.db ~/.local/share/ytcc/ytcc.db.v1
-    ```
-4. Migrate the database.
-    ```shell script
-    python3 path/to/migrate.py --olddb ~/.local/share/ytcc/ytcc.db.v1 --newdb ~/.local/share/ytcc/ytcc.db
-    ```
-5. (Optional) Take a look at the [configuration](#configuration) to see what's new and update your config.
-
-### Alternative migrations
-#### Channel export and import
-1. Export your subscriptions with ytcc 1.8.5 **before** upgrading to 2.0.0 or later
-    ```shell script
-    ytcc --export-to subscriptions.opml
-    ```
-2. Upgrade ytcc
-3. Rename configuration file and database (e.g. with `mv ~/.config/ytcc ~/.config/ytcc.1`)
-4. Import your subscriptions with v2
-    ```shell script
-    ytcc import subscriptions.opml
-    ```
-5. (Optional) You might also want to adjust your config to the new format. See [Configuration](#configuration).
-
-#### Start from scratch
-If you think the procedures described above are not worth the effort, you can start from scratch by removing the `~/.config/ytcc` directory.
-
+See the [migration guide](https://github.com/woefe/ytcc/tree/master/doc/migrate.md)
 
 ## Usage
 
@@ -128,8 +60,7 @@ ytcc ls -p "NCS: House" | ytcc play --audio-only
 ```
 
 **Alternative terminal interface built on [fzf](https://github.com/junegunn/fzf)**.
-Requires fzf version 0.19.0 or newer, preferably after [6f9664d](https://github.com/junegunn/fzf/commit/6f9663da62a84fcce8992c63dad8016f3107364d).
-Otherwise, you might experience some issues.
+Requires fzf version 0.23.1 or newer.
 Script is available [here](https://github.com/woefe/ytcc/tree/master/scripts/ytccf.sh).
 ```shell script
 ytccf.sh
