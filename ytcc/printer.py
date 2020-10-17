@@ -72,7 +72,7 @@ class VideoPrintable(Printable):
 
     @staticmethod
     def _format_duration(duration: float) -> str:
-        return f"{duration // 60: 3.0f}:{duration % 60:02.0f}"
+        return f"{duration // 60: 4.0f}:{duration % 60:02.0f}"
 
     @staticmethod
     def _format_publish_date(timestamp: float) -> str:
