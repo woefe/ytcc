@@ -1,0 +1,281 @@
+.TH ytcc 1 "Oct 2020" "2.0.0b2" "ytcc - a subscription wrapper for youtube-dl"
+.SH NAME
+ytcc - a subscription wrapper for youtube-dl playlists
+.SH SYNOPSIS
+ytcc [OPTIONS...] COMMAND [ARGS...]
+.SH DESCRIPTION
+Ytcc - the (not only) YouTube channel checker.
+
+Ytcc "subscribes" to playlists (supported by youtube-dl) and tracks new videos published to
+those playlists.
+
+To show the detailed help of a COMMAND run `ytcc COMMAND --help`.
+
+.SH OPTIONS
+.SS -c, --conf FILE
+Override configuration file.
+.SS -l, --loglevel [critical|info|debug]
+Set the log level. Overrides the log level configured in the config file.  [default: info]
+.SS -o, --output [json|table|xsv]
+Set output format. `json` prints in JSON format, which is usually not filtered by --attribute options of commands. `table` prints a human readable table. `xsv` prints x-separated values, where x can be set with the -s option.  [default: table]
+.SS -s, --separator TEXT
+Set the delimiter used in XSV format.  [default: ,]
+.SS --version
+Show the version and exit.
+.SS --help
+Show help and exit.
+.SH COMMANDS
+.SS subscribe [OPTIONS] NAME URL
+
+Subscribe to a playlist.
+
+The NAME argument is the name used to refer to the playlist. The URL argument is the URL to a
+playlist that is supported by youtube-dl.
+.P
+.B OPTIONS:
+.P
+.B --help
+Show command help and exit.
+.SS unsubscribe [OPTIONS] NAME
+
+Unsubscribe from a playlist.
+
+Unsubscribes from the playlist identified by NAME.
+.P
+.B OPTIONS:
+.P
+.B --yes
+Confirm the action without prompting.
+.P
+.B --help
+Show command help and exit.
+.SS rename [OPTIONS] OLD NEW
+
+Rename a playlist.
+
+Renames the playlist OLD to NEW.
+.P
+.B OPTIONS:
+.P
+.B --help
+Show command help and exit.
+.SS subscriptions [OPTIONS]
+
+List all subscriptions.
+.P
+.B OPTIONS:
+.P
+.B -a, --attributes COMMA_SEPARATED_VALUES
+Attributes of the playlist to be included in the output. Some of [name, url, tags].
+.P
+.B --help
+Show command help and exit.
+.SS tag [OPTIONS] NAME [TAGS]...
+
+Set tags of a playlist.
+
+Sets the TAGS associated with the playlist called NAME. If no tags are given, all tags are
+removed from the given playlist.
+.P
+.B OPTIONS:
+.P
+.B --help
+Show command help and exit.
+.SS update [OPTIONS]
+
+Check if new videos are available.
+
+Downloads metadata of new videos (if any) without playing or downloading the videos.
+.P
+.B OPTIONS:
+.P
+.B -f, --max-fail INTEGER
+Number of failed updates before a video is not checked for updates any more.
+.P
+.B -b, --max-backlog INTEGER
+Number of videos in a playlist that are checked for updates.
+.P
+.B --help
+Show command help and exit.
+.SS list [OPTIONS]
+
+List videos.
+
+Lists videos that match the given filter options. By default, all unwatched videos are listed.
+.P
+.B OPTIONS:
+.P
+.B -a, --attributes COMMA_SEPARATED_VALUES
+Attributes of videos to be included in the output. Some of [id, url, title, description, publish_date, watched, duration, extractor_hash, playlists].
+.P
+.B -c, --tags COMMA_SEPARATED_VALUES
+Listed videos must be tagged with one of the given tags.
+.P
+.B -s, --since [%Y-%m-%d]
+Listed videos must be published after the given date.
+.P
+.B -t, --till [%Y-%m-%d]
+Listed videos must be published before the given date.
+.P
+.B -p, --playlists COMMA_SEPARATED_VALUES
+Listed videos must be in on of the given playlists.
+.P
+.B -i, --ids COMMA_SEPARATED_VALUES
+Listed videos must have the given IDs.
+.P
+.B -w, --watched
+Listed videos include watched videos.
+.P
+.B --help
+Show command help and exit.
+.SS ls [OPTIONS]
+
+List IDs of unwatched videos in XSV format.
+
+Basically an alias for `ytcc --output xsv list --attributes id`. This alias can be useful for
+piping into the download, play, and mark commands. E.g: `ytcc ls | ytcc watch`
+.P
+.B OPTIONS:
+.P
+.B -c, --tags COMMA_SEPARATED_VALUES
+Listed videos must be tagged with one of the given tags.
+.P
+.B -s, --since [%Y-%m-%d]
+Listed videos must be published after the given date.
+.P
+.B -t, --till [%Y-%m-%d]
+Listed videos must be published before the given date.
+.P
+.B -p, --playlists COMMA_SEPARATED_VALUES
+Listed videos must be in on of the given playlists.
+.P
+.B -i, --ids COMMA_SEPARATED_VALUES
+Listed videos must have the given IDs.
+.P
+.B -w, --watched
+Listed videos include watched videos.
+.P
+.B --help
+Show command help and exit.
+.SS tui [OPTIONS]
+
+Start an interactive terminal user interface.
+.P
+.B OPTIONS:
+.P
+.B -c, --tags COMMA_SEPARATED_VALUES
+Listed videos must be tagged with one of the given tags.
+.P
+.B -s, --since [%Y-%m-%d]
+Listed videos must be published after the given date.
+.P
+.B -t, --till [%Y-%m-%d]
+Listed videos must be published before the given date.
+.P
+.B -p, --playlists COMMA_SEPARATED_VALUES
+Listed videos must be in on of the given playlists.
+.P
+.B -i, --ids COMMA_SEPARATED_VALUES
+Listed videos must have the given IDs.
+.P
+.B -w, --watched
+Listed videos include watched videos.
+.P
+.B --help
+Show command help and exit.
+.SS play [OPTIONS] [IDS]...
+
+Play videos.
+
+Plays the videos identified by the given video IDs. If no IDs are given, ytcc tries to read IDs
+from stdin. If no IDs are given and no IDs were read from stdin, all unwatched videos are
+played.
+.P
+.B OPTIONS:
+.P
+.B -a, --audio-only
+Play only the audio track.
+.P
+.B -i, --no-meta
+Don't print video metadata and description.
+.P
+.B -m, --no-mark
+Don't mark the video as watched after playing it.
+.P
+.B --help
+Show command help and exit.
+.SS mark [OPTIONS] [IDS]...
+
+Mark videos as watched.
+
+Marks videos as watched without playing or downloading them. If no IDs are given, ytcc tries to
+read IDs from stdin. If no IDs are given and no IDs were read from stdin, no videos are marked
+as watched.
+.P
+.B OPTIONS:
+.P
+.B --help
+Show command help and exit.
+.SS download [OPTIONS] [IDS]...
+
+Download videos.
+
+Downloads the videos identified by the given video IDs. If no IDs are given, ytcc tries to read
+IDs from stdin. If no IDs are given and no IDs were read from stdin, all unwatched videos are
+downloaded.
+.P
+.B OPTIONS:
+.P
+.B -p, --path DIRECTORY
+Set the download directory.
+.P
+.B -a, --audio-only
+Download only the audio track.
+.P
+.B -m, --no-mark
+Don't mark the video as watched after downloading it.
+.P
+.B --help
+Show command help and exit.
+.SS cleanup [OPTIONS]
+
+Remove all watched videos from the database.
+
+WARNING!!! This removes all metadata of watched, marked as watched, and downloaded videos from
+ytcc's database. This cannot be undone! In most cases you won't need this command, but it is
+useful to keep the database size small.
+.P
+.B OPTIONS:
+.P
+.B --yes
+Confirm the action without prompting.
+.P
+.B --help
+Show command help and exit.
+.SS import [OPTIONS] FILE
+
+Import YouTube subscriptions from OPML file.
+
+You can export your YouTube subscriptions at https://www.youtube.com/subscription_manager.
+.P
+.B OPTIONS:
+.P
+.B --help
+Show command help and exit.
+.SS bug-report [OPTIONS]
+
+Show debug information for bug reports.
+
+Shows versions of dependencies and configuration relevant for any bug report. Please include
+the output of this command when filing a new bug report!
+.P
+.B OPTIONS:
+.P
+.B --help
+Show command help and exit.
+.SH SEE ALSO
+mpv(1), youtube-dl(1)
+.SS Project homepage
+https://github.com/woefe/ytcc
+.SS Bug Tracker
+https://github.com/woefe/ytcc/issues
