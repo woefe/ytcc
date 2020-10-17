@@ -152,14 +152,18 @@ class Database:
         return int(count[0])
 
     def increase_extractor_fail_count(self, e_hash, max_fail=(1 << 63) - 1) -> None:
-        query = """
-        INSERT INTO extractor_meta VALUES (:e_hash,1)
-            ON CONFLICT (extractor_hash) DO UPDATE
-                SET failure_count = failure_count + 1
-                WHERE failure_count < :max_fail
-        """
+        insert_query = """
+            INSERT OR IGNORE INTO extractor_meta VALUES (:e_hash,0)
+            """
+        increment_query = """
+            UPDATE extractor_meta
+            SET failure_count = failure_count + 1
+            WHERE extractor_hash = :e_hash AND failure_count < :max_fail
+            """
+
         with self.connection:
-            self.connection.execute(query, {"e_hash": e_hash, "max_fail": max_fail})
+            self.connection.execute(insert_query, {"e_hash": e_hash})
+            self.connection.execute(increment_query, {"e_hash": e_hash, "max_fail": max_fail})
 
     def close(self) -> None:
         self.connection.commit()
@@ -188,10 +192,10 @@ class Database:
 
     def list_playlists(self) -> Iterable[MappedPlaylist]:
         query = """
-        SELECT p.id AS id, p.name AS name, p.url AS url, t.name AS tag
-        FROM playlist AS p
-            LEFT OUTER JOIN tag AS t ON p.id = t.playlist;
-        """
+            SELECT p.id AS id, p.name AS name, p.url AS url, t.name AS tag
+            FROM playlist AS p
+                LEFT OUTER JOIN tag AS t ON p.id = t.playlist;
+            """
         playlists: Dict[int, MappedPlaylist] = dict()
         for row in self.connection.execute(query):
             playlist = playlists.get(row["id"])
@@ -205,8 +209,8 @@ class Database:
 
     def tag_playlist(self, playlist: str, tags: List[str]) -> None:
         query_pid = "SELECT id FROM playlist WHERE name = ?"
-        query_clear = """DELETE FROM tag WHERE playlist = ?"""
-        query_insert = """INSERT OR IGNORE INTO tag (name, playlist) VALUES (?, ?)"""
+        query_clear = "DELETE FROM tag WHERE playlist = ?"
+        query_insert = "INSERT OR IGNORE INTO tag (name, playlist) VALUES (?, ?)"
         with self.connection as con:
             pid = int(con.execute(query_pid, (playlist,)).fetchone()["id"])
             con.execute(query_clear, (pid,))
@@ -226,6 +230,14 @@ class Database:
                     publish_date = :publish_date,
                     extractor_hash = :extractor_hash
             """
+        if sqlite3.sqlite_version_info < (3, 24, 0):
+            insert_video = """
+                INSERT OR IGNORE INTO video
+                    (title, url, description, duration, publish_date, watched, extractor_hash)
+                VALUES
+                    (:title, :url, :description, :duration, :publish_date, :watched,
+                     :extractor_hash)
+                """
         insert_playlist = """
             INSERT OR IGNORE INTO content (playlist_id, video_id)
             VALUES (?,(SELECT id FROM video WHERE url = ?));

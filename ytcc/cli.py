@@ -433,11 +433,16 @@ def bug_report():
     # pylint: disable=import-outside-toplevel
     import youtube_dl.version
     import subprocess
+    import sqlite3
     print("---ytcc version---")
     print(__version__)
     print()
     print("---youtube-dl version---")
     print(youtube_dl.version.__version__)
+    print()
+    print("---SQLite version---")
+    print("SQLite system library version:", sqlite3.sqlite_version)
+    print("Python module version:", sqlite3.version)
     print()
     print("---python version---")
     print(sys.version)
