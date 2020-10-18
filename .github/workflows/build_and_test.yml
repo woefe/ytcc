@@ -35,6 +35,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: |
         choco install ffmpeg mpv -y
+        refreshenv
     - name: Install dependencies on MacOS
       if: matrix.os == 'macos-latest'
       run: |
@@ -52,6 +53,8 @@ jobs:
         pip install pydocstyle
         pydocstyle ytcc
     - name: Linting with pylint
+      # Pylint does not yet support Python 3.9 (https://github.com/PyCQA/pylint/issues/3882)
+      if: matrix.python-version != '3.9'
       run: |
         pip install pylint
         pylint ytcc
