@@ -36,6 +36,7 @@ jobs:
       run: |
         choco install ffmpeg mpv.portable -y --limit-output --no-progress
         Copy-Item C:\ProgramData\chocolatey\lib\mpv.portable\tools\mpv.exe C:\ProgramData\chocolatey\bin\mpv.exe
+        Copy-Item C:\ProgramData\chocolatey\lib\mpv.portable\tools\d3dcompiler_43.dll.exe C:\ProgramData\chocolatey\bin\d3dcompiler_43.dll
     - name: Install dependencies on MacOS
       if: matrix.os == 'macos-latest'
       run: |
