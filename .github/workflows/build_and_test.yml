@@ -16,6 +16,8 @@ jobs:
         exclude:
           - os: macos-latest
             python-version: 3.9
+          - os: windows-latest
+            python-version: 3.9
       fail-fast: false
 
     steps:
