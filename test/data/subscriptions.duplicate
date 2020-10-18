@@ -1,0 +1,10 @@
+<opml version="1.1">
+    <body>
+        <outline text="YouTube Subscriptions" title="YouTube Subscriptions">
+            <outline text="NoCopyrightSounds" title="NoCopyrightSounds" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC_aEa8K-EOJ3D6gOs7HcyNg" />
+            <outline text="NoCopyrightSounds" title="NoCopyrightSounds" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC_aEa8K-EOJ3D6gOs7HcyNg" />
+        </outline>
+    </body>
+</opml>

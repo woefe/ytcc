@@ -1,0 +1,26 @@
+<opml version="1.1">
+    <body>
+        <outline text="YouTube Subscriptions" title="YouTube Subscriptions">
+            <outline text="TED" title="TED" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCAuUUnT6oDeKwE6v1NGQxug" />
+            <outline text="Computerphile" title="Computerphile" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC9-y-6csu5WGm29I7JiwpnA" />
+            <outline text="SemperVideo" title="SemperVideo" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCCI6C8hD-hTZi2JEmS7zvQw" />
+            <outline text="MrSuicideSheep" title="MrSuicideSheep" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC5nc_ZtjKW1htCVZVRxlQAQ" />
+            <outline text="MA Music" title="MA Music" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC0XKvSq8CcMBSQTKXZXnEiQ" />
+            <outline text="NoCopyrightSounds" title="NoCopyrightSounds" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC_aEa8K-EOJ3D6gOs7HcyNg" />
+            <outline text="Aleksander Vinter" title="Aleksander Vinter" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC5ur2L6Zu4oCShmtFw9UTfQ" />
+            <outline text="gotbletu" title="gotbletu" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCkf4VIqu3Acnfzuk3kRIFwA" />
+            <outline text="Monstercat" title="Monstercat" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCJ6td3C9QlPO9O_J5dF4ZzA" />
+            <outline text="Tek Linux" title="Tek Linux" type="rss"
+            xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCOWcZ6Wicl-1N34H0zZe38w" />
+        </outline>
+    </body>
+</opml>

@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 import contextlib
+import json
 import os
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
@@ -24,7 +25,8 @@ from typing import Callable
 import pytest
 from click.testing import CliRunner, Result
 
-from ytcc.cli import cli
+from test import WEBDRIVER_VIDEOS, WEBDRIVER_PLAYLIST
+from ytcc import InvalidSubscriptionFileError
 
 
 class YtccRunner(CliRunner):
@@ -35,7 +37,21 @@ class YtccRunner(CliRunner):
         self.download_dir = download_dir
 
     def __call__(self, *args, **kwargs):
-        return self.invoke(cli, ["--conf", self.conf_file, *args])
+        from ytcc.cli import cli
+
+        if kwargs.get("subscribe", False):
+            from ytcc.database import Database
+            with Database(self.db_file) as db:
+                db.add_playlist(WEBDRIVER_PLAYLIST.name, WEBDRIVER_PLAYLIST.url)
+            del kwargs["subscribe"]
+
+        if kwargs.get("update", False):
+            from ytcc.database import Database
+            with Database(self.db_file) as db:
+                db.add_videos(WEBDRIVER_VIDEOS, WEBDRIVER_PLAYLIST)
+            del kwargs["update"]
+
+        return self.invoke(cli, ["--conf", self.conf_file, *args], **kwargs)
 
 
 @pytest.fixture
@@ -82,21 +98,17 @@ def test_subscribe(cli_runner):
 
 def test_subscribe_duplicate(cli_runner):
     with cli_runner() as runner:
-        result = runner("subscribe", "WebDriver",
-                        "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw/videos")
-        assert result.exit_code == 0
-        result = runner("subscribe", "WebDriver",
-                        "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw/videos")
+        result = runner(
+            "subscribe", "WebDriver",
+            "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw/videos",
+            subscribe=True
+        )
         assert result.exit_code != 0
 
 
 def test_unsubscribe(cli_runner):
     with cli_runner() as runner:
-        result = runner("subscribe", "WebDriver",
-                        "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw/videos")
-        assert result.exit_code == 0
-
-        result = runner("unsubscribe", "--yes", "WebDriver")
+        result = runner("unsubscribe", "--yes", "WebDriver", subscribe=True)
         assert result.exit_code == 0
 
         result = runner("unsubscribe", "--yes", "WebDriver")
@@ -105,11 +117,7 @@ def test_unsubscribe(cli_runner):
 
 def test_rename(cli_runner):
     with cli_runner() as runner:
-        result = runner("subscribe", "WebDriver",
-                        "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw/videos")
-        assert result.exit_code == 0
-
-        result = runner("rename", "WebDriver", "WebDriverTorso")
+        result = runner("rename", "WebDriver", "WebDriverTorso", subscribe=True)
         assert result.exit_code == 0
 
         result = runner("-o", "xsv", "subscriptions")
@@ -119,13 +127,48 @@ def test_rename(cli_runner):
         assert result.exit_code != 0
 
 
-def test_update(cli_runner):
+def test_import(cli_runner):
     with cli_runner() as runner:
-        result = runner("subscribe", "WebDriver",
-                        "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw/videos")
+        result = runner("import", "test/data/subscriptions.small")
         assert result.exit_code == 0
 
-        result = runner("update", "--max-backlog", "20")
+        result = runner("subscriptions")
+        assert "NoCopyrightSounds" in result.stdout
+        assert "gotbletu" in result.stdout
+
+
+def test_import_duplicate(cli_runner, caplog):
+    with cli_runner() as runner:
+        result = runner("import", "test/data/subscriptions.duplicate")
+        assert result.exit_code == 0
+        assert caplog.records
+        for record in caplog.records:
+            if record.levelname == "WARNING":
+                assert "already subscribed" in record.msg
+
+
+def test_import_broken(cli_runner):
+    with cli_runner() as runner:
+        result = runner("import", "test/data/subscriptions.broken")
+        assert isinstance(result.exception, InvalidSubscriptionFileError)
+        assert "not a valid YouTube export file" in str(result.exception)
+
+
+def test_tag(cli_runner):
+    with cli_runner() as runner:
+        result = runner("tag", "WebDriver", "test1", subscribe=True)
+        assert result.exit_code == 0
+
+        result = runner("tag", "WebDriver", "test2", update=True)
+        assert result.exit_code == 0
+
+        result = runner("--output", "json", "list", "--tags", "test1,test2")
+        assert len(json.loads(result.stdout)) == 20
+
+
+def test_update(cli_runner):
+    with cli_runner() as runner:
+        result = runner("update", "--max-backlog", "20", subscribe=True)
         assert result.exit_code == 0
 
         result = runner("--output", "xsv", "list")
@@ -134,14 +177,7 @@ def test_update(cli_runner):
 
 def test_download(cli_runner):
     with cli_runner() as runner:
-        result = runner("subscribe", "WebDriver",
-                        "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw/videos")
-        assert result.exit_code == 0
-
-        result = runner("update", "--max-backlog", "20")
-        assert result.exit_code == 0
-
-        result = runner("download", "1")
+        result = runner("download", "1", subscribe=True, update=True)
         assert result.exit_code == 0
 
         result = runner(
@@ -154,7 +190,34 @@ def test_download(cli_runner):
         assert Path(runner.download_dir, result.stdout.splitlines()[0] + ".mkv").is_file()
 
 
-def test_xsv_printer_option(cli_runner):
+def test_pipe_mark(cli_runner):
+    with cli_runner() as runner:
+        result = runner("ls", subscribe=True, update=True)
+        result = runner("mark", input=result.stdout)
+        assert result.exit_code == 0
+        assert runner("ls").stdout == ""
+
+
+def test_play_video(cli_runner):
+    with cli_runner() as runner:
+        result = runner("play", "1", subscribe=True, update=True)
+        assert result.exit_code == 0
+
+        result = runner("ls")
+        assert len(result.stdout.splitlines()) == 19
+
+
+def test_play_video_empty(cli_runner, caplog):
+    with cli_runner() as runner:
+        caplog.set_level("INFO")
+        result = runner("play")
+        rec = caplog.records[0]
+        assert rec.levelname == "INFO"
+        assert "No videos to watch" in rec.msg
+        assert result.exit_code == 0
+
+
+def test_no_command(cli_runner):
     with cli_runner() as runner:
         result = runner("--output", "xsv", "--separator", "ab")
         assert result.exit_code != 0
