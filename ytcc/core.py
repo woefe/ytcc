@@ -421,17 +421,19 @@ class Ytcc:
             query_dict = parse_qs(rss_url.query, keep_blank_values=False)
             channel_id = query_dict.get("channel_id", [])
             if len(channel_id) != 1:
-                message = f"'{file.name}' is not a valid YouTube export file"
+                message = f"'{str(file)}' is not a valid YouTube export file"
                 raise InvalidSubscriptionFileError(message)
             yt_url = f"https://www.youtube.com/channel/{channel_id[0]}/videos"
             return elem.attrib["title"], yt_url
 
         try:
             tree = ET.parse(file)
-        except Exception as err:
+        except ET.ParseError as err:
             raise InvalidSubscriptionFileError(
-                f"'{file.name}' is not a valid YouTube export file"
+                f"'{str(file)}' is not a valid YouTube export file"
             ) from err
+        except OSError as err:
+            raise InvalidSubscriptionFileError(f"{str(file)} cannot be accessed") from err
 
         root = tree.getroot()
         for element in root.findall('.//outline[@type="rss"]'):
