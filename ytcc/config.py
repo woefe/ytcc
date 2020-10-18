@@ -201,9 +201,11 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
     if override_cfg_file:
         cfg_file_locations.append(override_cfg_file)
 
-    logger.debug("Reading config from following locations: %s", cfg_file_locations)
+    logger.debug("Trying to read config from following locations: %s", cfg_file_locations)
+    readable_locations = config.read(cfg_file_locations)
+    logger.debug("Config was read from following locations: %s", readable_locations)
 
-    if not config.read(cfg_file_locations):
+    if not readable_locations:
         logger.debug("No config file found. Creating new config at %s", default_cfg_file)
         path = Path(default_cfg_file)
         path.parent.mkdir(parents=True, exist_ok=True)
