@@ -141,10 +141,12 @@ class Ytcc:
     """The Ytcc class handles updating the RSS feeds and playing and listing/filtering videos.
 
     Filters can be set with with following methods:
-    * ``set_channel_filter``
+    * ``set_set_playlist_filter``
     * ``set_date_begin_filter``
     * ``set_date_end_filter``
     * ``set_include_watched_filter``
+    * ``set_set_video_id_filter``
+    * ``set_tags_set_tags_filter``
     """
 
     def __init__(self) -> None:
@@ -173,15 +175,15 @@ class Ytcc:
         """Close open resources like the database connection."""
         self.database.close()
 
-    def set_playlist_filter(self, channel_filter: List[str]) -> None:
+    def set_playlist_filter(self, playlists: List[str]) -> None:
         """Set the channel filter.
 
         The results when listing videos will only include videos by channels specified in the
         filter.
 
-        :param channel_filter: The list of channel names.
+        :param playlists: The list of channel names.
         """
-        self.playlist_filter = channel_filter
+        self.playlist_filter = playlists
 
     def set_date_begin_filter(self, begin: datetime.datetime) -> None:
         """Set the time filter.
@@ -211,12 +213,20 @@ class Ytcc:
     def set_video_id_filter(self, ids: Optional[List[int]] = None) -> None:
         """Set the id filter.
 
-        This filter overrides all other filters.
+        The results will have the given ids. This filter should in most cases be combined with the
+        `set_include_watched_filter()`
         :param ids: IDs to filter for.
         """
         self.video_id_filter = ids
 
     def set_tags_filter(self, tags: Optional[List[str]] = None) -> None:
+        """Set the tag filter.
+
+        The results of ``list_videos()`` will include only playlists tagged with at least one of
+        the given tags.
+
+        :param tags: The tags of playlists to include in the result
+        """
         self.tags_filter = tags
 
     @staticmethod

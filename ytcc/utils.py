@@ -23,23 +23,50 @@ T = TypeVar("T")
 
 
 def unpack_optional(elem: Optional[T], default: Callable[[], T]) -> T:
+    """Unpack an Optional object.
+
+    :param elem: The Optional object to unpack
+    :param default: Factory for the default value returned, if the Optional is None
+    :return: The default value or the non-None element
+    """
     if elem is None:
         return default()
     return elem
 
 
 def unpack_or_raise(elem: Optional[T], exception: Exception) -> T:
+    """Unpack an Optional object.
+
+    :param elem: The Optional object to unpack
+    :param exception: The exception to raise when the Optional is None
+    :return: The unpacked element
+    """
     if elem is None:
         raise exception
     return elem
 
 
 def take(amount: int, iterable: Iterable[T]) -> Iterable[T]:
+    """Take the first elements of an iterable.
+
+    If the given iterable has less elements than the given amount, the returned iterable has the
+    same amount of elements as the given iterable. Otherwise the returned iterable has `amount`
+    elements.
+
+    :param amount: The number of elements to take
+    :param iterable: The iterable to take elements from
+    :return: The first elements of the given iterable
+    """
     for _, elem in zip(range(amount), iterable):
         yield elem
 
 
 def lazy_import(fullname: str) -> Any:
+    """Import a module lazily.
+
+    :param fullname: The module to import
+    :return: A proxy object that lazily loads the module as soon as attributes are accessed.
+    """
     class _LazyLoader:
         def __init__(self):
             self._mod = None

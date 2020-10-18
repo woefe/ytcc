@@ -102,6 +102,10 @@ def getkey() -> str:
 
 
 def clear_screen() -> None:
+    """Clear the terminal.
+
+    Resets the curser to (0,0).
+    """
     click.clear()
 
 

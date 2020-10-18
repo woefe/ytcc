@@ -24,15 +24,15 @@ class YtccException(Exception):
 
 
 class BadURLException(YtccException):
-    """Raised when a given URL does not refer to a YouTube channel."""
+    """Raised when a given URL cannot be handled by youtube-dl."""
 
 
 class NameConflictError(YtccException):
-    """Raised when trying to subscribe to a channel the second (or more) time."""
+    """Raised when trying to subscribe to a playlist the second (or more) time."""
 
 
 class PlaylistDoesNotExistException(YtccException):
-    """Raised when the url of a given channel does not exist."""
+    """Raised when the url of a given playlist does not exist."""
 
 
 class InvalidSubscriptionFileError(YtccException):
