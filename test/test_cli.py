@@ -16,7 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 import contextlib
-from tempfile import NamedTemporaryFile
+import os
+from pathlib import Path
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import Callable
 
 import pytest
@@ -25,16 +27,36 @@ from click.testing import CliRunner, Result
 from ytcc.cli import cli
 
 
+class YtccRunner(CliRunner):
+    def __init__(self, conf_file, db_file, download_dir):
+        super().__init__()
+        self.conf_file = conf_file
+        self.db_file = db_file
+        self.download_dir = download_dir
+
+    def __call__(self, *args, **kwargs):
+        return self.invoke(cli, ["--conf", self.conf_file, *args])
+
+
 @pytest.fixture
-def cli_runner(monkeypatch) -> Callable[..., Result]:
+def cli_runner() -> Callable[..., Result]:
     @contextlib.contextmanager
-    def context():
-        with NamedTemporaryFile() as db_file, NamedTemporaryFile("w") as conf_file:
+    def context() -> YtccRunner:
+        with NamedTemporaryFile(delete=False) as db_file, \
+                NamedTemporaryFile("w", delete=False) as conf_file, \
+                TemporaryDirectory() as download_dir:
             conf_file.write("[ytcc]\n")
             conf_file.write(f"db_path={db_file.name}\n")
-            conf_file.write("download_dir=/tmp/ytcc\n")
-            conf_file.flush()
-            yield lambda *args: CliRunner().invoke(cli, ["--conf", conf_file.name, *args])
+            conf_file.write(f"download_dir={download_dir}\n")
+
+            db_file.close()
+            conf_file.close()
+
+            try:
+                yield YtccRunner(conf_file.name, db_file.name, download_dir)
+            finally:
+                os.remove(conf_file.name)
+                os.remove(db_file.name)
 
     return context
 
@@ -45,7 +67,8 @@ def test_bug_report_command(cli_runner):
         result = runner("bug-report")
         assert result.exit_code == 0
         assert result.stdout.startswith(f"---ytcc version---\n{__version__}")
-        assert "download_dir = /tmp/ytcc" in result.stdout
+        assert f"download_dir = {runner.download_dir}" in result.stdout
+        assert f"db_path = {runner.db_file}" in result.stdout
 
 
 def test_subscribe(cli_runner):
@@ -120,6 +143,15 @@ def test_download(cli_runner):
 
         result = runner("download", "1")
         assert result.exit_code == 0
+
+        result = runner(
+            "--output", "xsv",
+            "list",
+            "--attributes", "title",
+            "--ids", "1",
+            "--watched"
+        )
+        assert Path(runner.download_dir, result.stdout.splitlines()[0] + ".mkv").is_file()
 
 
 def test_xsv_printer_option(cli_runner):
