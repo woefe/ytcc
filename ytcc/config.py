@@ -30,19 +30,20 @@ from typing import Optional, TextIO, Type, Any, List, Callable, Tuple, Sequence
 
 from ytcc.exceptions import BadConfigException
 
-# typing.get_args was introduced in 3.8
+# typing.get_args and typing.get_origin were introduced in 3.8
+# pylint: disable=no-member
 if hasattr(typing, "get_args"):
-    get_type_args = typing.get_args
+    get_type_args = typing.get_args  # type: ignore[attr-defined]
 else:
     def get_type_args(typ):
         return typ.__args__ if hasattr(typ, "__args__") else None
 
-# typing.get_origin was introduced in 3.8
 if hasattr(typing, "get_origin"):
-    get_type_origin = typing.get_origin
+    get_type_origin = typing.get_origin  # type: ignore[attr-defined]
 else:
     def get_type_origin(typ):
         return typ.__origin__ if hasattr(typ, "__origin__") else None
+# pylint: enable=no-member
 
 logger = logging.getLogger(__name__)
 
