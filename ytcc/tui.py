@@ -228,8 +228,8 @@ class Interactive:
                   "The last video is not marked as watched!")
 
     def download_video(self, video: MappedVideo, audio_only: bool = False) -> None:
-        print(_('Downloading "{video.title}" by "{video.channel.displayname}"...').format(
-            video=video))
+        print(_('Downloading "{video.title}" in playlist(s) "{playlists}"...').format(
+            video=video, playlists=", ".join(v.name for v in video.playlists)))
         if self.core.download_video(video=video, audio_only=audio_only):
             self.core.mark_watched(video)
         else:
