@@ -236,33 +236,47 @@ class Interactive:
             print(_("An Error occured while downloading the video"))
 
 
+class StdOutOverride:
+    def __init__(self, stream):
+        self.orig = sys.stdout
+        self.stream = stream
+
+    def __enter__(self):
+        sys.stdout = self.stream
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout = self.orig
+
+
 def print_meta(video: MappedVideo, stream: TextIO = sys.stdout) -> None:
-    def print_separator(text: Optional[str] = None, fat: bool = False) -> None:
-        columns = shutil.get_terminal_size().columns
-        sep = "━" if fat else "─"
-        if not text:
-            print(sep * columns, file=stream)
-        else:
-            sep_len = (columns - len(text) - 2)
-            padding = sep_len // 2
-            printt(sep * padding)
-            printt(" ", text, " ", bold=fat)
-            printtln(sep * (padding + (sep_len % 2)))
+    with StdOutOverride(stream):
+        def print_separator(text: Optional[str] = None, fat: bool = False) -> None:
+            columns = shutil.get_terminal_size().columns
+            sep = "━" if fat else "─"
+            if not text:
+                print(sep * columns)
+            else:
+                sep_len = (columns - len(text) - 2)
+                padding = sep_len // 2
+                printt(sep * padding)
+                printt(" ", text, " ", bold=fat)
+                printtln(sep * (padding + (sep_len % 2)))
 
-    print_separator("Playing now", fat=True)
-    printt(_("         Title: "))
-    printtln(video.title, bold=True)
-    printt(_("In playlist(s): "))
-    printtln(", ".join(v.name for v in video.playlists), bold=True)
+        print_separator("Playing now", fat=True)
+        printt(_("         Title: "))
+        printtln(video.title, bold=True)
+        printt(_("In playlist(s): "))
+        printtln(", ".join(v.name for v in video.playlists), bold=True)
 
-    description = video.description
-    if description is not None:
-        columns = shutil.get_terminal_size().columns
-        lines = description.splitlines()
-        print_separator(_("Video description"))
+        description = video.description
+        if description is not None:
+            columns = shutil.get_terminal_size().columns
+            lines = description.splitlines()
+            print_separator(_("Video description"))
 
-        for line in lines:
-            print(wrap.fill(line, width=columns), file=stream)
+            for line in lines:
+                print(wrap.fill(line, width=columns))
 
-    print_separator(fat=True)
-    print(file=stream)
+        print_separator(fat=True)
+        print()
