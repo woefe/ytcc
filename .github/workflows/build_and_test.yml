@@ -34,8 +34,8 @@ jobs:
     - name: Install dependencies on Windows
       if: matrix.os == 'windows-latest'
       run: |
-        choco install ffmpeg mpv.portable -y --limit-output
-        Copy-Item C:\ProgramData\chocolatey\lib\mpv\tools\mpv.exe C:\ProgramData\chocolatey\bin\mpv.exe
+        choco install ffmpeg mpv.portable -y --limit-output --no-progress
+        Copy-Item C:\ProgramData\chocolatey\lib\mpv.portable\tools\mpv.exe C:\ProgramData\chocolatey\bin\mpv.exe
     - name: Install dependencies on MacOS
       if: matrix.os == 'macos-latest'
       run: |
