@@ -181,7 +181,7 @@ def test_update(cli_runner, caplog):
 
         errors = len([r for r in caplog.records if r.levelname == "ERROR"])
         result = runner("--output", "xsv", "list")
-        assert len(result.stdout.splitlines()) - errors == 20
+        assert len(result.stdout.splitlines()) + errors == 20
         assert errors < 5
 
 
