@@ -34,8 +34,7 @@ jobs:
     - name: Install dependencies on Windows
       if: matrix.os == 'windows-latest'
       run: |
-        choco install ffmpeg mpv -y
-        refreshenv
+        choco install ffmpeg mpv.portable -y
     - name: Install dependencies on MacOS
       if: matrix.os == 'macos-latest'
       run: |
