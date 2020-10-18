@@ -106,6 +106,14 @@ def test_subscribe_duplicate(cli_runner):
         assert result.exit_code != 0
 
 
+def test_subscribe_bad_url(cli_runner, caplog):
+    with cli_runner() as runner:
+        result = runner("subscribe", "Test", "test.kom")
+        assert result.exit_code != 0
+        msg = "The given URL does not point to a playlist or is not supported by youtube-dl"
+        assert any(map(lambda r: r.msg == msg, caplog.records))
+
+
 def test_unsubscribe(cli_runner):
     with cli_runner() as runner:
         result = runner("unsubscribe", "--yes", "WebDriver", subscribe=True)
@@ -166,13 +174,45 @@ def test_tag(cli_runner):
         assert len(json.loads(result.stdout)) == 20
 
 
-def test_update(cli_runner):
+def test_update(cli_runner, caplog):
     with cli_runner() as runner:
         result = runner("update", "--max-backlog", "20", subscribe=True)
         assert result.exit_code == 0
 
+        errors = len([r for r in caplog.records if r.levelname == "ERROR"])
         result = runner("--output", "xsv", "list")
-        assert len(result.stdout.splitlines()) == 20
+        assert len(result.stdout.splitlines()) - errors == 20
+        assert errors < 5
+
+
+def test_comma_list_error(cli_runner):
+    with cli_runner() as runner:
+        result = runner("list", "--ids", "a,b")
+        assert result.exit_code != 0
+        assert "Unexpected value" in result.stdout
+
+
+def test_bad_id(cli_runner, caplog):
+    with cli_runner() as runner:
+        result = runner("play", input="a")
+        assert result.exit_code != 0
+        assert "is not an integer" in caplog.records[0].msg
+
+
+def test_cleanup(cli_runner):
+    with cli_runner() as runner:
+        result = runner("mark", subscribe=True, update=True, input="1\n2")
+        assert result.exit_code == 0
+
+        result = runner("cleanup", input="y")
+        assert result.exit_code == 0
+
+        result = runner("ls", "--watched")
+        assert result.exit_code == 0
+        outlines = result.stdout.splitlines()
+        assert "1" not in outlines
+        assert "2" not in outlines
+        assert len(outlines) == 18
 
 
 def test_download(cli_runner):
