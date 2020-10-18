@@ -30,7 +30,7 @@ You can start ytcc directly from the cloned repo, if all requirements are instal
 ```
 
 Hard requirements:
-- [Python 3.8](https://www.python.org/)
+- [Python 3.7](https://www.python.org/)
 - [Click](https://click.palletsprojects.com/en/7.x/),
 - [youtube-dl](https://github.com/ytdl-org/youtube-dl)
 - [wcwidth](https://github.com/jquast/wcwidth)
