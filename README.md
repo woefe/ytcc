@@ -3,7 +3,7 @@
 
 Command line tool to keep track of your favorite playlists on YouTube and many other places.
 
-**The second beta release of ytcc 2.0.0 is out!**
+**Version 2.0.0 is out!**
 Read [the migration guide](https://github.com/woefe/ytcc/tree/master/doc/migrate.md) before upgrading to 2.0.0 or later!
 If you are looking for older versions, check the [Release](https://github.com/woefe/ytcc/releases) page and the [v1 branch](https://github.com/woefe/ytcc/tree/v1).
 
