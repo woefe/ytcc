@@ -377,13 +377,28 @@ class Database:
 
         return videos.values()
 
-    def cleanup(self) -> None:
-        """Delete all watched videos."""
+    def cleanup(self, keep: int) -> None:
+        """Delete watched videos.
+
+        :param keep: Amount of the latest videos to keep per playlist
+        """
         sql = """
             DELETE
             FROM video
-            WHERE watched = 1;
+            WHERE id IN (
+                SELECT v.id
+                FROM video AS v
+                         JOIN content AS cv ON v.id = cv.video_id
+                WHERE v.watched = 1
+                  AND (
+                          SELECT count(*)
+                          FROM video AS w
+                                   JOIN content AS cw ON w.id = cw.video_id
+                          WHERE v.publish_date < w.publish_date
+                            AND cv.playlist_id = cw.playlist_id
+                      ) >= ?
+            );
             """
         with self.connection as con:
-            con.execute(sql)
+            con.execute(sql, (keep,))
         self.connection.execute("VACUUM;")

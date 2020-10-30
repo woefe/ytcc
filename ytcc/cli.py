@@ -398,18 +398,22 @@ def download(ytcc: core.Ytcc, ids: Tuple[int, ...], path: Path, audio_only: bool
 
 
 @cli.command()
+@click.option("--keep", "-k", type=click.INT,
+              help="Number of videos to keep. Defaults to the max_update_backlog setting.")
 @click.confirmation_option(
-    prompt="Do you really want to remove all watched videos from the database?"
+    prompt="Do you really want to remove watched videos from the database?"
 )
 @pass_ytcc
-def cleanup(ytcc: core.Ytcc):
+def cleanup(ytcc: core.Ytcc, keep: Optional[int]):
     """Remove all watched videos from the database.
 
     WARNING!!! This removes all metadata of watched, marked as watched, and downloaded videos from
     ytcc's database. This cannot be undone! In most cases you won't need this command, but it is
     useful to keep the database size small.
     """
-    ytcc.cleanup()
+    if keep is None:
+        keep = config.ytcc.max_update_backlog
+    ytcc.cleanup(keep)
 
 
 @cli.command("import")

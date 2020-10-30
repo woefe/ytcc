@@ -411,9 +411,13 @@ class Ytcc:
     def tag_playlist(self, name: str, tags: List[str]) -> None:
         self.database.tag_playlist(name, tags)
 
-    def cleanup(self) -> None:
-        """Delete old videos from the database."""
-        self.database.cleanup()
+    def cleanup(self, keep: int) -> None:
+        """Delete old videos from the database.
+
+        :param keep: The number of videos to keep
+        :return: None
+        """
+        self.database.cleanup(keep)
 
     def import_yt_opml(self, file: Path):
         def _from_xml_element(elem: ET.Element) -> Tuple[str, str]:
