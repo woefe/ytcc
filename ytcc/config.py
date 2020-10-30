@@ -18,12 +18,11 @@
 
 import configparser
 import functools
-import inspect
 import io
 import logging
 import os
-import sys
 import typing
+from abc import ABC
 from enum import Enum, EnumMeta
 from pathlib import Path
 from typing import Optional, TextIO, Type, Any, List, Callable, Tuple, Sequence
@@ -121,7 +120,7 @@ class DateFormatStr(str):
         return super().__new__(cls, *arg)
 
 
-class BaseConfig:
+class BaseConfig(ABC):
     def __setattr__(self, key, value):
         raise AttributeError("Attribute is immutable")
 
@@ -217,13 +216,6 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
     return config
 
 
-def _is_config_class(member) -> bool:
-    return inspect.isclass(member) and member is not BaseConfig and issubclass(member, BaseConfig)
-
-
-_config_classes = inspect.getmembers(sys.modules[__name__], _is_config_class)
-
-
 def load(override_cfg_file: Optional[str] = None):
     conf_parser = _get_config(override_cfg_file)
 
@@ -270,19 +262,19 @@ def load(override_cfg_file: Optional[str] = None):
 
         return from_str(string)
 
-    for class_name, config_class in _config_classes:
-        for prop, conv in typing.get_type_hints(config_class).items():
+    for clazz in BaseConfig.__subclasses__():
+        for prop, conv in typing.get_type_hints(clazz).items():
 
             try:
-                str_val = conf_parser.get(class_name, prop, raw=True)
+                str_val = conf_parser.get(clazz.__name__, prop, raw=True)
             except configparser.Error:
                 continue
 
             try:
                 val = _convert(conv, str_val)
-                setattr(config_class, prop, val)
+                setattr(clazz, prop, val)
             except ValueError as err:
-                message = f"Value '{str_val}' for {class_name}.{prop} is invalid"
+                message = f"Value '{str_val}' for {clazz.__name__}.{prop} is invalid"
                 raise BadConfigException(message) from err
 
 
@@ -302,11 +294,11 @@ def dumps() -> str:
 
         return val
 
-    for name, clazz in _config_classes:
-        conf_parser[name] = {
+    for clazz in BaseConfig.__subclasses__():
+        conf_parser[clazz.__name__] = {
             k: _serialize(v)
             for k, v in clazz.__dict__.items()
-            if not k.startswith("__")
+            if not k.startswith("_")
         }
 
     conf_parser.write(strio)
