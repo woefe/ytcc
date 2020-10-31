@@ -62,7 +62,8 @@ ytcc ls -p "NCS: House" | ytcc play --audio-only
 
 **Alternative terminal interface built on [fzf](https://github.com/junegunn/fzf)**.
 Requires fzf version 0.23.1 or newer.
-Script is available [here](https://github.com/woefe/ytcc/tree/master/scripts/ytccf.sh).
+The script is automatically installed on most platforms during installation of ytcc.
+If it's not installed, you can download it from [here](https://github.com/woefe/ytcc/tree/master/scripts/ytccf.sh).
 ```shell script
 ytccf.sh
 

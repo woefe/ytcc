@@ -43,6 +43,7 @@ setup(
     packages=find_packages(exclude=["test"]),
     install_requires=["youtube_dl", "click", "wcwidth"],
     python_requires=">=3.7, <4",
+    scripts=["scripts/ytccf.sh"],
     entry_points={
         "console_scripts": ["ytcc=ytcc.cli:main"]
     },
@@ -54,7 +55,7 @@ setup(
         "Source": 'https://github.com/woefe/ytcc/',
     },
     classifiers=[
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "Intended Audience :: End Users/Desktop",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
@@ -62,6 +63,7 @@ setup(
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Topic :: Multimedia :: Sound/Audio",
         "Topic :: Multimedia :: Video"
     ]
