@@ -201,17 +201,17 @@ def test_bad_id(cli_runner, caplog):
 
 def test_cleanup(cli_runner):
     with cli_runner() as runner:
-        result = runner("mark", subscribe=True, update=True, input="1\n2")
+        result = runner("mark", subscribe=True, update=True, input="19\n20")
         assert result.exit_code == 0
 
-        result = runner("cleanup", input="y")
+        result = runner("cleanup", "--keep", "18", input="y")
         assert result.exit_code == 0
 
         result = runner("ls", "--watched")
         assert result.exit_code == 0
         outlines = result.stdout.splitlines()
-        assert "1" not in outlines
-        assert "2" not in outlines
+        assert "19" not in outlines
+        assert "20" not in outlines
         assert len(outlines) == 18
 
 
