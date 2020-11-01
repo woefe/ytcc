@@ -1,4 +1,4 @@
-.TH ytcc 1 "Oct 2020" "2.0.0" "ytcc - a subscription wrapper for youtube-dl"
+.TH ytcc 1 "Nov 2020" "2.0.1" "ytcc - a subscription wrapper for youtube-dl"
 .SH NAME
 ytcc - a subscription wrapper for youtube-dl playlists
 .SH SYNOPSIS
@@ -246,6 +246,9 @@ ytcc's database. This cannot be undone! In most cases you won't need this comman
 useful to keep the database size small.
 .P
 .B OPTIONS:
+.P
+.B -k, --keep INTEGER
+Number of videos to keep. Defaults to the max_update_backlog setting.
 .P
 .B --yes
 Confirm the action without prompting.
