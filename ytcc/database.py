@@ -216,6 +216,11 @@ class Database:
             con.execute(query_clear, (pid,))
             con.executemany(query_insert, ((tag, pid) for tag in tags))
 
+    def list_tags(self) -> Iterable[str]:
+        with self.connection as con:
+            for row in con.execute("SELECT DISTINCT name FROM tag"):
+                yield row["name"]
+
     def add_videos(self, videos: Iterable[Video], playlist: Playlist) -> None:
         insert_video = """
             INSERT INTO video

@@ -411,6 +411,9 @@ class Ytcc:
     def tag_playlist(self, name: str, tags: List[str]) -> None:
         self.database.tag_playlist(name, tags)
 
+    def list_tags(self) -> Iterable[str]:
+        return self.database.list_tags()
+
     def cleanup(self, keep: int) -> None:
         """Delete old videos from the database.
 

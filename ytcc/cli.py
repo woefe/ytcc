@@ -21,7 +21,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from sqlite3 import DatabaseError
-from typing import List, Callable, TypeVar, Generic, Optional, Iterable, Tuple
+from typing import List, Callable, TypeVar, Generic, Optional, Iterable, Tuple, Any, Union
 
 import click
 from click.exceptions import Exit
@@ -61,6 +61,64 @@ Copyright (C) 2015-2020  {__author__}
 This program comes with ABSOLUTELY NO WARRANTY; This is free software, and you
 are welcome to redistribute it under certain conditions.  See the GNU General
 Public Licence for details."""
+
+
+def _load_completion_conf(args: List[str]) -> None:
+    conf_path = None
+    try:
+        idx = args.index("--conf")
+    except ValueError:
+        pass
+    else:
+        if idx + 1 < len(args):
+            conf_path = args[idx + 1]
+
+    if conf_path:
+        config.load(conf_path)
+    else:
+        config.load()
+
+
+def ids_completion(_: Any, args: List[str],
+                   incomplete: str) -> List[Union[str, Tuple[str, str]]]:
+    try:
+        _load_completion_conf(args)
+    except BadConfigException:
+        return []
+
+    with core.Ytcc() as ytcc:
+        ytcc.set_include_watched_filter(False)
+        return [
+            (v_id, title)
+            for v_id, title in map(lambda v: (str(v.id), v.title), ytcc.list_videos())
+            if v_id.startswith(incomplete)
+        ]
+
+
+def playlist_completion(_: Any, args: List[str],
+                        incomplete: str) -> List[Union[str, Tuple[str, str]]]:
+    try:
+        _load_completion_conf(args)
+    except BadConfigException:
+        return []
+
+    with core.Ytcc() as ytcc:
+        return [
+            playlist.name
+            for playlist in ytcc.list_playlists()
+            if incomplete.lower() in playlist.name.lower()
+        ]
+
+
+def tag_completion(_: Any, args: List[str],
+                   incomplete: str) -> List[Union[str, Tuple[str, str]]]:
+    try:
+        _load_completion_conf(args)
+    except BadConfigException:
+        return []
+
+    with core.Ytcc() as ytcc:
+        return [tag for tag in ytcc.list_tags() if incomplete.lower() in tag.lower()]
 
 
 @click.group()
@@ -141,7 +199,7 @@ def subscribe(ytcc: core.Ytcc, name: str, url: str):
 
 
 @cli.command()
-@click.argument("name")
+@click.argument("name", autocompletion=playlist_completion)
 @click.confirmation_option(
     prompt="Unsubscribing will remove videos from the database that are not part of another "
            "playlist. Do you really want to unsubscribe?"
@@ -162,7 +220,7 @@ def unsubscribe(ytcc: core.Ytcc, name: str):
 
 
 @cli.command()
-@click.argument("old")
+@click.argument("old", autocompletion=playlist_completion)
 @click.argument("new")
 @pass_ytcc
 def rename(ytcc: core.Ytcc, old: str, new: str):
@@ -192,8 +250,8 @@ def subscriptions(ytcc: core.Ytcc, attributes: List[PlaylistAttr]):
 
 
 @cli.command()
-@click.argument("name")
-@click.argument("tags", nargs=-1)
+@click.argument("name", autocompletion=playlist_completion)
+@click.argument("tags", nargs=-1, autocompletion=tag_completion)
 @pass_ytcc
 def tag(ytcc: core.Ytcc, name: str, tags: Tuple[str, ...]):
     """Set tags of a playlist.
@@ -328,7 +386,7 @@ def _get_videos(ytcc: core.Ytcc, ids: List[int]) -> Iterable[MappedVideo]:
               help="Don't print video metadata and description.")
 @click.option("--no-mark", "-m", is_flag=True, default=False,
               help="Don't mark the video as watched after playing it.")
-@click.argument("ids", nargs=-1, type=click.INT)
+@click.argument("ids", nargs=-1, type=click.INT, autocompletion=ids_completion)
 @pass_ytcc
 def play(ytcc: core.Ytcc, ids: Tuple[int, ...], audio_only: bool, no_meta: bool, no_mark: bool):
     """Play videos.
@@ -355,7 +413,7 @@ def play(ytcc: core.Ytcc, ids: Tuple[int, ...], audio_only: bool, no_meta: bool,
 
 
 @cli.command()
-@click.argument("ids", nargs=-1, type=click.INT)
+@click.argument("ids", nargs=-1, type=click.INT, autocompletion=ids_completion)
 @pass_ytcc
 def mark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
     """Mark videos as watched.
@@ -376,7 +434,7 @@ def mark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
               help="Download only the audio track.")
 @click.option("--no-mark", "-m", is_flag=True, default=False,
               help="Don't mark the video as watched after downloading it.")
-@click.argument("ids", nargs=-1, type=click.INT)
+@click.argument("ids", nargs=-1, type=click.INT, autocompletion=ids_completion)
 @pass_ytcc
 def download(ytcc: core.Ytcc, ids: Tuple[int, ...], path: Path, audio_only: bool, no_mark: bool):
     """Download videos.
