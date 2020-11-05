@@ -47,6 +47,15 @@ logger = logging.getLogger(__name__)
 
 class Updater:
     def __init__(self, db_path: str, max_backlog=20, max_fail=5):
+        """
+        Initialize db
+
+        Args:
+            self: (todo): write your description
+            db_path: (str): write your description
+            max_backlog: (int): write your description
+            max_fail: (int): write your description
+        """
         self.db_path = db_path
         self.max_items = max_backlog
         self.max_fail = max_fail
@@ -60,6 +69,13 @@ class Updater:
         }
 
     def get_new_entries(self, playlist: Playlist) -> List[Tuple[Any, str, Playlist]]:
+        """
+        Return list of entries.
+
+        Args:
+            self: (todo): write your description
+            playlist: (list): write your description
+        """
         with Database(self.db_path) as database:
             hashes = frozenset(
                 x.extractor_hash
@@ -83,6 +99,14 @@ class Updater:
         return result
 
     def process_entry(self, e_hash: str, entry: Any) -> Tuple[str, Optional[Video]]:
+        """
+        Process a single entry.
+
+        Args:
+            self: (todo): write your description
+            e_hash: (todo): write your description
+            entry: (todo): write your description
+        """
         with Database(self.db_path) as database:
             if database.get_extractor_fail_count(e_hash) >= self.max_fail:
                 return e_hash, None
@@ -116,6 +140,12 @@ class Updater:
                 )
 
     def update(self):
+        """
+        Update list of the entries.
+
+        Args:
+            self: (todo): write your description
+        """
         num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 4
 
         with Pool(num_workers) as pool, Database(self.db_path) as database:
@@ -150,6 +180,12 @@ class Ytcc:
     """
 
     def __init__(self) -> None:
+        """
+        Initialize video.
+
+        Args:
+            self: (todo): write your description
+        """
         self._database: Optional[Database] = None
         self.video_id_filter: Optional[List[int]] = None
         self.playlist_filter: Optional[List[str]] = None
@@ -159,14 +195,35 @@ class Ytcc:
         self.include_watched_filter: Optional[bool] = False
 
     def __enter__(self) -> "Ytcc":
+        """
+        Returns the current request.
+
+        Args:
+            self: (todo): write your description
+        """
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Any:
+        """
+        Called when the given exception is raised.
+
+        Args:
+            self: (todo): write your description
+            exc_type: (todo): write your description
+            exc_val: (todo): write your description
+            exc_tb: (todo): write your description
+        """
         if self._database is not None:
             self._database.__exit__(exc_type, exc_val, exc_tb)
 
     @property
     def database(self) -> Database:
+        """
+        Returns the database.
+
+        Args:
+            self: (todo): write your description
+        """
         if self._database is None:
             self._database = Database(config.ytcc.db_path)
         return self._database
@@ -231,6 +288,13 @@ class Ytcc:
 
     @staticmethod
     def update(max_fail: Optional[int] = None, max_backlog: Optional[int] = None) -> None:
+        """
+        Update db db backlogor.
+
+        Args:
+            max_fail: (int): write your description
+            max_backlog: (int): write your description
+        """
         Updater(
             db_path=config.ytcc.db_path,
             max_fail=max_fail or config.ytcc.max_update_fail,
@@ -334,6 +398,14 @@ class Ytcc:
                 return False
 
     def add_playlist(self, name: str, url: str) -> None:
+        """
+        Add a new playlist.
+
+        Args:
+            self: (todo): write your description
+            name: (str): write your description
+            url: (str): write your description
+        """
         ydl_opts = {
             **YTDL_COMMON_OPTS,
             "playliststart": 1,
@@ -393,25 +465,72 @@ class Ytcc:
         )
 
     def mark_watched(self, video: Union[List[int], int, MappedVideo]) -> None:
+        """
+        Mark the video.
+
+        Args:
+            self: (todo): write your description
+            video: (todo): write your description
+            Union: (str): write your description
+            List: (todo): write your description
+            int: (todo): write your description
+            int: (todo): write your description
+            MappedVideo: (todo): write your description
+        """
         self.database.mark_watched(video)
 
     def delete_playlist(self, name: str) -> None:
+        """
+        Delete a playlist.
+
+        Args:
+            self: (todo): write your description
+            name: (str): write your description
+        """
         if not self.database.delete_playlist(name):
             raise PlaylistDoesNotExistException(f"Could not remove playlist {name}, because "
                                                 "it does not exist")
 
     def rename_playlist(self, oldname: str, newname: str) -> None:
+        """
+        Rename a playlist.
+
+        Args:
+            self: (todo): write your description
+            oldname: (str): write your description
+            newname: (str): write your description
+        """
         if not self.database.rename_playlist(oldname, newname):
             raise NameConflictError("Renaming failed. Either the old name does not exist or the "
                                     "new name is already used.")
 
     def list_playlists(self) -> Iterable[MappedPlaylist]:
+        """
+        List playlists.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.database.list_playlists()
 
     def tag_playlist(self, name: str, tags: List[str]) -> None:
+        """
+        Get a list of a playlist.
+
+        Args:
+            self: (todo): write your description
+            name: (str): write your description
+            tags: (todo): write your description
+        """
         self.database.tag_playlist(name, tags)
 
     def list_tags(self) -> Iterable[str]:
+        """
+        List all tags.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.database.list_tags()
 
     def cleanup(self, keep: int) -> None:
@@ -423,7 +542,22 @@ class Ytcc:
         self.database.cleanup(keep)
 
     def import_yt_opml(self, file: Path):
+        """
+        Parse channel options.
+
+        Args:
+            self: (todo): write your description
+            file: (str): write your description
+        """
         def _from_xml_element(elem: ET.Element) -> Tuple[str, str]:
+            """
+            Create an xml element from an xml element.
+
+            Args:
+                elem: (todo): write your description
+                ET: (todo): write your description
+                Element: (todo): write your description
+            """
             rss_url = urlparse(elem.attrib["xmlUrl"])
             query_dict = parse_qs(rss_url.query, keep_blank_values=False)
             channel_id = query_dict.get("channel_id", [])

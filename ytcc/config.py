@@ -35,12 +35,24 @@ if hasattr(typing, "get_args"):
     get_type_args = typing.get_args  # type: ignore[attr-defined]
 else:
     def get_type_args(typ):
+        """
+        Gets the arguments of the type.
+
+        Args:
+            typ: (str): write your description
+        """
         return typ.__args__ if hasattr(typ, "__args__") else None
 
 if hasattr(typing, "get_origin"):
     get_type_origin = typing.get_origin  # type: ignore[attr-defined]
 else:
     def get_type_origin(typ):
+        """
+        Return the origin for the given type.
+
+        Args:
+            typ: (str): write your description
+        """
         return typ.__origin__ if hasattr(typ, "__origin__") else None
 # pylint: enable=no-member
 
@@ -52,6 +64,13 @@ _BOOLEAN_STATES = {'1': True, 'yes': True, 'true': True, 'on': True,
 
 class Color(int):
     def __new__(cls, val):
+        """
+        Creates a new val
+
+        Args:
+            cls: (todo): write your description
+            val: (float): write your description
+        """
         i = super().__new__(cls, val)
         if 0 >= i >= 255:
             raise ValueError(f"{val} is not a valid color. "
@@ -80,6 +99,12 @@ class VideoAttr(str, Enum):
 
     @staticmethod
     def from_str(string: str) -> "VideoAttr":
+        """
+        Convert string from string.
+
+        Args:
+            string: (str): write your description
+        """
         v_attr = VideoAttr.__members__.get(string.upper())  # pylint: disable=no-member
         if v_attr is not None:
             return v_attr
@@ -93,6 +118,12 @@ class PlaylistAttr(str, Enum):
 
     @staticmethod
     def from_str(string: str) -> "PlaylistAttr":
+        """
+        Construct a string from string.
+
+        Args:
+            string: (str): write your description
+        """
         p_attr = PlaylistAttr.__members__.get(string.upper())  # pylint: disable=no-member
         if p_attr is not None:
             return p_attr
@@ -106,6 +137,13 @@ class Direction(str, Enum):
 
 class DateFormatStr(str):
     def __new__(cls, *arg):
+        """
+        Creates a new date object.
+
+        Args:
+            cls: (todo): write your description
+            arg: (str): write your description
+        """
         datechars = "aAwdbBmyYjUWx%"
         iterator = iter(arg[0])
 
@@ -122,6 +160,14 @@ class DateFormatStr(str):
 
 class BaseConfig(ABC):
     def __setattr__(self, key, value):
+        """
+        Sets an attribute of a key.
+
+        Args:
+            self: (todo): write your description
+            key: (str): write your description
+            value: (todo): write your description
+        """
         raise AttributeError("Attribute is immutable")
 
 
@@ -217,9 +263,22 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
 
 
 def load(override_cfg_file: Optional[str] = None):
+    """
+    Load a config file.
+
+    Args:
+        override_cfg_file: (str): write your description
+    """
     conf_parser = _get_config(override_cfg_file)
 
     def enum_from_str(e_class: EnumMeta, str_val: str) -> Enum:
+        """
+        Parse a string.
+
+        Args:
+            e_class: (todo): write your description
+            str_val: (str): write your description
+        """
         field: Any
         for field in e_class:
             # Might also raise a ValueError
@@ -230,15 +289,35 @@ def load(override_cfg_file: Optional[str] = None):
         raise ValueError(f"{str_val} is not a valid {e_class}")
 
     def bool_from_str(string: str) -> bool:
+        """
+        Convert string to bool.
+
+        Args:
+            string: (str): write your description
+        """
         bool_state = _BOOLEAN_STATES.get(string.lower())
         if bool_state is None:
             raise ValueError(f"{string} cannot be converted to bool")
         return bool_state
 
     def list_from_str(elem_type: Type, list_str: str) -> List[Any]:
+        """
+        Convert a comma - separated list.
+
+        Args:
+            elem_type: (str): write your description
+            list_str: (str): write your description
+        """
         return [_convert(elem_type, elem.strip()) for elem in list_str.split(",")]
 
     def tuple_from_str(types: Sequence[Type], tuple_str) -> Tuple:
+        """
+        Convert a tuple of types.
+
+        Args:
+            types: (todo): write your description
+            tuple_str: (str): write your description
+        """
         elems = tuple_str.split(":")
         if len(elems) != len(types):
             raise ValueError(f"{tuple_str} cannot be converted to tuple of type {types}")
@@ -246,6 +325,13 @@ def load(override_cfg_file: Optional[str] = None):
         return tuple(_convert(typ, elem) for elem, typ in zip(elems, types))
 
     def _convert(typ: Type[Any], string: str) -> Any:
+        """
+        Convert string to type.
+
+        Args:
+            typ: (todo): write your description
+            string: (str): write your description
+        """
         if get_type_origin(typ) is list:
             elem_conv = get_type_args(typ)[0]
             from_str: Callable[[str], Any] = functools.partial(list_from_str, elem_conv)
@@ -279,10 +365,21 @@ def load(override_cfg_file: Optional[str] = None):
 
 
 def dumps() -> str:
+    """
+    Serialize config to a string.
+
+    Args:
+    """
     conf_parser = configparser.ConfigParser(interpolation=None)
     strio = io.StringIO()
 
     def _serialize(val):
+        """
+        Serialize a value into a string.
+
+        Args:
+            val: (todo): write your description
+        """
         if isinstance(val, Enum):
             return val.value
         if isinstance(val, list):
@@ -306,4 +403,10 @@ def dumps() -> str:
 
 
 def dump(txt_io: TextIO) -> None:
+    """
+    Dump a text to a file - like object.
+
+    Args:
+        txt_io: (todo): write your description
+    """
     txt_io.write(dumps())

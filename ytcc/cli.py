@@ -46,9 +46,28 @@ class CommaList(click.ParamType, Generic[T]):
     name = "comma_separated_values"
 
     def __init__(self, validator: Callable[[str], T]):
+        """
+        Initialize a validator.
+
+        Args:
+            self: (todo): write your description
+            validator: (callable): write your description
+            Callable: (todo): write your description
+            str: (todo): write your description
+            T: (int): write your description
+        """
         self.validator = validator
 
     def convert(self, value, param, ctx) -> List[T]:
+        """
+        Convert the given a list.
+
+        Args:
+            self: (todo): write your description
+            value: (str): write your description
+            param: (todo): write your description
+            ctx: (todo): write your description
+        """
         try:
             return [self.validator(elem.strip()) for elem in value.split(",")]
         except ValueError:
@@ -64,6 +83,11 @@ Public Licence for details."""
 
 
 def _load_completion_conf(args: List[str]) -> None:
+    """
+    Load configuration file.
+
+    Args:
+    """
     conf_path = None
     try:
         idx = args.index("--conf")
@@ -81,6 +105,13 @@ def _load_completion_conf(args: List[str]) -> None:
 
 def ids_completion(_: Any, args: List[str],
                    incomplete: str) -> List[Union[str, Tuple[str, str]]]:
+    """
+    Return completion ids list of completion ids.
+
+    Args:
+        _: (todo): write your description
+        incomplete: (todo): write your description
+    """
     try:
         _load_completion_conf(args)
     except BadConfigException:
@@ -97,6 +128,13 @@ def ids_completion(_: Any, args: List[str],
 
 def playlist_completion(_: Any, args: List[str],
                         incomplete: str) -> List[Union[str, Tuple[str, str]]]:
+    """
+    Return a list of playlist.
+
+    Args:
+        _: (todo): write your description
+        incomplete: (str): write your description
+    """
     try:
         _load_completion_conf(args)
     except BadConfigException:
@@ -112,6 +150,13 @@ def playlist_completion(_: Any, args: List[str],
 
 def tag_completion(_: Any, args: List[str],
                    incomplete: str) -> List[Union[str, Tuple[str, str]]]:
+    """
+    Return completion completion.
+
+    Args:
+        _: (todo): write your description
+        incomplete: (str): write your description
+    """
     try:
         _load_completion_conf(args)
     except BadConfigException:
@@ -296,6 +341,20 @@ common_list_options = [
 
 def apply_filters(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
                   playlists: List[str], ids: List[int], watched: bool) -> None:
+    """
+    Given a list of a video.
+
+    Args:
+        ytcc: (todo): write your description
+        core: (todo): write your description
+        Ytcc: (array): write your description
+        tags: (array): write your description
+        since: (array): write your description
+        till: (array): write your description
+        playlists: (list): write your description
+        ids: (array): write your description
+        watched: (array): write your description
+    """
     ytcc.set_tags_filter(tags)
     ytcc.set_date_begin_filter(since)
     ytcc.set_date_end_filter(till)
@@ -307,6 +366,21 @@ def apply_filters(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datet
 def list_videos_impl(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
                      playlists: List[str], ids: List[int], attributes: List[str],
                      watched: bool) -> None:
+    """
+    List videos.
+
+    Args:
+        ytcc: (todo): write your description
+        core: (todo): write your description
+        Ytcc: (todo): write your description
+        tags: (todo): write your description
+        since: (todo): write your description
+        till: (str): write your description
+        playlists: (list): write your description
+        ids: (list): write your description
+        attributes: (dict): write your description
+        watched: (todo): write your description
+    """
     apply_filters(ytcc, tags, since, till, playlists, ids, watched)
     if attributes:
         printer.filter = attributes
@@ -358,6 +432,12 @@ tui.params.extend(common_list_options)
 
 
 def _get_ids(ids: List[int]) -> Iterable[int]:
+    """
+    Yield ids from ids.
+
+    Args:
+        ids: (list): write your description
+    """
     if not ids and not sys.stdin.isatty():
         for line in sys.stdin:
             line = line.strip()
@@ -372,6 +452,15 @@ def _get_ids(ids: List[int]) -> Iterable[int]:
 
 
 def _get_videos(ytcc: core.Ytcc, ids: List[int]) -> Iterable[MappedVideo]:
+    """
+    Get videos of the video.
+
+    Args:
+        ytcc: (todo): write your description
+        core: (str): write your description
+        Ytcc: (todo): write your description
+        ids: (list): write your description
+    """
     ids = list(_get_ids(ids))
     if ids:
         ytcc.set_video_id_filter(ids)
@@ -520,6 +609,11 @@ def bug_report():
 
 
 def main():
+    """
+    Main entry point.
+
+    Args:
+    """
     try:
         cli.main(standalone_mode=False)
     except DatabaseError as db_err:

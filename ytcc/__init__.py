@@ -36,6 +36,11 @@ from ytcc.exceptions import *
 
 
 def _get_translations_path() -> str:
+    """
+    Returns the path to the translations.
+
+    Args:
+    """
     path = Path(__file__)
     path = path.parent.joinpath("resources", "locale")
     if path.is_dir():

@@ -28,10 +28,23 @@ from ytcc.cli import cli
 
 class BlankUsageFormatter(click.HelpFormatter):
     def write_usage(self, prog, args="", prefix=""):
+        """
+        Writes usage line of the usage.
+
+        Args:
+            self: (todo): write your description
+            prog: (todo): write your description
+            prefix: (str): write your description
+        """
         super().write_usage(prog, args, prefix)
 
 
 def main():
+    """
+    Main entry point.
+
+    Args:
+    """
     ctx = cli.make_context("ytcc", [""])
     with open("doc/ytcc.1", "w") as manpage:
         today = date.today().strftime('%b %Y')

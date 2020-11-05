@@ -31,11 +31,23 @@ logger = logging.getLogger(__name__)
 
 
 def logging_cb(querystr: str) -> None:
+    """
+    Logs a log.
+
+    Args:
+        querystr: (str): write your description
+    """
     if logger.isEnabledFor(logging.DEBUG):
         logger.debug("%s", " ".join(querystr.split()))
 
 
 def _placeholder(elements: List[Any]) -> str:
+    """
+    Returns a list.
+
+    Args:
+        elements: (todo): write your description
+    """
     return ",".join("?" * len(elements))
 
 
@@ -71,6 +83,13 @@ class Database:
     VERSION = 2
 
     def __init__(self, path: str = ":memory:"):
+        """
+        Initialize the sqlite database.
+
+        Args:
+            self: (todo): write your description
+            path: (str): write your description
+        """
         is_new_db = True
         if path != ":memory:":
             expanded_path = Path(path).expanduser()
@@ -92,12 +111,33 @@ class Database:
             raise IncompatibleDatabaseVersion("Database Schema 2 or higher is required")
 
     def __enter__(self) -> "Database":
+        """
+        Returns the current request.
+
+        Args:
+            self: (todo): write your description
+        """
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Any:
+        """
+        Exit the given exception.
+
+        Args:
+            self: (todo): write your description
+            exc_type: (todo): write your description
+            exc_val: (todo): write your description
+            exc_tb: (todo): write your description
+        """
         self.close()
 
     def _populate(self):
+        """
+        Populate the script.
+
+        Args:
+            self: (todo): write your description
+        """
         script = f"""CREATE TABLE tag
             (
                 name     VARCHAR NOT NULL,
@@ -145,6 +185,13 @@ class Database:
             self.connection.executescript(script)
 
     def get_extractor_fail_count(self, e_hash) -> int:
+        """
+        Get the count of the count of entries.
+
+        Args:
+            self: (todo): write your description
+            e_hash: (str): write your description
+        """
         query = "SELECT failure_count FROM extractor_meta WHERE extractor_hash = ?"
         count = self.connection.execute(query, (e_hash,)).fetchone()
         if count is None:
@@ -152,6 +199,14 @@ class Database:
         return int(count[0])
 
     def increase_extractor_fail_count(self, e_hash, max_fail=(1 << 63) - 1) -> None:
+        """
+        Increase the last failure count.
+
+        Args:
+            self: (todo): write your description
+            e_hash: (todo): write your description
+            max_fail: (int): write your description
+        """
         insert_query = """
             INSERT OR IGNORE INTO extractor_meta VALUES (:e_hash,0)
             """
@@ -166,22 +221,51 @@ class Database:
             self.connection.execute(increment_query, {"e_hash": e_hash, "max_fail": max_fail})
 
     def close(self) -> None:
+        """
+        Closes the connection.
+
+        Args:
+            self: (todo): write your description
+        """
         self.connection.commit()
         self.connection.close()
 
     def add_playlist(self, name: str, url: str) -> None:
+        """
+        Add a playlist.
+
+        Args:
+            self: (todo): write your description
+            name: (str): write your description
+            url: (str): write your description
+        """
         query = "INSERT INTO playlist (name, url) VALUES (?, ?);"
         with self.connection:
             res = self.connection.execute(query, (name, url))
             return res.rowcount > 0
 
     def delete_playlist(self, name: str) -> bool:
+        """
+        Deletes playlist.
+
+        Args:
+            self: (todo): write your description
+            name: (str): write your description
+        """
         query = "DELETE FROM playlist WHERE name = ?"
         with self.connection:
             res = self.connection.execute(query, (name,))
             return res.rowcount > 0
 
     def rename_playlist(self, oldname, newname) -> bool:
+        """
+        Rename a playlist.
+
+        Args:
+            self: (todo): write your description
+            oldname: (str): write your description
+            newname: (str): write your description
+        """
         query = "UPDATE playlist SET name = ? WHERE name = ?"
         try:
             with self.connection:
@@ -191,6 +275,12 @@ class Database:
             return False
 
     def list_playlists(self) -> Iterable[MappedPlaylist]:
+        """
+        List playlists.
+
+        Args:
+            self: (todo): write your description
+        """
         query = """
             SELECT p.id AS id, p.name AS name, p.url AS url, t.name AS tag
             FROM playlist AS p
@@ -208,6 +298,14 @@ class Database:
         return playlists.values()
 
     def tag_playlist(self, playlist: str, tags: List[str]) -> None:
+        """
+        Play a playlist.
+
+        Args:
+            self: (todo): write your description
+            playlist: (todo): write your description
+            tags: (todo): write your description
+        """
         query_pid = "SELECT id FROM playlist WHERE name = ?"
         query_clear = "DELETE FROM tag WHERE playlist = ?"
         query_insert = "INSERT OR IGNORE INTO tag (name, playlist) VALUES (?, ?)"
@@ -217,11 +315,25 @@ class Database:
             con.executemany(query_insert, ((tag, pid) for tag in tags))
 
     def list_tags(self) -> Iterable[str]:
+        """
+        List all tags
+
+        Args:
+            self: (todo): write your description
+        """
         with self.connection as con:
             for row in con.execute("SELECT DISTINCT name FROM tag"):
                 yield row["name"]
 
     def add_videos(self, videos: Iterable[Video], playlist: Playlist) -> None:
+        """
+        Add videos to a video.
+
+        Args:
+            self: (todo): write your description
+            videos: (todo): write your description
+            playlist: (todo): write your description
+        """
         insert_video = """
             INSERT INTO video
                 (title, url, description, duration, publish_date, watched, extractor_hash)
@@ -261,17 +373,45 @@ class Database:
 
     @overload
     def mark_watched(self, video: List[int]) -> None:
+        """
+        Mark video as video.
+
+        Args:
+            self: (todo): write your description
+            video: (todo): write your description
+        """
         ...
 
     @overload
     def mark_watched(self, video: int) -> None:
+        """
+        !
+
+        Args:
+            self: (todo): write your description
+            video: (todo): write your description
+        """
         ...
 
     @overload
     def mark_watched(self, video: MappedVideo) -> None:
+        """
+        !
+
+        Args:
+            self: (todo): write your description
+            video: (todo): write your description
+        """
         ...
 
     def mark_watched(self, video: Any) -> None:
+        """
+        Mark video as video.
+
+        Args:
+            self: (todo): write your description
+            video: (todo): write your description
+        """
         if isinstance(video, int):
             videos = [video]
         elif isinstance(video, list):
@@ -292,6 +432,24 @@ class Database:
                     tags: Optional[List[str]] = None,
                     playlists: Optional[List[str]] = None,
                     ids: Optional[List[int]] = None) -> Iterable[MappedVideo]:
+        """
+        List videos.
+
+        Args:
+            self: (todo): write your description
+            since: (todo): write your description
+            till: (todo): write your description
+            watched: (todo): write your description
+            tags: (todo): write your description
+            List: (todo): write your description
+            str: (str): write your description
+            playlists: (list): write your description
+            List: (todo): write your description
+            str: (str): write your description
+            ids: (list): write your description
+            List: (todo): write your description
+            int: (todo): write your description
+        """
 
         tag_condition = f"AND t.name IN ({_placeholder(tags)})" if tags is not None else ""
         id_condition = f"AND v.id IN ({_placeholder(ids)})" if ids is not None else ""
@@ -309,6 +467,11 @@ class Database:
         order_by_clause = ""
         if config.ytcc.order_by:
             def directions() -> Iterable[Tuple[str, str]]:
+                """
+                Iterate over all available columns.
+
+                Args:
+                """
                 column_names = {
                     VideoAttr.ID: "id",
                     VideoAttr.URL: "url",

@@ -69,9 +69,22 @@ def lazy_import(fullname: str) -> Any:
     """
     class _LazyLoader:
         def __init__(self):
+            """
+            Initialize the module.
+
+            Args:
+                self: (todo): write your description
+            """
             self._mod = None
 
         def __getattr__(self, item):
+            """
+            Return the value of an object.
+
+            Args:
+                self: (todo): write your description
+                item: (str): write your description
+            """
             if self._mod is None:
                 self._mod = importlib.import_module(fullname)
             return getattr(self._mod, item)

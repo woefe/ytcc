@@ -25,10 +25,21 @@ from pathlib import Path
 
 
 def error(message: str):
+    """
+    Print an error message
+
+    Args:
+        message: (str): write your description
+    """
     print("Error:", message, file=sys.stderr)
 
 
 def usage():
+    """
+    Print help text
+
+    Args:
+    """
     help_text = f"""\
     Usage: {sys.argv[0]} --olddb PATH --newdb PATH
 
