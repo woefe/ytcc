@@ -36,6 +36,13 @@ class Table(NamedTuple):
     data: List[List[str]]
 
     def apply_filter(self, column_names: List[str]) -> "Table":
+        """
+        Apply a column to the dataframe.
+
+        Args:
+            self: (todo): write your description
+            column_names: (list): write your description
+        """
         try:
             indices = [self.header.index(col) for col in column_names]
         except ValueError as index_err:
@@ -52,12 +59,24 @@ class Table(NamedTuple):
 class TableData(ABC):
     @abstractmethod
     def table(self) -> Table:
+        """
+        Returns the table.
+
+        Args:
+            self: (todo): write your description
+        """
         pass
 
 
 class DictData(ABC):
     @abstractmethod
     def data(self) -> Iterable[Dict[str, Any]]:
+        """
+        Returns the data.
+
+        Args:
+            self: (todo): write your description
+        """
         pass
 
 
@@ -68,17 +87,42 @@ class Printable(DictData, TableData, metaclass=ABCMeta):
 class VideoPrintable(Printable):
 
     def __init__(self, videos: Iterable[MappedVideo]):
+        """
+        Initialize a list of videos.
+
+        Args:
+            self: (todo): write your description
+            videos: (int): write your description
+        """
         self.videos = videos
 
     @staticmethod
     def _format_duration(duration: float) -> str:
+        """
+        Format the duration.
+
+        Args:
+            duration: (float): write your description
+        """
         return f"{duration // 60: 4.0f}:{duration % 60:02.0f}"
 
     @staticmethod
     def _format_publish_date(timestamp: float) -> str:
+        """
+        Format a date.
+
+        Args:
+            timestamp: (int): write your description
+        """
         return datetime.fromtimestamp(timestamp).strftime(config.ytcc.date_format)
 
     def data(self) -> Iterable[Dict[str, Any]]:
+        """
+        Yield video data.
+
+        Args:
+            self: (todo): write your description
+        """
         for video in self.videos:
             video_dict = asdict(video)
             video_dict["duration"] = self._format_duration(video.duration)
@@ -86,6 +130,12 @@ class VideoPrintable(Printable):
             yield video_dict
 
     def table(self) -> Table:
+        """
+        Return a list.
+
+        Args:
+            self: (todo): write your description
+        """
         header = ["id", "url", "title", "description", "publish_date", "watched", "duration",
                   "extractor_hash", "playlists"]
 
@@ -109,13 +159,32 @@ class VideoPrintable(Printable):
 class PlaylistPrintable(Printable):
 
     def __init__(self, playlists: Iterable[MappedPlaylist]):
+        """
+        Add a playlist.
+
+        Args:
+            self: (todo): write your description
+            playlists: (todo): write your description
+        """
         self.playlists = playlists
 
     def data(self) -> Iterable[Dict[str, Any]]:
+        """
+        Return a generator of playlists.
+
+        Args:
+            self: (todo): write your description
+        """
         for playlist in self.playlists:
             yield asdict(playlist)
 
     def table(self) -> Table:
+        """
+        Returns a table of playlist.
+
+        Args:
+            self: (todo): write your description
+        """
         header = ["name", "url", "tags"]
         data = []
         for playlist in self.playlists:
@@ -127,24 +196,57 @@ class PlaylistPrintable(Printable):
 class Printer(ABC):
 
     def __init__(self):
+        """
+        Initialize the filter.
+
+        Args:
+            self: (todo): write your description
+        """
         self._filter: Optional[List[Any]] = None
 
     @property
     def filter(self) -> Optional[List[Any]]:
+        """
+        Returns a filter.
+
+        Args:
+            self: (todo): write your description
+        """
         return self._filter
 
     @filter.setter
     def filter(self, fields: List[Any]):
+        """
+        Filter the list of fields.
+
+        Args:
+            self: (todo): write your description
+            fields: (list): write your description
+        """
         self._filter = fields
 
     @abstractmethod
     def print(self, obj: Printable) -> None:
+        """
+        Print the given object
+
+        Args:
+            self: (todo): write your description
+            obj: (todo): write your description
+        """
         pass
 
 
 class TablePrinter(Printer):
 
     def print(self, obj: TableData) -> None:
+        """
+        Prints the table.
+
+        Args:
+            self: (todo): write your description
+            obj: (todo): write your description
+        """
         table = obj.table()
         if self.filter is not None:
             table = table.apply_filter(self.filter)
@@ -153,6 +255,15 @@ class TablePrinter(Printer):
 
     @staticmethod
     def print_col(text: str, width: int, background: Optional[int], bold: bool):
+        """
+        Print text to terminal.
+
+        Args:
+            text: (str): write your description
+            width: (int): write your description
+            background: (bool): write your description
+            bold: (todo): write your description
+        """
         padding = " " * max(0, (width - wcswidth(text)))
         padded = text + padding
         printt(" " + padded + " ", background=background, bold=bold)
@@ -160,6 +271,15 @@ class TablePrinter(Printer):
     @staticmethod
     def print_row(columns: List[str], widths: List[int],
                   bold: bool = False, background: Optional[int] = None) -> None:
+        """
+        Prints a formatted ascii.
+
+        Args:
+            columns: (list): write your description
+            widths: (int): write your description
+            bold: (str): write your description
+            background: (todo): write your description
+        """
 
         if len(widths) != len(columns) and not columns:
             raise ValueError("For every column, a width must be specified, "
@@ -174,6 +294,12 @@ class TablePrinter(Printer):
 
     @staticmethod
     def table_print(table: Table) -> None:
+        """
+        Print a table.
+
+        Args:
+            table: (str): write your description
+        """
         transposed = zip(table.header, *table.data)
         col_widths = [max(map(wcswidth, column)) for column in transposed]
 
@@ -189,16 +315,37 @@ class TablePrinter(Printer):
 class XSVPrinter(Printer):
 
     def __init__(self, separator: str = ","):
+        """
+        Initialize separator
+
+        Args:
+            self: (todo): write your description
+            separator: (str): write your description
+        """
         super().__init__()
         if len(separator) != 1:
             raise YtccException("Separator must be a single character")
         self.separator = separator
 
     def escape(self, string: str) -> str:
+        """
+        Escape the given string.
+
+        Args:
+            self: (todo): write your description
+            string: (str): write your description
+        """
         string = string.replace("\\", "\\\\")
         return string.replace(self.separator, "\\" + self.separator)
 
     def print(self, obj: TableData) -> None:
+        """
+        Print a table.
+
+        Args:
+            self: (todo): write your description
+            obj: (todo): write your description
+        """
         table = obj.table()
         if self.filter is not None:
             table = table.apply_filter(self.filter)
@@ -211,4 +358,11 @@ class XSVPrinter(Printer):
 class JSONPrinter(Printer):
 
     def print(self, obj: DictData) -> None:
+        """
+        Prints the given object to stdout.
+
+        Args:
+            self: (todo): write your description
+            obj: (todo): write your description
+        """
         json.dump(list(obj.data()), sys.stdout, indent=2)

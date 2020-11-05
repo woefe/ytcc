@@ -38,12 +38,28 @@ class Option(NamedTuple):
 
 class Action(Enum):
     def __init__(self, text: str, hotkey: str, color: Callable[[], int]):
+        """
+        Initialize hotkey.
+
+        Args:
+            self: (todo): write your description
+            text: (str): write your description
+            hotkey: (str): write your description
+            color: (bool): write your description
+            Callable: (todo): write your description
+            int: (int): write your description
+        """
         self.text = text
         self.hotkey = hotkey
         self.color = color
 
     @staticmethod
     def from_config():
+        """
+        Return an action instance from configuration.
+
+        Args:
+        """
         return Action.__dict__.get(config.tui.default_action.value.upper(), Action.PLAY_VIDEO)
 
     SHOW_HELP = (None, FKeys.F1, None)
@@ -57,6 +73,14 @@ class Action(Enum):
 
 class VideoSelection(TableData, dict):
     def __init__(self, alphabet: str, videos: List[MappedVideo]):
+        """
+        !
+
+        Args:
+            self: (todo): write your description
+            alphabet: (float): write your description
+            videos: (int): write your description
+        """
         super().__init__()
         codes = self._prefix_codes(frozenset(alphabet), len(videos))
         for code, video in zip(codes, videos):
@@ -64,6 +88,13 @@ class VideoSelection(TableData, dict):
 
     @staticmethod
     def _prefix_codes(alphabet: FrozenSet[str], count: int) -> List[str]:
+        """
+        Given a list of alphabetical characters.
+
+        Args:
+            alphabet: (float): write your description
+            count: (int): write your description
+        """
         codes = list(alphabet)
 
         if len(codes) < 2:
@@ -88,6 +119,12 @@ class VideoSelection(TableData, dict):
         return codes
 
     def table(self) -> Table:
+        """
+        Returns a table of the table.
+
+        Args:
+            self: (todo): write your description
+        """
         table = VideoPrintable(self.values()).table()
         data = [[code] + row for code, row in zip(self.keys(), table.data)]
         return Table(["key"] + table.header, data)
@@ -96,29 +133,73 @@ class VideoSelection(TableData, dict):
 class Interactive:
 
     def __init__(self, core: Ytcc):
+        """
+        Initialize a new action.
+
+        Args:
+            self: (todo): write your description
+            core: (todo): write your description
+        """
         self.core = core
         self.videos = list(core.list_videos())
         self.previous_action = Action.from_config()
         self.action = self.previous_action
 
         def makef(arg):
+            """
+            Make a function that will be used in the given argument.
+
+            Args:
+                arg: (str): write your description
+            """
             return lambda: self.set_action(arg)
 
         self.hooks = {action.hotkey: makef(action) for action in list(Action)}
 
     def set_action(self, action: Action) -> bool:
+        """
+        Sets the given action.
+
+        Args:
+            self: (todo): write your description
+            action: (str): write your description
+        """
         self.previous_action = self.action
         self.action = action
         return action in (Action.SHOW_HELP, Action.REFRESH)
 
     def get_prompt_text(self) -> str:
+        """
+        Get the prompt text.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.action.text
 
     def get_prompt_color(self) -> Optional[int]:
+        """
+        Return the color of the prompt.
+
+        Args:
+            self: (todo): write your description
+        """
         return self.action.color()
 
     def command_line(self, tags: List[str]) -> Tuple[str, bool]:
+        """
+        Ask the user input
+
+        Args:
+            self: (todo): write your description
+            tags: (list): write your description
+        """
         def print_prompt():
+            """
+            Prints the prompt to the console.
+
+            Args:
+            """
             prompt_format = "{prompt_text} > "
             prompt = prompt_format.format(prompt_text=self.get_prompt_text())
             printt(prompt, foreground=self.get_prompt_color(), bold=True, replace=True)
@@ -159,6 +240,12 @@ class Interactive:
         return tag, hook_triggered
 
     def run(self) -> None:
+        """
+        Run video
+
+        Args:
+            self: (todo): write your description
+        """
         selectable = VideoSelection(config.tui.alphabet, self.videos)
         printer = TablePrinter()
         printer.filter = ["key", *config.ytcc.video_attrs]
@@ -220,6 +307,14 @@ class Interactive:
                 break
 
     def play(self, video: MappedVideo, audio_only: bool) -> None:
+        """
+        !
+
+        Args:
+            self: (todo): write your description
+            video: (todo): write your description
+            audio_only: (bool): write your description
+        """
         print_meta(video)
         if self.core.play_video(video, audio_only):
             self.core.mark_watched(video)
@@ -228,6 +323,14 @@ class Interactive:
                   "The last video is not marked as watched!")
 
     def download_video(self, video: MappedVideo, audio_only: bool = False) -> None:
+        """
+        Downloads the video.
+
+        Args:
+            self: (todo): write your description
+            video: (str): write your description
+            audio_only: (str): write your description
+        """
         print(_('Downloading "{video.title}" in playlist(s) "{playlists}"...').format(
             video=video, playlists=", ".join(v.name for v in video.playlists)))
         if self.core.download_video(video=video, audio_only=audio_only):
@@ -238,20 +341,58 @@ class Interactive:
 
 class StdOutOverride:
     def __init__(self, stream):
+        """
+        Initialize the stream.
+
+        Args:
+            self: (todo): write your description
+            stream: (todo): write your description
+        """
         self.orig = sys.stdout
         self.stream = stream
 
     def __enter__(self):
+        """
+        Enter sys. pty.
+
+        Args:
+            self: (todo): write your description
+        """
         sys.stdout = self.stream
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Exit the given exception.
+
+        Args:
+            self: (todo): write your description
+            exc_type: (todo): write your description
+            exc_val: (todo): write your description
+            exc_tb: (todo): write your description
+        """
         sys.stdout = self.orig
 
 
 def print_meta(video: MappedVideo, stream: TextIO = sys.stdout) -> None:
+    """
+    Print metric metadata.
+
+    Args:
+        video: (todo): write your description
+        stream: (str): write your description
+        sys: (todo): write your description
+        stdout: (todo): write your description
+    """
     with StdOutOverride(stream):
         def print_separator(text: Optional[str] = None, fat: bool = False) -> None:
+            """
+            Print text to printable text.
+
+            Args:
+                text: (str): write your description
+                fat: (str): write your description
+            """
             columns = shutil.get_terminal_size().columns
             sep = "━" if fat else "─"
             if not text:

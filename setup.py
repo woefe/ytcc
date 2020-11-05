@@ -8,6 +8,11 @@ import ytcc
 
 
 def compile_translations():
+    """
+    Compile translations. translations
+
+    Args:
+    """
     po_files = glob("po/*.po")
     package_data = []
     for file in po_files:

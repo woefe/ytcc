@@ -31,12 +31,27 @@ from ytcc import InvalidSubscriptionFileError
 
 class YtccRunner(CliRunner):
     def __init__(self, conf_file, db_file, download_dir):
+        """
+        Initialize configuration file.
+
+        Args:
+            self: (todo): write your description
+            conf_file: (str): write your description
+            db_file: (str): write your description
+            download_dir: (str): write your description
+        """
         super().__init__()
         self.conf_file = conf_file
         self.db_file = db_file
         self.download_dir = download_dir
 
     def __call__(self, *args, **kwargs):
+        """
+        Execute a database.
+
+        Args:
+            self: (todo): write your description
+        """
         from ytcc.cli import cli
 
         if kwargs.get("subscribe", False):
@@ -56,8 +71,18 @@ class YtccRunner(CliRunner):
 
 @pytest.fixture
 def cli_runner() -> Callable[..., Result]:
+    """
+    A context manager which runs a database.
+
+    Args:
+    """
     @contextlib.contextmanager
     def context() -> YtccRunner:
+        """
+        Context manager to temporarily temporarily temporarily.
+
+        Args:
+        """
         with NamedTemporaryFile(delete=False) as db_file, \
                 NamedTemporaryFile("w", delete=False) as conf_file, \
                 TemporaryDirectory() as download_dir:
@@ -78,6 +103,12 @@ def cli_runner() -> Callable[..., Result]:
 
 
 def test_bug_report_command(cli_runner):
+    """
+    Determine test report.
+
+    Args:
+        cli_runner: (todo): write your description
+    """
     from ytcc import __version__
     with cli_runner() as runner:
         result = runner("bug-report")
@@ -88,6 +119,12 @@ def test_bug_report_command(cli_runner):
 
 
 def test_subscribe(cli_runner):
+    """
+    Subscribe to a command.
+
+    Args:
+        cli_runner: (todo): write your description
+    """
     with cli_runner() as runner:
         result = runner("subscribe", "WebDriver",
                         "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw/videos")
@@ -97,6 +134,12 @@ def test_subscribe(cli_runner):
 
 
 def test_subscribe_duplicate(cli_runner):
+    """
+    Subscribe to a list of command.
+
+    Args:
+        cli_runner: (todo): write your description
+    """
     with cli_runner() as runner:
         result = runner(
             "subscribe", "WebDriver",
@@ -107,6 +150,13 @@ def test_subscribe_duplicate(cli_runner):
 
 
 def test_subscribe_bad_url(cli_runner, caplog):
+    """
+    Test for bad recipients.
+
+    Args:
+        cli_runner: (todo): write your description
+        caplog: (bool): write your description
+    """
     with cli_runner() as runner:
         result = runner("subscribe", "Test", "test.kom")
         assert result.exit_code != 0
@@ -115,6 +165,12 @@ def test_subscribe_bad_url(cli_runner, caplog):
 
 
 def test_unsubscribe(cli_runner):
+    """
+    Unsubscribe.
+
+    Args:
+        cli_runner: (todo): write your description
+    """
     with cli_runner() as runner:
         result = runner("unsubscribe", "--yes", "WebDriver", subscribe=True)
         assert result.exit_code == 0
@@ -124,6 +180,12 @@ def test_unsubscribe(cli_runner):
 
 
 def test_rename(cli_runner):
+    """
+    Renames a test.
+
+    Args:
+        cli_runner: (todo): write your description
+    """
     with cli_runner() as runner:
         result = runner("rename", "WebDriver", "WebDriverTorso", subscribe=True)
         assert result.exit_code == 0
@@ -136,6 +198,12 @@ def test_rename(cli_runner):
 
 
 def test_import(cli_runner):
+    """
+    Run a command line.
+
+    Args:
+        cli_runner: (todo): write your description
+    """
     with cli_runner() as runner:
         result = runner("import", "test/data/subscriptions.small")
         assert result.exit_code == 0
@@ -146,6 +214,13 @@ def test_import(cli_runner):
 
 
 def test_import_duplicate(cli_runner, caplog):
+    """
+    Test if the record exists.
+
+    Args:
+        cli_runner: (todo): write your description
+        caplog: (str): write your description
+    """
     with cli_runner() as runner:
         result = runner("import", "test/data/subscriptions.duplicate")
         assert result.exit_code == 0
@@ -156,6 +231,12 @@ def test_import_duplicate(cli_runner, caplog):
 
 
 def test_import_broken(cli_runner):
+    """
+    Import a command - line subscription.
+
+    Args:
+        cli_runner: (todo): write your description
+    """
     with cli_runner() as runner:
         result = runner("import", "test/data/subscriptions.broken")
         assert isinstance(result.exception, InvalidSubscriptionFileError)
@@ -163,6 +244,12 @@ def test_import_broken(cli_runner):
 
 
 def test_tag(cli_runner):
+    """
+    Test for a command.
+
+    Args:
+        cli_runner: (todo): write your description
+    """
     with cli_runner() as runner:
         result = runner("tag", "WebDriver", "test1", subscribe=True)
         assert result.exit_code == 0
@@ -175,6 +262,13 @@ def test_tag(cli_runner):
 
 
 def test_update(cli_runner, caplog):
+    """
+    Update a test test record.
+
+    Args:
+        cli_runner: (todo): write your description
+        caplog: (bool): write your description
+    """
     with cli_runner() as runner:
         result = runner("update", "--max-backlog", "20", subscribe=True)
         assert result.exit_code == 0
@@ -186,6 +280,12 @@ def test_update(cli_runner, caplog):
 
 
 def test_comma_list_error(cli_runner):
+    """
+    Executes all the list of a list.
+
+    Args:
+        cli_runner: (todo): write your description
+    """
     with cli_runner() as runner:
         result = runner("list", "--ids", "a,b")
         assert result.exit_code != 0
@@ -193,6 +293,13 @@ def test_comma_list_error(cli_runner):
 
 
 def test_bad_id(cli_runner, caplog):
+    """
+    Test if a badge id.
+
+    Args:
+        cli_runner: (todo): write your description
+        caplog: (str): write your description
+    """
     with cli_runner() as runner:
         result = runner("play", input="a")
         assert result.exit_code != 0
@@ -200,6 +307,12 @@ def test_bad_id(cli_runner, caplog):
 
 
 def test_cleanup(cli_runner):
+    """
+    Executes the command.
+
+    Args:
+        cli_runner: (todo): write your description
+    """
     with cli_runner() as runner:
         result = runner("mark", subscribe=True, update=True, input="19\n20")
         assert result.exit_code == 0
@@ -216,6 +329,12 @@ def test_cleanup(cli_runner):
 
 
 def test_download(cli_runner):
+    """
+    Download the test test suite.
+
+    Args:
+        cli_runner: (str): write your description
+    """
     with cli_runner() as runner:
         result = runner("download", "1", subscribe=True, update=True)
         assert result.exit_code == 0
@@ -231,6 +350,12 @@ def test_download(cli_runner):
 
 
 def test_pipe_mark(cli_runner):
+    """
+    Execute a pipe. pipe.
+
+    Args:
+        cli_runner: (todo): write your description
+    """
     with cli_runner() as runner:
         result = runner("ls", subscribe=True, update=True)
         result = runner("mark", input=result.stdout)
@@ -239,6 +364,12 @@ def test_pipe_mark(cli_runner):
 
 
 def test_play_video(cli_runner):
+    """
+    Runs the test.
+
+    Args:
+        cli_runner: (todo): write your description
+    """
     with cli_runner() as runner:
         result = runner("play", "1", subscribe=True, update=True)
         assert result.exit_code == 0
@@ -248,6 +379,13 @@ def test_play_video(cli_runner):
 
 
 def test_play_video_empty(cli_runner, caplog):
+    """
+    Test if the command is empty.
+
+    Args:
+        cli_runner: (todo): write your description
+        caplog: (todo): write your description
+    """
     with cli_runner() as runner:
         caplog.set_level("INFO")
         result = runner("play")
@@ -258,6 +396,12 @@ def test_play_video_empty(cli_runner, caplog):
 
 
 def test_no_command(cli_runner):
+    """
+    Run a test command.
+
+    Args:
+        cli_runner: (todo): write your description
+    """
     with cli_runner() as runner:
         result = runner("--output", "xsv", "--separator", "ab")
         assert result.exit_code != 0
