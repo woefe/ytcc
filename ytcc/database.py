@@ -292,13 +292,16 @@ class Database:
         with self.connection as con:
             con.executemany(query, ((watch_timestamp, int(video)) for video in videos))
 
-    def list_videos(self,
-                    since: Optional[float] = None,
-                    till: Optional[float] = None,
-                    watched: Optional[bool] = None,
-                    tags: Optional[List[str]] = None,
-                    playlists: Optional[List[str]] = None,
-                    ids: Optional[List[int]] = None) -> Iterable[MappedVideo]:
+    def list_videos(
+        self,
+        since: Optional[float] = None,
+        till: Optional[float] = None,
+        watched: Optional[bool] = None,
+        tags: Optional[List[str]] = None,
+        playlists: Optional[List[str]] = None,
+        ids: Optional[List[int]] = None,
+        order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None
+    ) -> Iterable[MappedVideo]:
 
         tag_condition = f"AND t.name IN ({_placeholder(tags)})" if tags is not None else ""
         id_condition = f"AND v.id IN ({_placeholder(ids)})" if ids is not None else ""
@@ -327,7 +330,7 @@ class Database:
                     VideoAttr.EXTRACTOR_HASH: "extractor_hash",
                     VideoAttr.PLAYLISTS: "playlist_name",
                 }
-                for untrusted_col, untrusted_dir in config.ytcc.order_by:
+                for untrusted_col, untrusted_dir in order_by or config.ytcc.order_by:
                     ord_dir = 'ASC' if untrusted_dir == Direction.ASC else 'DESC'
                     col = column_names.get(untrusted_col)
                     if col is not None:

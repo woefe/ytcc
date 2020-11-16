@@ -31,6 +31,7 @@ from typing import Iterable, List, Optional, Any, Dict, Tuple, Union
 from urllib.parse import parse_qs, urlparse
 
 from ytcc import config
+from ytcc.config import Direction, VideoAttr
 from ytcc.database import Database, Video, Playlist, MappedVideo, MappedPlaylist
 from ytcc.exceptions import YtccException, BadURLException, NameConflictError, \
     PlaylistDoesNotExistException, InvalidSubscriptionFileError
@@ -159,6 +160,7 @@ class Ytcc:
         self.date_begin_filter = 0.0
         self.date_end_filter = (0.0, False)
         self.include_watched_filter: Optional[bool] = False
+        self.order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None
 
     def __enter__(self) -> "Ytcc":
         return self
@@ -230,6 +232,9 @@ class Ytcc:
         :param tags: The tags of playlists to include in the result
         """
         self.tags_filter = tags
+
+    def set_listing_order(self, order_by: List[Tuple[VideoAttr, Direction]]):
+        self.order_by = order_by
 
     @staticmethod
     def update(max_fail: Optional[int] = None, max_backlog: Optional[int] = None) -> None:
@@ -391,7 +396,8 @@ class Ytcc:
             watched=self.include_watched_filter,
             tags=self.tags_filter,
             playlists=self.playlist_filter,
-            ids=self.video_id_filter
+            ids=self.video_id_filter,
+            order_by=self.order_by
         )
 
     def mark_watched(self, video: Union[List[int], int, MappedVideo]) -> None:
