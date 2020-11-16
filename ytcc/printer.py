@@ -75,14 +75,14 @@ class VideoPrintable(Printable):
         return f"{duration // 60: 4.0f}:{duration % 60:02.0f}"
 
     @staticmethod
-    def _format_publish_date(timestamp: float) -> str:
+    def _format_date(timestamp: float) -> str:
         return datetime.fromtimestamp(timestamp).strftime(config.ytcc.date_format)
 
     def data(self) -> Iterable[Dict[str, Any]]:
         for video in self.videos:
             video_dict = asdict(video)
             video_dict["duration"] = self._format_duration(video.duration)
-            video_dict["publish_date"] = self._format_publish_date(video.publish_date)
+            video_dict["publish_date"] = self._format_date(video.publish_date)
             yield video_dict
 
     def table(self) -> Table:
@@ -96,8 +96,8 @@ class VideoPrintable(Printable):
                 video.url,
                 video.title,
                 video.description,
-                self._format_publish_date(video.publish_date),
-                str(video.watched),
+                self._format_date(video.publish_date),
+                self._format_date(video.watch_date) if video.watch_date else "No",
                 self._format_duration(video.duration),
                 video.extractor_hash,
                 ", ".join(map(lambda v: v.name, video.playlists))

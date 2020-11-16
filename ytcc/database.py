@@ -19,6 +19,7 @@
 import logging
 import sqlite3
 from dataclasses import dataclass, asdict
+from datetime import datetime
 from pathlib import Path
 from typing import List, Iterable, Any, Optional, Dict, overload, Tuple
 
@@ -51,9 +52,13 @@ class Video:
     title: str
     description: str
     publish_date: float
-    watched: bool
+    watch_date: Optional[float]
     duration: float
     extractor_hash: str
+
+    @property
+    def watched(self) -> bool:
+        return self.publish_date is not None
 
 
 @dataclass(frozen=True)
@@ -129,7 +134,7 @@ class Database:
                 description    VARCHAR,
                 duration       FLOAT,
                 publish_date   FLOAT,
-                watched        INTEGER CONSTRAINT watchedBool CHECK (watched = 1 OR watched = 0),
+                watch_date     FLOAT,
                 extractor_hash VARCHAR UNIQUE
             );
 
@@ -224,9 +229,10 @@ class Database:
     def add_videos(self, videos: Iterable[Video], playlist: Playlist) -> None:
         insert_video = """
             INSERT INTO video
-                (title, url, description, duration, publish_date, watched, extractor_hash)
+                (title, url, description, duration, publish_date, watch_date, extractor_hash)
             VALUES
-                (:title, :url, :description, :duration, :publish_date, :watched, :extractor_hash)
+                (:title, :url, :description, :duration, :publish_date, :watch_date,
+                 :extractor_hash)
             ON CONFLICT (url) DO UPDATE
                 SET title = :title,
                     url = :url,
@@ -238,9 +244,9 @@ class Database:
         if sqlite3.sqlite_version_info < (3, 24, 0):
             insert_video = """
                 INSERT OR IGNORE INTO video
-                    (title, url, description, duration, publish_date, watched, extractor_hash)
+                    (title, url, description, duration, publish_date, watch_date, extractor_hash)
                 VALUES
-                    (:title, :url, :description, :duration, :publish_date, :watched,
+                    (:title, :url, :description, :duration, :publish_date, :watch_date,
                      :extractor_hash)
                 """
         insert_playlist = """
@@ -281,9 +287,10 @@ class Database:
         else:
             raise TypeError(f"Cannot mark object of type {type(video)} as watched.")
 
-        query = "UPDATE video SET watched = 1 WHERE id = ?"
+        watch_timestamp = datetime.now().timestamp()
+        query = "UPDATE video SET watch_date = ? WHERE id = ?"
         with self.connection as con:
-            con.executemany(query, ((int(video),) for video in videos))
+            con.executemany(query, ((watch_timestamp, int(video)) for video in videos))
 
     def list_videos(self,
                     since: Optional[float] = None,
@@ -302,8 +309,8 @@ class Database:
 
         watched_condition = {
             None: "",
-            True: "AND v.watched",
-            False: "AND not v.watched"
+            True: "AND v.watch_date IS NOT NULL",
+            False: "AND v.watch_date IS NULL"
         }.get(watched, "")
 
         order_by_clause = ""
@@ -315,7 +322,7 @@ class Database:
                     VideoAttr.TITLE: "title",
                     VideoAttr.DESCRIPTION: "description",
                     VideoAttr.PUBLISH_DATE: "publish_date",
-                    VideoAttr.WATCHED: "watched",
+                    VideoAttr.WATCHED: "watch_date",
                     VideoAttr.DURATION: "duration",
                     VideoAttr.EXTRACTOR_HASH: "extractor_hash",
                     VideoAttr.PLAYLISTS: "playlist_name",
@@ -336,7 +343,7 @@ class Database:
                    v.description    AS description,
                    v.duration       AS duration,
                    v.publish_date   AS publish_date,
-                   v.watched        AS watched,
+                   v.watch_date     AS watch_date,
                    v.extractor_hash AS extractor_hash,
                    p.name           AS playlist_name,
                    p.url            AS playlist_url
@@ -370,7 +377,7 @@ class Database:
                         title=row["title"],
                         description=row["description"],
                         publish_date=row["publish_date"],
-                        watched=row["watched"],
+                        watch_date=row["watch_date"],
                         duration=row["duration"],
                         extractor_hash=row["extractor_hash"],
                         playlists=[Playlist(row["playlist_name"], row["playlist_url"])]
@@ -394,7 +401,7 @@ class Database:
                 SELECT v.id
                 FROM video AS v
                          JOIN content AS cv ON v.id = cv.video_id
-                WHERE v.watched = 1
+                WHERE v.watch_date IS NOT NULL
                   AND (
                           SELECT count(*)
                           FROM video AS w

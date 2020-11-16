@@ -77,7 +77,9 @@ class Updater:
             else:
                 for entry in take(self.max_items, info.get("entries", [])):
                     e_hash = ydl._make_archive_id(entry)  # pylint: disable=protected-access
-                    if e_hash not in hashes:
+                    if e_hash is None:
+                        logger.warning("Ignoring malformed playlist entry from %s", playlist.name)
+                    elif e_hash not in hashes:
                         result.append((entry, e_hash, playlist))
 
         return result
@@ -110,7 +112,7 @@ class Updater:
                     title=processed["title"],
                     description=processed.get("description", ""),
                     publish_date=publish_date,
-                    watched=False,
+                    watch_date=None,
                     duration=processed.get("duration", -1),
                     extractor_hash=e_hash
                 )
