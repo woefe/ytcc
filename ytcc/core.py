@@ -207,12 +207,15 @@ class Ytcc:
         """
         self.date_end_filter = (end.timestamp(), True)
 
-    def set_include_watched_filter(self, enabled: bool = False) -> None:
+    def set_watched_filter(self, enabled: Optional[bool] = False) -> None:
         """Set the "watched video" filter.
 
         The results when listing videos will include both watched and unwatched videos.
+
+        :param enabled: If None, all videos ar listed. If True, only watched videos are listed.
+                        If False, only unwatched are listed
         """
-        self.include_watched_filter = None if enabled else False
+        self.include_watched_filter = enabled
 
     def set_video_id_filter(self, ids: Optional[List[int]] = None) -> None:
         """Set the id filter.

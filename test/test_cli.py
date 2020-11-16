@@ -207,7 +207,7 @@ def test_cleanup(cli_runner):
         result = runner("cleanup", "--keep", "18", input="y")
         assert result.exit_code == 0
 
-        result = runner("ls", "--watched")
+        result = runner("ls", "--watched", "--unwatched")
         assert result.exit_code == 0
         outlines = result.stdout.splitlines()
         assert "19" not in outlines
