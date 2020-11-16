@@ -21,6 +21,7 @@
 import sqlite3
 import sys
 import textwrap
+from datetime import datetime
 from pathlib import Path
 
 
@@ -112,7 +113,7 @@ with ytcc.Ytcc() as core_v2, sqlite3.connect(old_db) as con_v1:
                 title=title,
                 description=description,
                 publish_date=float(publish_date),
-                watched=bool(int(watched)),
+                watch_date=None if not bool(int(watched)) else datetime.now().timestamp(),
                 duration=0,
                 extractor_hash=f"youtube {yt_videoid}"
             )
