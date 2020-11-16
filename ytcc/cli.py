@@ -28,7 +28,7 @@ from click.exceptions import Exit
 
 from ytcc import __version__, __author__
 from ytcc import core, config
-from ytcc.config import PlaylistAttr, VideoAttr
+from ytcc.config import PlaylistAttr, VideoAttr, Direction
 from ytcc.database import MappedVideo
 from ytcc.exceptions import BadConfigException, IncompatibleDatabaseVersion, BadURLException, \
     NameConflictError, PlaylistDoesNotExistException, YtccException
@@ -290,7 +290,10 @@ common_list_options = [
     click.Option(["--ids", "-i"], type=CommaList(int),
                  help="Listed videos must have the given IDs."),
     click.Option(["--watched", "-w"], is_flag=True, default=False,
-                 help="Listed videos include watched videos.")
+                 help="Listed videos include watched videos."),
+    click.Option(["--order-by", "-o"], type=(click.Choice(VideoAttr), click.Choice(Direction)),
+                 multiple=True, help="Set the column and direction to sort listed videos.")
+
 ]
 
 
@@ -306,12 +309,14 @@ def apply_filters(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datet
 
 def list_videos_impl(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
                      playlists: List[str], ids: List[int], attributes: List[str],
-                     watched: bool) -> None:
+                     watched: bool, order_by: Optional[List[Tuple[VideoAttr, Direction]]]) -> None:
     apply_filters(ytcc, tags, since, till, playlists, ids, watched)
     if attributes:
         printer.filter = attributes
     else:
         printer.filter = config.ytcc.video_attrs
+    if order_by is not None:
+        ytcc.set_listing_order(order_by)
     printer.print(VideoPrintable(ytcc.list_videos()))
 
 
@@ -321,18 +326,20 @@ def list_videos_impl(ytcc: core.Ytcc, tags: List[str], since: datetime, till: da
                    f"Some of [{', '.join(map(lambda x: x.value, list(VideoAttr)))}].")
 @pass_ytcc
 def list_videos(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
-                playlists: List[str], ids: List[int], attributes: List[str], watched: bool):
+                playlists: List[str], ids: List[int], attributes: List[str], watched: bool,
+                order_by: Optional[List[Tuple[VideoAttr, Direction]]]):
     """List videos.
 
     Lists videos that match the given filter options. By default, all unwatched videos are listed.
     """
-    list_videos_impl(ytcc, tags, since, till, playlists, ids, attributes, watched)
+    list_videos_impl(ytcc, tags, since, till, playlists, ids, attributes, watched, order_by)
 
 
 @cli.command("ls")
 @pass_ytcc
 def list_ids(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
-             playlists: List[str], ids: List[int], watched: bool):
+             playlists: List[str], ids: List[int], watched: bool,
+             order_by: Optional[List[Tuple[VideoAttr, Direction]]]):
     """List IDs of unwatched videos in XSV format.
 
     Basically an alias for `ytcc --output xsv list --attributes id`. This alias can be useful for
@@ -340,15 +347,18 @@ def list_ids(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
     """
     global printer  # pylint: disable=global-statement,invalid-name
     printer = XSVPrinter()
-    list_videos_impl(ytcc, tags, since, till, playlists, ids, ["id"], watched)
+    list_videos_impl(ytcc, tags, since, till, playlists, ids, ["id"], watched, order_by)
 
 
 @cli.command()
 @pass_ytcc
 def tui(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime, playlists: List[str],
-        ids: List[int], watched: bool):
+        ids: List[int], watched: bool,
+        order_by: Optional[List[Tuple[VideoAttr, Direction]]]):
     """Start an interactive terminal user interface."""
     apply_filters(ytcc, tags, since, till, playlists, ids, watched)
+    if order_by is not None:
+        ytcc.set_listing_order(order_by)
     Interactive(ytcc).run()
 
 
