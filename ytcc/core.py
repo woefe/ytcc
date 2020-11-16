@@ -406,6 +406,9 @@ class Ytcc:
     def mark_watched(self, video: Union[List[int], int, MappedVideo]) -> None:
         self.database.mark_watched(video)
 
+    def mark_unwatched(self, video: Union[List[int], int, MappedVideo]) -> None:
+        self.database.mark_unwatched(video)
+
     def delete_playlist(self, name: str) -> None:
         if not self.database.delete_playlist(name):
             raise PlaylistDoesNotExistException(f"Could not remove playlist {name}, because "

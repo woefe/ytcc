@@ -278,6 +278,24 @@ class Database:
         ...
 
     def mark_watched(self, video: Any) -> None:
+        self._mark(video, datetime.now().timestamp())
+
+    @overload
+    def mark_unwatched(self, video: List[int]) -> None:
+        ...
+
+    @overload
+    def mark_unwatched(self, video: int) -> None:
+        ...
+
+    @overload
+    def mark_unwatched(self, video: MappedVideo) -> None:
+        ...
+
+    def mark_unwatched(self, video: Any) -> None:
+        self._mark(video, None)
+
+    def _mark(self, video: Any, val: Optional[float]):
         if isinstance(video, int):
             videos = [video]
         elif isinstance(video, list):
@@ -287,10 +305,9 @@ class Database:
         else:
             raise TypeError(f"Cannot mark object of type {type(video)} as watched.")
 
-        watch_timestamp = datetime.now().timestamp()
         query = "UPDATE video SET watch_date = ? WHERE id = ?"
         with self.connection as con:
-            con.executemany(query, ((watch_timestamp, int(video)) for video in videos))
+            con.executemany(query, ((val, int(video)) for video in videos))
 
     def list_videos(
         self,
