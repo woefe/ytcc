@@ -177,7 +177,8 @@ class Ytcc:
 
     def close(self) -> None:
         """Close open resources like the database connection."""
-        self.database.close()
+        if self._database is not None:
+            self._database.close()
 
     def set_playlist_filter(self, playlists: List[str]) -> None:
         """Set the channel filter.
