@@ -26,6 +26,7 @@ from typing import List, Iterable, Any, Optional, Dict, overload, Tuple
 from ytcc import config
 from ytcc.config import Direction, VideoAttr
 from ytcc.exceptions import IncompatibleDatabaseVersion, PlaylistDoesNotExistException
+from ytcc.migration import migrate
 from ytcc.utils import unpack_optional
 
 logger = logging.getLogger(__name__)
@@ -73,7 +74,7 @@ class MappedPlaylist(Playlist):
 
 
 class Database:
-    VERSION = 2
+    VERSION = 3
 
     def __init__(self, path: str = ":memory:"):
         is_new_db = True
@@ -92,9 +93,10 @@ class Database:
 
         if is_new_db:
             self._populate()
-
-        if int(self.connection.execute("PRAGMA USER_VERSION;").fetchone()[0]) < 2:
+        db_version = int(self.connection.execute("PRAGMA user_version;").fetchone()[0])
+        if db_version < 2:
             raise IncompatibleDatabaseVersion("Database Schema 2 or higher is required")
+        migrate(db_version, Database.VERSION, self.connection)
 
     def __enter__(self) -> "Database":
         return self
@@ -144,7 +146,7 @@ class Database:
                 failure_count INTEGER
             );
 
-            PRAGMA USER_VERSION = {self.VERSION};
+            PRAGMA user_version = {self.VERSION};
             """
         with self.connection:
             self.connection.executescript(script)
