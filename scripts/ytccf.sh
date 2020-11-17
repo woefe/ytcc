@@ -32,6 +32,7 @@ key_bindings="
       alt-d: download video(s)
       alt-r: update
       alt-m: mark selection as watched
+      alt-u: mark last watched video as unwatched
       alt-h: show help"
 
 check_cmd() {
@@ -62,7 +63,8 @@ OPTIONS:
   -p, --playlists COMMA_SEPARATED_VALUES
                                   Listed videos must be in on of the given
                                   playlists.
-  -w, --watched                   Listed videos include watched videos.
+  -w, --watched                   Only watched videos are listed.
+  -u, --unwatched                 Only unwatched videos are listed.
   -h, --help                      Show this message and exit.
 
 
@@ -100,6 +102,10 @@ while [[ $# -gt 0 ]]; do
         make_table="$make_table -w"
         shift
         ;;
+    -u | --unwatched)
+        make_table="$make_table -u"
+        shift
+        ;;
     -h | --help)
         usage
         exit
@@ -126,4 +132,5 @@ eval "$make_table" |
         --bind "alt-r:execute%ytcc update%+reload%$make_table%" \
         --bind "alt-h:execute%echo 'Key bindings:$key_bindings' | less%+reload%$make_table%" \
         --bind "alt-m:reload%cut -d ' ' -f 2 {+f} | ytcc mark > /dev/null; $make_table%" \
+        --bind "alt-u:reload%ytcc ls --order-by watched desc --watched | head -n1 | ytcc unmark > /dev/null; $make_table%" \
         --header-lines 2
