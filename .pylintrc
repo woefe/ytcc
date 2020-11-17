@@ -142,7 +142,8 @@ disable=missing-function-docstring,
         xreadlines-attribute,
         deprecated-sys-function,
         exception-escape,
-        comprehension-escape
+        comprehension-escape,
+        duplicate-code  # Because it cannot be disabled on a per-file basis
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

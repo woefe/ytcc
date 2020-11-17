@@ -80,7 +80,7 @@ def _load_completion_conf(args: List[str]) -> None:
 
 
 def ids_completion(watched: bool = False):
-    def complete(ctx: Any, args: List[str],
+    def complete(ctx: Any, args: List[str],  # pylint: disable=unused-argument
                  incomplete: str) -> List[Union[str, Tuple[str, str]]]:
         try:
             _load_completion_conf(args)
@@ -98,7 +98,7 @@ def ids_completion(watched: bool = False):
     return complete
 
 
-def playlist_completion(ctx: Any, args: List[str],
+def playlist_completion(ctx: Any, args: List[str],  # pylint: disable=unused-argument
                         incomplete: str) -> List[Union[str, Tuple[str, str]]]:
     try:
         _load_completion_conf(args)
@@ -113,7 +113,7 @@ def playlist_completion(ctx: Any, args: List[str],
         ]
 
 
-def tag_completion(ctx: Any, args: List[str],
+def tag_completion(ctx: Any, args: List[str],  # pylint: disable=unused-argument
                    incomplete: str) -> List[Union[str, Tuple[str, str]]]:
     try:
         _load_completion_conf(args)
@@ -319,6 +319,7 @@ def apply_filters(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datet
     ytcc.set_watched_filter(watched_filter)
 
 
+# pylint: disable=too-many-arguments
 def list_videos_impl(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
                      playlists: List[str], ids: List[int], attributes: List[str],
                      watched: bool, unwatched: bool,

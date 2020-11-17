@@ -311,6 +311,32 @@ class Database:
         with self.connection as con:
             con.executemany(query, ((val, int(video)) for video in videos))
 
+    @staticmethod
+    def _make_order_by_clause(order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None) -> str:
+        order_by_clause = ""
+        if config.ytcc.order_by:
+            def directions() -> Iterable[Tuple[str, str]]:
+                column_names = {
+                    VideoAttr.ID: "id",
+                    VideoAttr.URL: "url",
+                    VideoAttr.TITLE: "title",
+                    VideoAttr.DESCRIPTION: "description",
+                    VideoAttr.PUBLISH_DATE: "publish_date",
+                    VideoAttr.WATCHED: "watch_date",
+                    VideoAttr.DURATION: "duration",
+                    VideoAttr.EXTRACTOR_HASH: "extractor_hash",
+                    VideoAttr.PLAYLISTS: "playlist_name",
+                }
+                for untrusted_col, untrusted_dir in order_by or config.ytcc.order_by:
+                    ord_dir = 'ASC' if untrusted_dir == Direction.ASC else 'DESC'
+                    col = column_names.get(untrusted_col)
+                    if col is not None:
+                        yield col, ord_dir
+
+            order_by_clause = "ORDER BY "
+            order_by_clause += ", ".join(f"{col} {ord_dir}" for col, ord_dir in directions())
+        return order_by_clause
+
     def list_videos(
         self,
         since: Optional[float] = None,
@@ -335,28 +361,7 @@ class Database:
             False: "AND v.watch_date IS NULL"
         }.get(watched, "")
 
-        order_by_clause = ""
-        if config.ytcc.order_by:
-            def directions() -> Iterable[Tuple[str, str]]:
-                column_names = {
-                    VideoAttr.ID: "id",
-                    VideoAttr.URL: "url",
-                    VideoAttr.TITLE: "title",
-                    VideoAttr.DESCRIPTION: "description",
-                    VideoAttr.PUBLISH_DATE: "publish_date",
-                    VideoAttr.WATCHED: "watch_date",
-                    VideoAttr.DURATION: "duration",
-                    VideoAttr.EXTRACTOR_HASH: "extractor_hash",
-                    VideoAttr.PLAYLISTS: "playlist_name",
-                }
-                for untrusted_col, untrusted_dir in order_by or config.ytcc.order_by:
-                    ord_dir = 'ASC' if untrusted_dir == Direction.ASC else 'DESC'
-                    col = column_names.get(untrusted_col)
-                    if col is not None:
-                        yield col, ord_dir
-
-            order_by_clause = "ORDER BY "
-            order_by_clause += ", ".join(f"{col} {ord_dir}" for col, ord_dir in directions())
+        order_by_clause = self._make_order_by_clause(order_by)
 
         query = f"""
             SELECT v.id             AS id,
