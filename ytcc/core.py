@@ -373,10 +373,21 @@ class Ytcc:
                 )
                 raise BadURLException("Not a playlist or not supported by youtube-dl")
 
-        try:
+            peek = list(info.get("entries"))
+            if not peek:
+                logger.warning("The playlist might be empty")
+
+            for entry in peek:
+                if ydl._make_archive_id(entry) is None:  # pylint: disable=protected-access
+                    raise BadURLException("The given URL is not supported by ytcc, because it "
+                                          "doesn't point to a playlist")
+
             real_url = info.get("webpage_url")
-            if real_url:
-                self.database.add_playlist(name, real_url)
+            if not real_url:
+                raise BadURLException("The playlist URL cannot be found")
+
+        try:
+            self.database.add_playlist(name, real_url)
         except sqlite3.IntegrityError as integrity_error:
             logger.debug(
                 "Cannot subscribe to playlist due to integrity constraint error: %s",
