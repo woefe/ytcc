@@ -122,15 +122,15 @@ check_cmd ytcc
 check_cmd fzf
 
 eval "$make_table" |
-    fzf --preview "ytcc --output xsv --separator ';' list -a description -i \$(echo {} | cut -d ' ' -f 2)" \
+    fzf --preview "ytcc --output xsv --separator ';' list -a description -i {1}" \
         --multi \
         --layout reverse \
         --preview-window down:55%:wrap \
-        --bind "enter:execute%cut -d ' ' -f 2 {+f} | ytcc play%+reload%$make_table%" \
-        --bind "alt-enter:execute%cut -d ' ' -f 2 {+f} | ytcc play --audio-only%+reload%$make_table%" \
-        --bind "alt-d:execute%cut -d ' ' -f 2 {+f} | ytcc download%+reload%$make_table%" \
+        --bind "enter:execute%ytcc play {+1}%+reload%$make_table%" \
+        --bind "alt-enter:execute%ytcc play --audio-only {+1}%+reload%$make_table%" \
+        --bind "alt-d:execute%ytcc download {+1}%+reload%$make_table%" \
         --bind "alt-r:execute%ytcc update%+reload%$make_table%" \
         --bind "alt-h:execute%echo 'Key bindings:$key_bindings' | less%+reload%$make_table%" \
-        --bind "alt-m:reload%cut -d ' ' -f 2 {+f} | ytcc mark > /dev/null; $make_table%" \
-        --bind "alt-u:reload%ytcc ls --order-by watched desc --watched | head -n1 | ytcc unmark > /dev/null; $make_table%" \
+        --bind "alt-m:reload%ytcc mark {+1}; $make_table%" \
+        --bind "alt-u:reload%ytcc ls --order-by watched desc --watched | head -n1 | ytcc unmark; $make_table%" \
         --header-lines 2
