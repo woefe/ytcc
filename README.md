@@ -183,6 +183,11 @@ thumbnail = on
 skip_live_stream = true
 ```
 
+### mpv configuration
+Ytcc uses [mpv](https://mpv.io) to play videos.
+You can configure mpv to integrate nicely with ytcc.
+Specifics are documented [here](https://github.com/woefe/ytcc/tree/master/doc/mpv.md).
+
 
 ## Reporting issues
 Create a new issue on the [GitHub issue tracker](https://github.com/woefe/ytcc/issues/new).
