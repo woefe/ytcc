@@ -239,6 +239,7 @@ class RSSPrinter(Printer):
                 RSS2.RSSItem(
                     title=entry["title"],
                     link=entry["url"],
+                    author=",".join(playlist["name"] for playlist in entry["playlists"]),
                     description=entry["description"],
                     guid=RSS2.Guid(str(entry["id"]), isPermaLink=False),
                     pubDate=datetime.strptime(entry["publish_date"], config.ytcc.date_format)
