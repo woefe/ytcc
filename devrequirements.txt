@@ -7,3 +7,4 @@ pydocstyle
 # Application dependencies
 click
 youtube_dl
+PyRSS2Gen

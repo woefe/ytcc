@@ -42,6 +42,9 @@ setup(
     license=ytcc.__license__,
     packages=find_packages(exclude=["test"]),
     install_requires=["youtube_dl", "click", "wcwidth"],
+    extras_require={
+        "rss": ["PyRSS2Gen"]
+    },
     python_requires=">=3.7, <4",
     scripts=["scripts/ytccf.sh"],
     entry_points={

@@ -20,10 +20,15 @@ import json
 import sys
 from abc import ABC, abstractmethod, ABCMeta
 from dataclasses import asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Iterable, Dict, Any, NamedTuple, Optional
 
 from wcwidth import wcswidth
+
+try:
+    import PyRSS2Gen as RSS2
+except ImportError:
+    RSS2 = None
 
 from ytcc import config
 from ytcc.database import MappedVideo, MappedPlaylist
@@ -212,3 +217,33 @@ class JSONPrinter(Printer):
 
     def print(self, obj: DictData) -> None:
         json.dump(list(obj.data()), sys.stdout, indent=2)
+
+
+class RSSPrinter(Printer):
+
+    def __init__(self):
+        if RSS2 is None:
+            raise YtccException("RSS is only available with PyRSS2Gen."
+                                " Please install it, e.g. with 'pip install PyRSS2Gen'")
+
+    def print(self, obj: DictData) -> None:
+        if getattr(obj, 'videos', None) is None:
+            raise YtccException('RSS feed is only available with video lists')
+
+        rss = RSS2.RSS2(
+            title="YTCC feed",
+            link="https://github.com/woefe/ytcc",
+            description="Latest videos from your YTCC instance",
+            lastBuildDate=datetime.now(tz=timezone.utc),
+            items=[
+                RSS2.RSSItem(
+                    title=entry["title"],
+                    link=entry["url"],
+                    description=entry["description"],
+                    guid=RSS2.Guid(str(entry["id"]), isPermaLink=False),
+                    pubDate=datetime.strptime(entry["publish_date"], config.ytcc.date_format)
+                )
+                for entry in obj.data()
+            ]
+        )
+        rss.write_xml(sys.stdout)
