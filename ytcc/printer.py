@@ -222,6 +222,7 @@ class JSONPrinter(Printer):
 class RSSPrinter(Printer):
 
     def __init__(self):
+        super().__init__()
         if RSS2 is None:
             raise YtccException("RSS is only available with PyRSS2Gen."
                                 " Please install it, e.g. with 'pip install PyRSS2Gen'")
