@@ -29,7 +29,8 @@ jobs:
     - name: Install dependencies on Ubuntu
       if: matrix.os == 'ubuntu-latest'
       run: |
-        sudo apt-get install -y gettext ffmpeg
+        sudo apt update
+        sudo apt install -y gettext ffmpeg
         sudo ln -s /bin/true /bin/mpv
     - name: Install dependencies on Windows
       if: matrix.os == 'windows-latest'
