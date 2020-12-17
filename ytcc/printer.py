@@ -247,4 +247,4 @@ class RSSPrinter(Printer):
                 for entry in obj.data()
             ]
         )
-        rss.write_xml(sys.stdout)
+        rss.write_xml(sys.stdout, encoding="utf8")
