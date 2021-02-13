@@ -45,7 +45,7 @@ List playlist content in JSON format.
 ytcc --output json list --playlist "NCS: House" --since 2020-07-07 --watched
 ```
 
-List videos as RSS feed.
+List all videos as RSS feed.
 ```shell script
 ytcc --output rss list --watched
 ```
@@ -122,7 +122,7 @@ date_format = %Y-%m-%d
 max_update_fail = 5
 
 # Default update backlog.
-# The update command will only the first `max_update_backlog` videos of a playlist to improve
+# The update command will only check the first `max_update_backlog` videos of a playlist to improve
 # performance. This setting can be overridden with the --max-backlog commandline parameter.
 max_update_backlog = 20
 
@@ -155,15 +155,12 @@ default_action = play_video
 # want to be able to download videos.
 format = bestvideo[height<=?1080]+bestaudio/best
 
-# Output template (see OUTPUT TEMPLATE in youtube-dl manpage)
+# Output template (see OUTPUT TEMPLATE in youtube-dl manpage).
 output_template = %(title)s.%(ext)s
 
 # If a merge is required according to format selection, merge to the given container format.
 # One of mkv, mp4, ogg, webm, flv
 merge_output_format = mkv
-
-# Loglevel options: quiet, normal, verbose
-loglevel = normal
 
 # Limit download speed to the given bytes/second. Set 0 for no limit.
 # E.g. limit to one megabyte per second
@@ -174,23 +171,24 @@ ratelimit = 0
 # Set 0 for no retries.
 retries = 0
 
-# Subtitles for videos. If enabled and available, automatic and manual subtitles for selected
-# languages are embedded in the video.
+# Subtitles for videos.
+# If enabled and available, automatic and manual subtitles for selected languages are embedded in
+# the video.
 #subtitles = en,de
 subtitles = off
 
-# Embed the youtube thumbnail in audio downloads. Transforms the resulting file to m4a, if
-# enabled.
+# Embed the youtube thumbnail in audio downloads.
+# Transforms the resulting file to m4a, if enabled.
 thumbnail = on
 
-# Skips livestreams in download command
+# Skips livestreams in download command.
 skip_live_stream = true
 
 # Don't download videos longer than 'max_duration' seconds.
 # 0 disables the limit.
 max_duration = 9000
 
-# Restrict filenames to only ASCII characters and avoid "&" and spaces in filenames
+# Restrict filenames to only ASCII characters and avoid "&" and spaces in filenames.
 restrict_filenames = off
 ```
 
