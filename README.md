@@ -21,7 +21,7 @@ See the [migration guide](https://github.com/woefe/ytcc/tree/master/doc/migrate.
 
 "Subscribe" to playlists.
 ```shell script
-ytcc subscribe "Jupiter Broadcasting" "https://www.youtube.com/user/jupiterbroadcasting"
+ytcc subscribe "Jupiter Broadcasting" "https://www.youtube.com/c/JupiterBroadcasting/videos"
 ytcc subscribe "NCS: House" "https://www.youtube.com/playlist?list=PLRBp0Fe2GpgmsW46rJyudVFlY6IYjFBIK"
 ```
 
