@@ -185,6 +185,10 @@ thumbnail = on
 
 # Skips livestreams in download command
 skip_live_stream = true
+
+# Don't download videos longer than 'max_duration' seconds.
+# 0 disables the limit.
+max_duration = 9000
 ```
 
 ### mpv configuration

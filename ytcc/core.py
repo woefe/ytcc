@@ -331,6 +331,13 @@ class Ytcc:
                 ydl_opts["writeautomaticsub"] = True
                 ydl_opts["postprocessors"].append({"key": "FFmpegEmbedSubtitle"})
 
+        if 0 < conf.max_duration < video.duration:
+            logger.info(
+                "Skipping video %s, because it is longer than the configured maximum",
+                video.url
+            )
+            return False
+
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             try:
                 info = ydl.extract_info(video.url, download=False, process=False)
