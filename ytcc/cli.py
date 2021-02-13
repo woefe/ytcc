@@ -33,7 +33,7 @@ from ytcc.database import MappedVideo
 from ytcc.exceptions import BadConfigException, IncompatibleDatabaseVersion, BadURLException, \
     NameConflictError, PlaylistDoesNotExistException, YtccException
 from ytcc.printer import JSONPrinter, XSVPrinter, VideoPrintable, TablePrinter, \
-    PlaylistPrintable, Printer
+    PlaylistPrintable, Printer, RSSPrinter
 from ytcc.tui import print_meta, Interactive
 
 T = TypeVar("T")  # pylint: disable=invalid-name
@@ -131,11 +131,12 @@ def tag_completion(ctx: Any, args: List[str],  # pylint: disable=unused-argument
 @click.option("--loglevel", "-l", type=click.Choice(["critical", "info", "debug"]), default="info",
               show_default=True,
               help="Set the log level. Overrides the log level configured in the config file.")
-@click.option("--output", "-o", type=click.Choice(["json", "table", "xsv"]), default="table",
-              show_default=True,
+@click.option("--output", "-o", type=click.Choice(["json", "table", "xsv", "rss"]),
+              default="table", show_default=True,
               help="Set output format. `json` prints in JSON format, which is usually not filtered"
                    " by --attribute options of commands. `table` prints a human readable table."
-                   " `xsv` prints x-separated values, where x can be set with the -s option.")
+                   " `xsv` prints x-separated values, where x can be set with the -s option."
+                   " `rss` prints a RSS 2.0 feed of videos.")
 @click.option("--separator", "-s", default=",", show_default=True,
               help="Set the delimiter used in XSV format.")
 @click.version_option(version=__version__, prog_name="ytcc", message=version_text)
@@ -177,6 +178,8 @@ def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: s
         printer = JSONPrinter()
     elif output == "xsv":
         printer = XSVPrinter(separator)
+    elif output == "rss":
+        printer = RSSPrinter()
 
 
 @cli.command()

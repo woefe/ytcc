@@ -45,6 +45,11 @@ List playlist content in JSON format.
 ytcc --output json list --playlist "NCS: House" --since 2020-07-07 --watched
 ```
 
+List videos as RSS feed.
+```shell script
+ytcc --output rss list --watched
+```
+
 Start the interactive terminal interface.
 ```shell script
 ytcc tui

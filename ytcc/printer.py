@@ -15,12 +15,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
-
+import html
 import json
 import sys
+import xml.etree.ElementTree as ET
+from email.utils import format_datetime as rss2_date
 from abc import ABC, abstractmethod, ABCMeta
 from dataclasses import asdict
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Iterable, Dict, Any, NamedTuple, Optional
 
 from wcwidth import wcswidth
@@ -212,3 +214,37 @@ class JSONPrinter(Printer):
 
     def print(self, obj: DictData) -> None:
         json.dump(list(obj.data()), sys.stdout, indent=2)
+
+
+class RSSPrinter(Printer):
+    def print(self, obj: VideoPrintable) -> None:
+        if not isinstance(obj, VideoPrintable):
+            raise YtccException("RSS can only be generated for videos")
+
+        rss = ET.Element("rss", version="2.0")
+        channel = ET.SubElement(rss, "channel")
+        title = ET.SubElement(channel, "title")
+        title.text = "Ytcc videos"
+        link = ET.SubElement(channel, "link")
+        link.text = "https://github.com/woefe/ytcc"
+        description = ET.SubElement(channel, "description")
+        description.text = "Latest videos from your ytcc subscriptions"
+        last_build_date = ET.SubElement(channel, "lastBuildDate")
+        last_build_date.text = rss2_date(datetime.now(tz=timezone.utc))
+
+        for video in obj.videos:
+            item = ET.SubElement(channel, "item")
+            title = ET.SubElement(item, "title")
+            title.text = video.title
+            link = ET.SubElement(item, "link")
+            link.text = video.url
+            author = ET.SubElement(item, "author")
+            author.text = ", ".join(map(lambda v: v.name, video.playlists))
+            description = ET.SubElement(item, "description")
+            description.text = f"<pre>{html.escape(video.description)}</pre>"
+            pub_date = ET.SubElement(item, "pubDate")
+            pub_date.text = rss2_date(datetime.fromtimestamp(video.publish_date))
+            guid = ET.SubElement(item, "guid", isPermaLink="false")
+            guid.text = f"ytcc::{video.id}::{video.extractor_hash}"
+
+        ET.dump(rss)
