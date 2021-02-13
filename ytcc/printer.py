@@ -217,7 +217,7 @@ class JSONPrinter(Printer):
 
 
 class RSSPrinter(Printer):
-    def print(self, obj: VideoPrintable) -> None:
+    def print(self, obj: Printable) -> None:
         if not isinstance(obj, VideoPrintable):
             raise YtccException("RSS can only be generated for videos")
 
