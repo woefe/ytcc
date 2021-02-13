@@ -1,4 +1,4 @@
-.TH ytcc 1 "Nov 2020" "2.0.1" "ytcc - a subscription wrapper for youtube-dl"
+.TH ytcc 1 "Feb 2021" "2.1.0" "ytcc - a subscription wrapper for youtube-dl"
 .SH NAME
 ytcc - a subscription wrapper for youtube-dl playlists
 .SH SYNOPSIS
@@ -16,8 +16,8 @@ To show the detailed help of a COMMAND run `ytcc COMMAND --help`.
 Override configuration file.
 .SS -l, --loglevel [critical|info|debug]
 Set the log level. Overrides the log level configured in the config file.  [default: info]
-.SS -o, --output [json|table|xsv]
-Set output format. `json` prints in JSON format, which is usually not filtered by --attribute options of commands. `table` prints a human readable table. `xsv` prints x-separated values, where x can be set with the -s option.  [default: table]
+.SS -o, --output [json|table|xsv|rss]
+Set output format. `json` prints in JSON format, which is usually not filtered by --attribute options of commands. `table` prints a human readable table. `xsv` prints x-separated values, where x can be set with the -s option. `rss` prints a RSS 2.0 feed of videos.  [default: table]
 .SS -s, --separator TEXT
 Set the delimiter used in XSV format.  [default: ,]
 .SS --version
@@ -124,7 +124,13 @@ Listed videos must be in on of the given playlists.
 Listed videos must have the given IDs.
 .P
 .B -w, --watched
-Listed videos include watched videos.
+Only watched videos are listed.
+.P
+.B -u, --unwatched
+Only unwatched videos are listed.
+.P
+.B -o, --order-by <CHOICE CHOICE>...
+Set the column and direction to sort listed videos.
 .P
 .B --help
 Show command help and exit.
@@ -153,7 +159,13 @@ Listed videos must be in on of the given playlists.
 Listed videos must have the given IDs.
 .P
 .B -w, --watched
-Listed videos include watched videos.
+Only watched videos are listed.
+.P
+.B -u, --unwatched
+Only unwatched videos are listed.
+.P
+.B -o, --order-by <CHOICE CHOICE>...
+Set the column and direction to sort listed videos.
 .P
 .B --help
 Show command help and exit.
@@ -179,7 +191,13 @@ Listed videos must be in on of the given playlists.
 Listed videos must have the given IDs.
 .P
 .B -w, --watched
-Listed videos include watched videos.
+Only watched videos are listed.
+.P
+.B -u, --unwatched
+Only unwatched videos are listed.
+.P
+.B -o, --order-by <CHOICE CHOICE>...
+Set the column and direction to sort listed videos.
 .P
 .B --help
 Show command help and exit.
@@ -211,6 +229,17 @@ Mark videos as watched.
 Marks videos as watched without playing or downloading them. If no IDs are given, ytcc tries to
 read IDs from stdin. If no IDs are given and no IDs were read from stdin, no videos are marked
 as watched.
+.P
+.B OPTIONS:
+.P
+.B --help
+Show command help and exit.
+.SS unmark [OPTIONS] [IDS]...
+
+Mark videos as unwatched.
+
+Marks videos as unwatched. If no IDs are given, ytcc tries to read IDs from stdin. If no IDs
+are given and no IDs were read from stdin, no videos are marked as watched.
 .P
 .B OPTIONS:
 .P
