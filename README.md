@@ -146,17 +146,16 @@ default_action = play_video
 
 
 [youtube_dl]
-merge_output_format = mkv
 # Format (see FORMAT SELECTION in youtube-dl manpage). Make sure to use a video format here, if you
 # want to be able to download videos.
 format = bestvideo[height<=?1080]+bestaudio/best
 
 # Output template (see OUTPUT TEMPLATE in youtube-dl manpage)
-outputtemplate = %(title)s.%(ext)s
+output_template = %(title)s.%(ext)s
 
 # If a merge is required according to format selection, merge to the given container format.
 # One of mkv, mp4, ogg, webm, flv
-mergeoutputformat = mkv
+merge_output_format = mkv
 
 # Loglevel options: quiet, normal, verbose
 loglevel = normal
