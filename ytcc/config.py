@@ -171,6 +171,7 @@ class youtube_dl(BaseConfig):  # pylint: disable=invalid-name
     skip_live_stream: bool = True
     merge_output_format: str = "mkv"
     max_duration: int = 0
+    restrict_filenames: bool = False
 
 
 def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigParser:

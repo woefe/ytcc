@@ -189,6 +189,9 @@ skip_live_stream = true
 # Don't download videos longer than 'max_duration' seconds.
 # 0 disables the limit.
 max_duration = 9000
+
+# Restrict filenames to only ASCII characters and avoid "&" and spaces in filenames
+restrict_filenames = off
 ```
 
 ### mpv configuration

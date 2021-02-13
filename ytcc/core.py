@@ -308,6 +308,7 @@ class Ytcc:
             "ratelimit": conf.ratelimit if conf.ratelimit > 0 else None,
             "retries": conf.retries,
             "merge_output_format": conf.merge_output_format,
+            "restrictfilenames": conf.restrict_filenames,
             "ignoreerrors": False,
             "postprocessors": [
                 {
