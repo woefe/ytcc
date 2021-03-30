@@ -100,24 +100,43 @@ class Updater:
                 logging.warning("Failed to get a video. Youtube-dl said: '%s'", download_error)
                 return e_hash, None
             else:
-                publish_date = 0.0
+                title = processed.get("title")
+                if not title:
+                    logger.error("Failed to process a video, because its title is missing")
+                    return e_hash, None
+
+                url = processed.get("webpage_url")
+                if not url:
+                    logger.error(
+                        "Failed to process a video '%s', because its URL is missing",
+                        title
+                    )
+                    return e_hash, None
+
+                if processed.get("age_limit", 0) > config.ytcc.age_limit:
+                    logger.warning("Ignoring video '%s' due to age limit", title)
+                    return e_hash, None
+
+                publish_date = 169201.0  # Minimum timestamp usable on Windows
                 date_str = processed.get("upload_date")
                 if date_str:
                     publish_date = datetime.datetime.strptime(date_str, "%Y%m%d").timestamp()
+                else:
+                    logger.warning("Publication date of video '%s' is unknown", title)
 
-                if processed.get("age_limit", 0) > config.ytcc.age_limit:
-                    logger.warning("Ignoring video '%s' due to age limit", processed.get("title"))
-                    return e_hash, None
+                duration = processed.get("duration") or -1
+                if duration < 0:
+                    logger.warning("Duration of video '%s' is unknown", title)
 
                 logger.info("Processed video '%s'", processed.get("title"))
 
                 return e_hash, Video(
-                    url=processed["webpage_url"],
-                    title=processed["title"],
+                    url=url,
+                    title=title,
                     description=processed.get("description", ""),
                     publish_date=publish_date,
                     watch_date=None,
-                    duration=processed.get("duration", -1),
+                    duration=duration,
                     extractor_hash=e_hash
                 )
 

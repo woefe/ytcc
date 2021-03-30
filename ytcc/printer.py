@@ -74,6 +74,8 @@ class VideoPrintable(Printable):
 
     @staticmethod
     def _format_duration(duration: float) -> str:
+        if not duration or duration < 0:
+            return "   0:00"
         return f"{duration // 60: 4.0f}:{duration % 60:02.0f}"
 
     @staticmethod
