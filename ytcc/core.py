@@ -39,8 +39,11 @@ from ytcc.utils import unpack_optional, take, lazy_import
 
 youtube_dl = lazy_import("youtube_dl")
 
+_ytdl_logger = logging.getLogger("youtube_dl")
+_ytdl_logger.propagate = False
+_ytdl_logger.addHandler(logging.NullHandler())
 YTDL_COMMON_OPTS = {
-    "logger": logging.getLogger("youtube_dl")
+    "logger": _ytdl_logger
 }
 
 logger = logging.getLogger(__name__)
