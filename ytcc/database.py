@@ -75,7 +75,7 @@ class MappedPlaylist(Playlist):
 
 
 class Database:
-    VERSION = 3
+    VERSION = 4
 
     def __init__(self, path: str = ":memory:"):
         is_new_db = True
