@@ -71,6 +71,9 @@ class Updater:
             )
 
         result = []
+        ydl_opts = self.ydl_opts.copy()
+        ydl_opts["playlistend"] = None if playlist.reverse else self.max_items
+
         with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
             logger.info("Checking playlist '%s'...", playlist.name)
             try:
@@ -79,7 +82,10 @@ class Updater:
                 logging.error("Failed to get playlist %s. Youtube-dl said: '%s'",
                               playlist.name, download_error)
             else:
-                for entry in take(self.max_items, info.get("entries", [])):
+                entries = info.get("entries", [])
+                if playlist.reverse:
+                    entries = reversed(list(entries))
+                for entry in take(self.max_items, entries):
                     e_hash = ydl._make_archive_id(entry)  # pylint: disable=protected-access
                     if e_hash is None:
                         logger.warning("Ignoring malformed playlist entry from %s", playlist.name)
@@ -374,7 +380,7 @@ class Ytcc:
                 logger.debug("youtube-dl failed with '%s'", ydl_err)
                 return False
 
-    def add_playlist(self, name: str, url: str) -> None:
+    def add_playlist(self, name: str, url: str, reverse: bool = False) -> None:
         ydl_opts = {
             **YTDL_COMMON_OPTS,
             "playliststart": 1,
@@ -417,7 +423,7 @@ class Ytcc:
                 raise BadURLException("The playlist URL cannot be found")
 
         try:
-            self.database.add_playlist(name, real_url)
+            self.database.add_playlist(name, real_url, reverse)
         except sqlite3.IntegrityError as integrity_error:
             logger.debug(
                 "Cannot subscribe to playlist due to integrity constraint error: %s",

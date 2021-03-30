@@ -185,15 +185,17 @@ def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: s
 @cli.command()
 @click.argument("name")
 @click.argument("url")
+@click.option("--reverse", is_flag=True, default=False,
+              help="Check the playlist in reverse order. Slows down updating!")
 @pass_ytcc
-def subscribe(ytcc: core.Ytcc, name: str, url: str):
+def subscribe(ytcc: core.Ytcc, name: str, url: str, reverse: bool):
     """Subscribe to a playlist.
 
     The NAME argument is the name used to refer to the playlist. The URL argument is the URL to a
     playlist that is supported by youtube-dl.
     """
     try:
-        ytcc.add_playlist(name, url)
+        ytcc.add_playlist(name, url, reverse)
     except BadURLException as bad_url:
         logger.error("The given URL does not point to a playlist or is not supported by "
                      "youtube-dl")

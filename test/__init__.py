@@ -2,7 +2,9 @@ from ytcc import Video, Playlist
 
 WEBDRIVER_PLAYLIST = Playlist(
     "WebDriver",
-    "https://www.youtube.com/playlist?list=UUsLiV4WJfkTEHH0b9PmRklw")
+    "https://www.youtube.com/playlist?list=UUsLiV4WJfkTEHH0b9PmRklw",
+    False
+)
 
 WEBDRIVER_VIDEOS = [
     Video("https://www.youtube.com/watch?v=XI7Cxdj2pAQ", "StmpavbMLW", "tmpavbMLW", 1572476400.0,
