@@ -48,7 +48,7 @@ class CommaList(click.ParamType, Generic[T]):
     def __init__(self, validator: Callable[[str], T]):
         self.validator = validator
 
-    def convert(self, value, param, ctx) -> List[T]:
+    def convert(self, value, param, ctx) -> List[T]:  # pylint: disable=inconsistent-return-statements
         try:
             return [self.validator(elem.strip()) for elem in value.split(",")]
         except ValueError:
