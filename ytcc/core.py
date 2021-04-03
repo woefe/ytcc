@@ -17,155 +17,27 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import datetime
-import itertools
 import logging
 import os
 import sqlite3
 import subprocess
 import time
 import xml.etree.ElementTree as ET
-from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor as Pool
 from pathlib import Path
 from typing import Iterable, List, Optional, Any, Dict, Tuple, Union
 from urllib.parse import parse_qs, urlparse
 
 from ytcc import config
 from ytcc.config import Direction, VideoAttr
-from ytcc.database import Database, Video, Playlist, MappedVideo, MappedPlaylist
+from ytcc.database import Database, Video, MappedVideo, MappedPlaylist, Playlist
 from ytcc.exceptions import YtccException, BadURLException, NameConflictError, \
     PlaylistDoesNotExistException, InvalidSubscriptionFileError
-from ytcc.utils import unpack_optional, take, lazy_import
+from ytcc.updater import Updater, Fetcher, YTDL_COMMON_OPTS
+from ytcc.utils import lazy_import
 
 youtube_dl = lazy_import("youtube_dl")
 
-_ytdl_logger = logging.getLogger("youtube_dl")
-_ytdl_logger.propagate = False
-_ytdl_logger.addHandler(logging.NullHandler())
-YTDL_COMMON_OPTS = {
-    "logger": _ytdl_logger
-}
-
 logger = logging.getLogger(__name__)
-
-
-class Updater:
-    def __init__(self, db_path: str, max_backlog=20, max_fail=5):
-        self.db_path = db_path
-        self.max_items = max_backlog
-        self.max_fail = max_fail
-
-        self.ydl_opts = {
-            **YTDL_COMMON_OPTS,
-            "playliststart": 1,
-            "playlistend": max_backlog,
-            "noplaylist": False,
-            "age_limit": config.ytcc.age_limit
-        }
-
-    def get_new_entries(self, playlist: Playlist) -> List[Tuple[Any, str, Playlist]]:
-        with Database(self.db_path) as database:
-            hashes = frozenset(
-                x.extractor_hash
-                for x in database.list_videos(playlists=[playlist.name])
-            )
-
-        result = []
-        ydl_opts = self.ydl_opts.copy()
-        ydl_opts["playlistend"] = None if playlist.reverse else self.max_items
-
-        with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
-            logger.info("Checking playlist '%s'...", playlist.name)
-            try:
-                info = ydl.extract_info(playlist.url, download=False, process=False)
-            except youtube_dl.DownloadError as download_error:
-                logging.error("Failed to get playlist %s. Youtube-dl said: '%s'",
-                              playlist.name, download_error)
-            else:
-                entries = info.get("entries", [])
-                if playlist.reverse:
-                    entries = reversed(list(entries))
-                for entry in take(self.max_items, entries):
-                    e_hash = ydl._make_archive_id(entry)  # pylint: disable=protected-access
-                    if e_hash is None:
-                        logger.warning("Ignoring malformed playlist entry from %s", playlist.name)
-                    elif e_hash not in hashes:
-                        result.append((entry, e_hash, playlist))
-
-        return result
-
-    def process_entry(self, e_hash: str, entry: Any) -> Tuple[str, Optional[Video]]:
-        with Database(self.db_path) as database:
-            if database.get_extractor_fail_count(e_hash) >= self.max_fail:
-                return e_hash, None
-
-        with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
-            try:
-                processed = ydl.process_ie_result(entry, False)
-            except youtube_dl.DownloadError as download_error:
-                logging.warning("Failed to get a video. Youtube-dl said: '%s'", download_error)
-                return e_hash, None
-            else:
-                title = processed.get("title")
-                if not title:
-                    logger.error("Failed to process a video, because its title is missing")
-                    return e_hash, None
-
-                url = processed.get("webpage_url")
-                if not url:
-                    logger.error(
-                        "Failed to process a video '%s', because its URL is missing",
-                        title
-                    )
-                    return e_hash, None
-
-                if processed.get("age_limit", 0) > config.ytcc.age_limit:
-                    logger.warning("Ignoring video '%s' due to age limit", title)
-                    return e_hash, None
-
-                publish_date = 169201.0  # Minimum timestamp usable on Windows
-                date_str = processed.get("upload_date")
-                if date_str:
-                    publish_date = datetime.datetime.strptime(date_str, "%Y%m%d").timestamp()
-                else:
-                    logger.warning("Publication date of video '%s' is unknown", title)
-
-                duration = processed.get("duration") or -1
-                if duration < 0:
-                    logger.warning("Duration of video '%s' is unknown", title)
-
-                logger.info("Processed video '%s'", processed.get("title"))
-
-                return e_hash, Video(
-                    url=url,
-                    title=title,
-                    description=processed.get("description", ""),
-                    publish_date=publish_date,
-                    watch_date=None,
-                    duration=duration,
-                    extractor_hash=e_hash
-                )
-
-    def update(self):
-        num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 4
-
-        with Pool(num_workers) as pool, Database(self.db_path) as database:
-            playlists = database.list_playlists()
-            raw_entries = dict()
-            playlists_mapping = defaultdict(list)
-            full_content = pool.map(self.get_new_entries, playlists)
-            for entry, e_hash, playlist in itertools.chain.from_iterable(full_content):
-                raw_entries[e_hash] = entry
-                playlists_mapping[e_hash].append(playlist)
-
-            results = dict(pool.map(self.process_entry, *zip(*raw_entries.items())))
-
-            for key in raw_entries:
-                for playlist in playlists_mapping[key]:
-                    if results[key] is not None:
-                        database.add_videos([results[key]], playlist)
-                    else:
-                        database.increase_extractor_fail_count(key, max_fail=self.max_fail)
 
 
 class Ytcc:
@@ -380,11 +252,24 @@ class Ytcc:
                 logger.debug("youtube-dl failed with '%s'", ydl_err)
                 return False
 
+    @staticmethod
+    def _is_playlist_reverse(items: List[Video]) -> bool:
+        if not items or items[0].publish_date >= items[-1].publish_date:
+            return False
+
+        prev = items[0]
+        for item in items:
+            if prev.publish_date > item.publish_date:
+                return False
+            prev = item
+
+        return True
+
     def add_playlist(self, name: str, url: str, reverse: bool = False) -> None:
         ydl_opts = {
             **YTDL_COMMON_OPTS,
             "playliststart": 1,
-            "playlistend": 2,
+            "playlistend": 10,
             "noplaylist": False,
             "extract_flat": "in_playlist"
         }
@@ -401,7 +286,7 @@ class Ytcc:
                     "URL is not supported by youtube-dl or does not exist"
                 ) from download_error
 
-            if not info.get("_type") == "playlist":
+            if info.get("_type") != "playlist":
                 logger.debug(
                     "'%s' doesn't seem point to a playlist. Extractor info is: '%s'",
                     url,
@@ -410,9 +295,6 @@ class Ytcc:
                 raise BadURLException("Not a playlist or not supported by youtube-dl")
 
             peek = list(info.get("entries"))
-            if not peek:
-                logger.warning("The playlist might be empty")
-
             for entry in peek:
                 if ydl._make_archive_id(entry) is None:  # pylint: disable=protected-access
                     raise BadURLException("The given URL is not supported by ytcc, because it "
@@ -421,6 +303,18 @@ class Ytcc:
             real_url = info.get("webpage_url")
             if not real_url:
                 raise BadURLException("The playlist URL cannot be found")
+
+            logger.info("Performing update check on 10 playlist items")
+            playlist = Fetcher(10).fetch(Playlist(name, real_url, reverse))
+            if not playlist:
+                logger.warning("The playlist might be empty")
+
+            if self._is_playlist_reverse(playlist):
+                logger.warning(
+                    "The playlist seems to be updated in opposite order. You probably won't "
+                    "receive any updates for this playlist. "
+                    "See `ytcc subscribe --help` for more details on the `--reverse` option."
+                )
 
         try:
             self.database.add_playlist(name, real_url, reverse)

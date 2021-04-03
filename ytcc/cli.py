@@ -186,7 +186,9 @@ def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: s
 @click.argument("name")
 @click.argument("url")
 @click.option("--reverse", is_flag=True, default=False,
-              help="Check the playlist in reverse order. Slows down updating!")
+              help="Check the playlist in reverse order. This should be used for playlists where "
+                   "the latest videos are added to the end of the playlist. WARNING: Using this "
+                   "option on large playlists slows down updating!")
 @pass_ytcc
 def subscribe(ytcc: core.Ytcc, name: str, url: str, reverse: bool):
     """Subscribe to a playlist.
