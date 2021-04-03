@@ -192,7 +192,7 @@ class Database:
             res = self.connection.execute(query, (name,))
             return res.rowcount > 0
 
-    def rename_playlist(self, oldname, newname) -> bool:
+    def rename_playlist(self, oldname: str, newname: str) -> bool:
         query = "UPDATE playlist SET name = ? WHERE name = ?"
         try:
             with self.connection:
@@ -200,6 +200,12 @@ class Database:
                 return res.rowcount > 0
         except sqlite3.IntegrityError:
             return False
+
+    def reverse_playlist(self, playlist: str) -> bool:
+        query = "UPDATE playlist SET reverse = (reverse + 1) % 2 WHERE name = ?"
+        with self.connection as con:
+            res = con.execute(query, (playlist,))
+            return res.rowcount > 0
 
     def list_playlists(self) -> Iterable[MappedPlaylist]:
         query = """

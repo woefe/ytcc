@@ -312,8 +312,9 @@ class Ytcc:
             if self._is_playlist_reverse(playlist):
                 logger.warning(
                     "The playlist seems to be updated in opposite order. You probably won't "
-                    "receive any updates for this playlist. "
-                    "See `ytcc subscribe --help` for more details on the `--reverse` option."
+                    "receive any updates for this playlist. Use `ytcc reverse '%s'` to change the "
+                    "update behavior of the playlist.",
+                    name
                 )
 
         try:
@@ -360,6 +361,12 @@ class Ytcc:
         if not self.database.rename_playlist(oldname, newname):
             raise NameConflictError("Renaming failed. Either the old name does not exist or the "
                                     "new name is already used.")
+
+    def reverse_playlist(self, playlist: str) -> None:
+        if not self.database.reverse_playlist(playlist):
+            raise PlaylistDoesNotExistException(
+                "Could not modify the playlist, because it does not exist"
+            )
 
     def list_playlists(self) -> Iterable[MappedPlaylist]:
         return self.database.list_playlists()

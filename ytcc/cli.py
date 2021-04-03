@@ -245,6 +245,24 @@ def rename(ytcc: core.Ytcc, old: str, new: str):
         raise Exit(1) from nce
 
 
+@cli.command("reverse")
+@click.argument("playlists", nargs=-1, autocompletion=playlist_completion)
+@pass_ytcc
+def reverse_playlist(ytcc: core.Ytcc, playlists: Tuple[str, ...]):
+    """Toggle the update behavior of playlists.
+
+    Playlists updated in reverse might lead to slow updates with the `update` command.
+    """
+    for playlist in playlists:
+        try:
+            ytcc.reverse_playlist(playlist)
+        except PlaylistDoesNotExistException as err:
+            logger.error("Could not reverse playlist '%s', because it doesn't exist", playlist)
+            raise Exit(1) from err
+        else:
+            logger.info("Reversed playlist '%s'", playlist)
+
+
 @cli.command()
 @click.option("--attributes", "-a", type=CommaList(PlaylistAttr.from_str),
               help="Attributes of the playlist to be included in the output. "
