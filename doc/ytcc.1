@@ -1,4 +1,4 @@
-.TH ytcc 1 "Feb 2021" "2.1.0" "ytcc - a subscription wrapper for youtube-dl"
+.TH ytcc 1 "Apr 2021" "2.2.0" "ytcc - a subscription wrapper for youtube-dl"
 .SH NAME
 ytcc - a subscription wrapper for youtube-dl playlists
 .SH SYNOPSIS
@@ -34,6 +34,9 @@ playlist that is supported by youtube-dl.
 .P
 .B OPTIONS:
 .P
+.B --reverse
+Check the playlist in reverse order. This should be used for playlists where the latest videos are added to the end of the playlist. WARNING: Using this option on large playlists slows down updating!
+.P
 .B --help
 Show command help and exit.
 .SS unsubscribe [OPTIONS] NAME
@@ -59,6 +62,16 @@ Renames the playlist OLD to NEW.
 .P
 .B --help
 Show command help and exit.
+.SS reverse [OPTIONS] [PLAYLISTS]...
+
+Toggle the update behavior of playlists.
+
+Playlists updated in reverse might lead to slow updates with the `update` command.
+.P
+.B OPTIONS:
+.P
+.B --help
+Show command help and exit.
 .SS subscriptions [OPTIONS]
 
 List all subscriptions.
@@ -66,7 +79,7 @@ List all subscriptions.
 .B OPTIONS:
 .P
 .B -a, --attributes COMMA_SEPARATED_VALUES
-Attributes of the playlist to be included in the output. Some of [name, url, tags].
+Attributes of the playlist to be included in the output. Some of [name, url, tags, reverse].
 .P
 .B --help
 Show command help and exit.
