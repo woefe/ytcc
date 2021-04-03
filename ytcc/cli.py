@@ -241,7 +241,7 @@ def rename(ytcc: core.Ytcc, old: str, new: str):
     try:
         ytcc.rename_playlist(old, new)
     except NameConflictError as nce:
-        logger.error("'%s'", str(nce))
+        logger.error("%s", str(nce))
         raise Exit(1) from nce
 
 
@@ -270,7 +270,7 @@ def reverse_playlist(ytcc: core.Ytcc, playlists: Tuple[str, ...]):
 @pass_ytcc
 def subscriptions(ytcc: core.Ytcc, attributes: List[PlaylistAttr]):
     """List all subscriptions."""
-    if not filter:
+    if not attributes:
         printer.filter = config.ytcc.playlist_attrs
     else:
         printer.filter = attributes
@@ -586,7 +586,8 @@ def bug_report():
 
 def main():
     try:
-        cli.main(standalone_mode=False)
+        exit_code = cli.main(standalone_mode=False)
+        sys.exit(exit_code)
     except DatabaseError as db_err:
         logger.error("Cannot connect to the database or query failed unexpectedly")
         logger.debug("Unknown database error", exc_info=db_err)
