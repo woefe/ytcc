@@ -305,7 +305,7 @@ class Ytcc:
                 raise BadURLException("The playlist URL cannot be found")
 
             logger.info("Performing update check on 10 playlist items")
-            playlist = Fetcher(10).fetch(Playlist(name, real_url, reverse))
+            playlist = list(Fetcher(10).fetch(Playlist(name, real_url, reverse)))
             if not playlist:
                 logger.warning("The playlist might be empty")
 

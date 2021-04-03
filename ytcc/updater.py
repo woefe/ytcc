@@ -119,12 +119,11 @@ class Fetcher:
                     extractor_hash=e_hash
                 )
 
-    def fetch(self, playlist: Playlist) -> List[Video]:
-        return [
-            video
-            for entry, e_hash in self.get_unprocessed_entries(playlist)
-            if (video := self.process_entry(e_hash, entry)[1])
-        ]
+    def fetch(self, playlist: Playlist) -> Iterable[Video]:
+        for entry, e_hash in self.get_unprocessed_entries(playlist):
+            video = self.process_entry(e_hash, entry)[1]
+            if video:
+                yield video
 
 
 class Updater:
