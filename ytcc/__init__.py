@@ -31,7 +31,6 @@ import gettext
 import sys
 from pathlib import Path
 from ytcc.database import Database, MappedVideo, Video, MappedPlaylist, Playlist
-from ytcc.core import Ytcc
 from ytcc.exceptions import *
 
 

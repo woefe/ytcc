@@ -107,7 +107,7 @@ video_attrs = id, title, publish_date, duration, playlists
 
 # Default attributes shown in playlist/subscription listings.
 # Some ytcc commands allow overriding the default set here in the config.
-playlist_attrs = name, url, tags
+playlist_attrs = name, url, reverse, tags
 
 # Path where the database is stored.
 # Can be used to sync the database between multiple machines.

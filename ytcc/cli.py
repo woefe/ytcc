@@ -185,15 +185,19 @@ def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: s
 @cli.command()
 @click.argument("name")
 @click.argument("url")
+@click.option("--reverse", is_flag=True, default=False,
+              help="Check the playlist in reverse order. This should be used for playlists where "
+                   "the latest videos are added to the end of the playlist. WARNING: Using this "
+                   "option on large playlists slows down updating!")
 @pass_ytcc
-def subscribe(ytcc: core.Ytcc, name: str, url: str):
+def subscribe(ytcc: core.Ytcc, name: str, url: str, reverse: bool):
     """Subscribe to a playlist.
 
     The NAME argument is the name used to refer to the playlist. The URL argument is the URL to a
     playlist that is supported by youtube-dl.
     """
     try:
-        ytcc.add_playlist(name, url)
+        ytcc.add_playlist(name, url, reverse)
     except BadURLException as bad_url:
         logger.error("The given URL does not point to a playlist or is not supported by "
                      "youtube-dl")
@@ -239,6 +243,24 @@ def rename(ytcc: core.Ytcc, old: str, new: str):
     except NameConflictError as nce:
         logger.error("'%s'", str(nce))
         raise Exit(1) from nce
+
+
+@cli.command("reverse")
+@click.argument("playlists", nargs=-1, autocompletion=playlist_completion)
+@pass_ytcc
+def reverse_playlist(ytcc: core.Ytcc, playlists: Tuple[str, ...]):
+    """Toggle the update behavior of playlists.
+
+    Playlists updated in reverse might lead to slow updates with the `update` command.
+    """
+    for playlist in playlists:
+        try:
+            ytcc.reverse_playlist(playlist)
+        except PlaylistDoesNotExistException as err:
+            logger.error("Could not reverse playlist '%s', because it doesn't exist", playlist)
+            raise Exit(1) from err
+        else:
+            logger.info("Reversed playlist '%s'", playlist)
 
 
 @cli.command()

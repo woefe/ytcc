@@ -90,6 +90,7 @@ class PlaylistAttr(str, Enum):
     NAME = "name"
     URL = "url"
     TAGS = "tags"
+    REVERSE = "reverse"
 
     @staticmethod
     def from_str(string: str) -> "PlaylistAttr":

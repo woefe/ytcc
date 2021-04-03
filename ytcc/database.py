@@ -45,6 +45,7 @@ def _placeholder(elements: List[Any]) -> str:
 class Playlist:
     name: str
     url: str
+    reverse: bool
 
 
 @dataclass(frozen=True)
@@ -74,7 +75,7 @@ class MappedPlaylist(Playlist):
 
 
 class Database:
-    VERSION = 3
+    VERSION = 4
 
     def __init__(self, path: str = ":memory:"):
         is_new_db = True
@@ -86,6 +87,8 @@ class Database:
 
         sqlite3.register_converter("integer", int)
         sqlite3.register_converter("float", float)
+        sqlite3.register_converter("boolean", lambda v: bool(int(v)))
+        sqlite3.register_adapter(bool, int)
         self.connection = sqlite3.connect(f"{path}", detect_types=sqlite3.PARSE_DECLTYPES)
         self.connection.set_trace_callback(logging_cb)
         self.connection.row_factory = sqlite3.Row
@@ -115,9 +118,10 @@ class Database:
 
             CREATE TABLE playlist
             (
-                id   INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                name VARCHAR UNIQUE,
-                url  VARCHAR UNIQUE
+                id      INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                name    VARCHAR UNIQUE,
+                url     VARCHAR UNIQUE,
+                reverse BOOLEAN
             );
 
             CREATE TABLE content
@@ -176,10 +180,10 @@ class Database:
         self.connection.commit()
         self.connection.close()
 
-    def add_playlist(self, name: str, url: str) -> None:
-        query = "INSERT INTO playlist (name, url) VALUES (?, ?);"
+    def add_playlist(self, name: str, url: str, reverse: bool = False) -> None:
+        query = "INSERT INTO playlist (name, url, reverse) VALUES (?, ?, ?);"
         with self.connection:
-            res = self.connection.execute(query, (name, url))
+            res = self.connection.execute(query, (name, url, reverse))
             return res.rowcount > 0
 
     def delete_playlist(self, name: str) -> bool:
@@ -188,7 +192,7 @@ class Database:
             res = self.connection.execute(query, (name,))
             return res.rowcount > 0
 
-    def rename_playlist(self, oldname, newname) -> bool:
+    def rename_playlist(self, oldname: str, newname: str) -> bool:
         query = "UPDATE playlist SET name = ? WHERE name = ?"
         try:
             with self.connection:
@@ -197,9 +201,15 @@ class Database:
         except sqlite3.IntegrityError:
             return False
 
+    def reverse_playlist(self, playlist: str) -> bool:
+        query = "UPDATE playlist SET reverse = (reverse + 1) % 2 WHERE name = ?"
+        with self.connection as con:
+            res = con.execute(query, (playlist,))
+            return res.rowcount > 0
+
     def list_playlists(self) -> Iterable[MappedPlaylist]:
         query = """
-            SELECT p.id AS id, p.name AS name, p.url AS url, t.name AS tag
+            SELECT p.id AS id, p.name AS name, p.url AS url, p.reverse AS reverse, t.name AS tag
             FROM playlist AS p
                 LEFT OUTER JOIN tag AS t ON p.id = t.playlist;
             """
@@ -208,7 +218,7 @@ class Database:
             playlist = playlists.get(row["id"])
             if playlist is None:
                 tags = [row["tag"]] if row["tag"] else []
-                playlists[row["id"]] = MappedPlaylist(row["name"], row["url"], tags)
+                playlists[row["id"]] = MappedPlaylist(row["name"], row["url"], row["reverse"], tags)
             else:
                 playlists[row["id"]].tags.append(row["tag"])
 
@@ -373,7 +383,8 @@ class Database:
                    v.watch_date     AS watch_date,
                    v.extractor_hash AS extractor_hash,
                    p.name           AS playlist_name,
-                   p.url            AS playlist_url
+                   p.url            AS playlist_url,
+                   p.reverse        AS playlist_reverse
             FROM video AS v
                      JOIN content c ON v.id = c.video_id
                      JOIN playlist p ON p.id = c.playlist_id
@@ -407,11 +418,21 @@ class Database:
                         watch_date=row["watch_date"],
                         duration=row["duration"],
                         extractor_hash=row["extractor_hash"],
-                        playlists=[Playlist(row["playlist_name"], row["playlist_url"])]
+                        playlists=[
+                            Playlist(
+                                row["playlist_name"],
+                                row["playlist_url"],
+                                row["playlist_reverse"]
+                            )
+                        ]
                     )
                 else:
                     videos[row["id"]].playlists.append(
-                        Playlist(row["playlist_name"], row["playlist_url"])
+                        Playlist(
+                            row["playlist_name"],
+                            row["playlist_url"],
+                            row["playlist_reverse"]
+                        )
                     )
 
         return videos.values()

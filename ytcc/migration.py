@@ -18,7 +18,7 @@
 import sqlite3
 from datetime import datetime
 
-v3_watch_date = f"""
+V3_WATCH_DATE = f"""
 CREATE TABLE new_video
 (
     id             INTEGER        NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -63,7 +63,13 @@ ALTER TABLE new_video
 PRAGMA foreign_key_check;
 """
 
-UPDATES = ["-- noop", "-- noop", v3_watch_date]
+V4_PLAYLIST_REVERSE = """
+ALTER TABLE playlist ADD COLUMN reverse BOOLEAN;
+
+UPDATE playlist SET reverse = false WHERE reverse IS NULL;
+"""
+
+UPDATES = ["-- noop", "-- noop", V3_WATCH_DATE, V4_PLAYLIST_REVERSE]
 
 
 def migrate(old_version: int, new_version: int, db_conn: sqlite3.Connection) -> None:

@@ -120,10 +120,11 @@ class PlaylistPrintable(Printable):
             yield asdict(playlist)
 
     def table(self) -> Table:
-        header = ["name", "url", "tags"]
+        header = ["name", "url", "reverse", "tags"]
         data = []
         for playlist in self.playlists:
-            data.append([playlist.name, playlist.url, ", ".join(playlist.tags)])
+            is_reverse = str(playlist.reverse).lower()
+            data.append([playlist.name, playlist.url, is_reverse, ", ".join(playlist.tags)])
 
         return Table(header, data)
 
