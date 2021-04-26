@@ -33,6 +33,7 @@ class FKeys(str, Enum):
     F5 = "<F5>"
     F6 = "<F6>"
     F7 = "<F7>"
+    F8 = "<F8>"
     DEL = "DEL"
 
 
@@ -46,6 +47,7 @@ _KNOWN_KEYS = {
     "\x1bOt": FKeys.F5,
     "\x1bOu": FKeys.F6,
     "\x1bOv": FKeys.F7,
+    "\x1bOl": FKeys.F8,
 
     # rxvt
     "\x1b[11~": FKeys.F1,
@@ -55,6 +57,7 @@ _KNOWN_KEYS = {
     "\x1b[15~": FKeys.F5,
     "\x1b[17~": FKeys.F6,
     "\x1b[18~": FKeys.F7,
+    "\x1b[19~": FKeys.F8,
 
     # linux
     "\x1b[[A": FKeys.F1,
@@ -71,6 +74,7 @@ _KNOWN_KEYS = {
     "\x00?": FKeys.F5,
     "\x00@": FKeys.F6,
     "\x00A": FKeys.F7,
+    "\x00B": FKeys.F8,
 
     # other
     "\x7f": FKeys.DEL,  # Linux

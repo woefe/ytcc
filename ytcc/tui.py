@@ -53,6 +53,7 @@ class Action(Enum):
     REFRESH = (None, FKeys.F5, None)
     DOWNLOAD_AUDIO = (_("Download audio"), FKeys.F7, lambda: config.theme.prompt_download_audio)
     DOWNLOAD_VIDEO = (_("Download video"), FKeys.F6, lambda: config.theme.prompt_download_video)
+    UNMARK = (None, FKeys.F8, None)
 
 
 class VideoSelection(TableData, dict):
@@ -90,7 +91,7 @@ class VideoSelection(TableData, dict):
     def table(self) -> Table:
         table = VideoPrintable(self.values()).table()
         data = [[code] + row for code, row in zip(self.keys(), table.data)]
-        return Table(["key"] + table.header, data)
+        return Table(["TAG"] + table.header, data)
 
 
 class Interactive:
@@ -109,7 +110,7 @@ class Interactive:
     def set_action(self, action: Action) -> bool:
         self.previous_action = self.action
         self.action = action
-        return action in (Action.SHOW_HELP, Action.REFRESH)
+        return action in (Action.SHOW_HELP, Action.REFRESH, Action.UNMARK)
 
     def get_prompt_text(self) -> str:
         return self.action.text
@@ -161,7 +162,7 @@ class Interactive:
     def run(self) -> None:
         selectable = VideoSelection(config.tui.alphabet, self.videos)
         printer = TablePrinter()
-        printer.filter = ["key", *config.ytcc.video_attrs]
+        printer.filter = ["TAG", *config.ytcc.video_attrs]
 
         while True:
             remaining_tags = list(selectable.keys())
@@ -190,12 +191,12 @@ class Interactive:
                     del selectable[tag]
                 elif self.action is Action.PLAY_AUDIO:
                     print()
-                    self.play(video, True)
-                    del selectable[tag]
+                    if self.play(video, True):
+                        del selectable[tag]
                 elif self.action is Action.PLAY_VIDEO:
                     print()
-                    self.play(video, False)
-                    del selectable[tag]
+                    if self.play(video, False):
+                        del selectable[tag]
             elif self.action is Action.SHOW_HELP:
                 self.action = self.previous_action
                 terminal.clear_screen()
@@ -207,10 +208,17 @@ class Interactive:
                     "    <F5> Refresh video list.\n"
                     "    <F6> Set action: Download video.\n"
                     "    <F7> Set action: Download audio.\n"
+                    "    <F8> Mark most recent video as unwatched.\n"
                     " <Enter> Accept first video.\n"
                     "<CTRL+D> Exit.\n"
                 ))
                 input(_("Press Enter to continue"))
+            elif self.action is Action.UNMARK:
+                self.action = self.previous_action
+                self.core.unmark_recent()
+                self.videos = list(self.core.list_videos())
+                self.run()
+                break
             elif self.action is Action.REFRESH:
                 self.action = self.previous_action
                 terminal.clear_screen()
@@ -219,13 +227,15 @@ class Interactive:
                 self.run()
                 break
 
-    def play(self, video: MappedVideo, audio_only: bool) -> None:
+    def play(self, video: MappedVideo, audio_only: bool) -> bool:
         print_meta(video)
         if self.core.play_video(video, audio_only):
             self.core.mark_watched(video)
-        else:
-            print("The video player terminated with an error. "
-                  "The last video is not marked as watched!")
+            return True
+
+        print("The video player terminated with an error. "
+              "The last video is not marked as watched!")
+        return False
 
     def download_video(self, video: MappedVideo, audio_only: bool = False) -> None:
         print(_('Downloading "{video.title}" in playlist(s) "{playlists}"...').format(
