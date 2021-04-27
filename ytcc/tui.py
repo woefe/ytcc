@@ -20,7 +20,7 @@ import shutil
 import sys
 import textwrap as wrap
 from enum import Enum
-from typing import List, Optional, Tuple, Callable, NamedTuple, FrozenSet, TextIO
+from typing import List, Optional, Tuple, Callable, NamedTuple, FrozenSet, TextIO, Dict
 
 from ytcc import terminal, _, config
 from ytcc.core import Ytcc
@@ -177,26 +177,21 @@ class Interactive:
             if video is None and not hook_triggered:
                 break
 
-            if video is not None:
-                if self.action is Action.MARK_WATCHED:
-                    self.core.mark_watched(video)
-                    del selectable[tag]
-                elif self.action is Action.DOWNLOAD_AUDIO:
-                    print()
-                    self.download_video(video, True)
-                    del selectable[tag]
-                elif self.action is Action.DOWNLOAD_VIDEO:
-                    print()
-                    self.download_video(video, False)
-                    del selectable[tag]
-                elif self.action is Action.PLAY_AUDIO:
-                    print()
-                    if self.play(video, True):
-                        del selectable[tag]
-                elif self.action is Action.PLAY_VIDEO:
-                    print()
-                    if self.play(video, False):
-                        del selectable[tag]
+            actions: Dict[Action, Callable[[MappedVideo], Optional[bool]]] = {
+                Action.MARK_WATCHED: self.core.mark_watched,
+                Action.DOWNLOAD_AUDIO: lambda v: self.download_video(v, True),
+                Action.DOWNLOAD_VIDEO: lambda v: self.download_video(v, False),
+                Action.PLAY_AUDIO: lambda v: self.play(v, True),
+                Action.PLAY_VIDEO: lambda v: self.play(v, False),
+            }
+
+            if (
+                video is not None
+                and self.action in actions
+                and actions[self.action](video) in [True, None]
+            ):
+                del selectable[tag]
+
             elif self.action is Action.SHOW_HELP:
                 self.action = self.previous_action
                 terminal.clear_screen()
@@ -237,13 +232,16 @@ class Interactive:
               "The last video is not marked as watched!")
         return False
 
-    def download_video(self, video: MappedVideo, audio_only: bool = False) -> None:
+    def download_video(self, video: MappedVideo, audio_only: bool = False) -> bool:
         print(_('Downloading "{video.title}" in playlist(s) "{playlists}"...').format(
             video=video, playlists=", ".join(v.name for v in video.playlists)))
+
         if self.core.download_video(video=video, audio_only=audio_only):
             self.core.mark_watched(video)
-        else:
-            print(_("An Error occured while downloading the video"))
+            return True
+
+        print(_("An Error occured while downloading the video"))
+        return False
 
 
 class StdOutOverride:
