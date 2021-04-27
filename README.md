@@ -42,12 +42,12 @@ ytcc list
 
 List playlist content in JSON format.
 ```shell script
-ytcc --output json list --playlist "NCS: House" --since 2020-07-07 --watched
+ytcc --output json list --playlist "NCS: House" --since 2020-07-07 --watched --unwatched
 ```
 
 List all videos as RSS feed.
 ```shell script
-ytcc --output rss list --watched
+ytcc --output rss list --watched --unwatched
 ```
 
 Start the interactive terminal interface.

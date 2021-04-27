@@ -304,6 +304,10 @@ def update(ytcc: core.Ytcc, max_fail: Optional[int], max_backlog: Optional[int])
     ytcc.update(max_fail, max_backlog)
 
 
+_video_attrs = click.Choice(VideoAttr)
+_video_attrs.name = "attribute"
+_dir = click.Choice(Direction)
+_dir.name = "direction"
 common_list_options = [
     click.Option(["--tags", "-c"], type=CommaList(str),
                  help="Listed videos must be tagged with one of the given tags."),
@@ -321,8 +325,10 @@ common_list_options = [
                  help="Only watched videos are listed."),
     click.Option(["--unwatched", "-u"], is_flag=True, default=False,
                  help="Only unwatched videos are listed."),
-    click.Option(["--order-by", "-o"], type=(click.Choice(VideoAttr), click.Choice(Direction)),
-                 multiple=True, help="Set the column and direction to sort listed videos.")
+    click.Option(["--order-by", "-o"], type=(_video_attrs, _dir), multiple=True,
+                 help="Set the column and direction to sort listed videos. "
+                      f"ATTRIBUTE is one of [{', '.join(VideoAttr)}]. "
+                      f"Direction is one of [{', '.join(Direction)}].")
 
 ]
 
@@ -362,7 +368,7 @@ def list_videos_impl(ytcc: core.Ytcc, tags: List[str], since: datetime, till: da
 @cli.command("list")
 @click.option("--attributes", "-a", type=CommaList(VideoAttr.from_str),
               help="Attributes of videos to be included in the output. "
-                   f"Some of [{', '.join(map(lambda x: x.value, list(VideoAttr)))}].")
+                   f"Some of [{', '.join(VideoAttr)}].")
 @pass_ytcc
 def list_videos(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
                 playlists: List[str], ids: List[int], attributes: List[str],
