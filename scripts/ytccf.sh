@@ -122,7 +122,7 @@ check_cmd ytcc
 check_cmd fzf
 
 eval "$make_table" |
-    fzf --preview "ytcc --output xsv --separator ';' list -a description -i {1}" \
+    fzf --preview "ytcc --output xsv --separator ';' list --watched --unwatched -a description -i {1}" \
         --multi \
         --layout reverse \
         --preview-window down:55%:wrap \
