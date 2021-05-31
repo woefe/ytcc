@@ -162,3 +162,8 @@ def printt(*text, foreground: Optional[int] = None, background: Optional[int] = 
 
     print(*text, sep="", end="")
     print(esc_clear_attrs, flush=True, end="")
+
+
+def get_terminal_width() -> int:
+    width, _ = click.get_terminal_size()
+    return width
