@@ -1,4 +1,4 @@
-.TH ytcc 1 "Apr 2021" "2.2.0" "ytcc - a subscription wrapper for youtube-dl"
+.TH ytcc 1 "Jun 2021" "2.3.0" "ytcc - a subscription wrapper for youtube-dl"
 .SH NAME
 ytcc - a subscription wrapper for youtube-dl playlists
 .SH SYNOPSIS
@@ -20,6 +20,8 @@ Set the log level. Overrides the log level configured in the config file.  [defa
 Set output format. `json` prints in JSON format, which is usually not filtered by --attribute options of commands. `table` prints a human readable table. `xsv` prints x-separated values, where x can be set with the -s option. `rss` prints a RSS 2.0 feed of videos.  [default: table]
 .SS -s, --separator TEXT
 Set the delimiter used in XSV format.  [default: ,]
+.SS -t, --truncate TRUNCATE
+Truncate the table output. 'max' truncates to terminal width, 'no' disables truncating, an integer N truncates to length N.  [default: max]
 .SS --version
 Show the version and exit.
 .SS --help
@@ -142,8 +144,8 @@ Only watched videos are listed.
 .B -u, --unwatched
 Only unwatched videos are listed.
 .P
-.B -o, --order-by <CHOICE CHOICE>...
-Set the column and direction to sort listed videos.
+.B -o, --order-by <ATTRIBUTE DIRECTION>...
+Set the column and direction to sort listed videos. ATTRIBUTE is one of [id, url, title, description, publish_date, watched, duration, extractor_hash, playlists]. Direction is one of [asc, desc].
 .P
 .B --help
 Show command help and exit.
@@ -177,8 +179,8 @@ Only watched videos are listed.
 .B -u, --unwatched
 Only unwatched videos are listed.
 .P
-.B -o, --order-by <CHOICE CHOICE>...
-Set the column and direction to sort listed videos.
+.B -o, --order-by <ATTRIBUTE DIRECTION>...
+Set the column and direction to sort listed videos. ATTRIBUTE is one of [id, url, title, description, publish_date, watched, duration, extractor_hash, playlists]. Direction is one of [asc, desc].
 .P
 .B --help
 Show command help and exit.
@@ -209,8 +211,8 @@ Only watched videos are listed.
 .B -u, --unwatched
 Only unwatched videos are listed.
 .P
-.B -o, --order-by <CHOICE CHOICE>...
-Set the column and direction to sort listed videos.
+.B -o, --order-by <ATTRIBUTE DIRECTION>...
+Set the column and direction to sort listed videos. ATTRIBUTE is one of [id, url, title, description, publish_date, watched, duration, extractor_hash, playlists]. Direction is one of [asc, desc].
 .P
 .B --help
 Show command help and exit.
