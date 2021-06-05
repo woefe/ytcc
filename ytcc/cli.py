@@ -55,6 +55,20 @@ class CommaList(click.ParamType, Generic[T]):
             self.fail(f"Unexpected value {value} in comma separated list")
 
 
+class TruncateVals(click.ParamType):
+    name = "truncate"
+
+    def convert(self, value, param, ctx) -> Union[None, str, int]:  # pylint: disable=inconsistent-return-statements
+        if value == "max":
+            return "max"
+        if value == "no":
+            return None
+        try:
+            return int(value)
+        except ValueError:
+            self.fail(f"Unexpected value {value}. Must be 'no', 'max', or an integer")
+
+
 version_text = f"""%(prog)s, version %(version)s
 
 Copyright (C) 2015-2020  {__author__}
@@ -139,9 +153,13 @@ def tag_completion(ctx: Any, args: List[str],  # pylint: disable=unused-argument
                    " `rss` prints a RSS 2.0 feed of videos.")
 @click.option("--separator", "-s", default=",", show_default=True,
               help="Set the delimiter used in XSV format.")
+@click.option("--truncate", "-t", default="max", show_default=True, type=TruncateVals(),
+              help="Truncate the table output. 'max' truncates to terminal width, 'no' disables"
+                   " truncating, an integer N truncates to length N.")
 @click.version_option(version=__version__, prog_name="ytcc", message=version_text)
 @click.pass_context
-def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: str) -> None:
+def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: str,
+        truncate: Union[None, str, int]) -> None:
     """Ytcc - the (not only) YouTube channel checker.
 
     Ytcc "subscribes" to playlists (supported by youtube-dl) and tracks new videos published to
@@ -173,7 +191,7 @@ def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: s
     ctx.call_on_close(ytcc.close)
 
     if output == "table":
-        printer = TablePrinter()
+        printer = TablePrinter(truncate)
     elif output == "json":
         printer = JSONPrinter()
     elif output == "xsv":
@@ -304,9 +322,9 @@ def update(ytcc: core.Ytcc, max_fail: Optional[int], max_backlog: Optional[int])
     ytcc.update(max_fail, max_backlog)
 
 
-_video_attrs = click.Choice(VideoAttr)
+_video_attrs = click.Choice(list(VideoAttr))
 _video_attrs.name = "attribute"
-_dir = click.Choice(Direction)
+_dir = click.Choice(list(Direction))
 _dir.name = "direction"
 common_list_options = [
     click.Option(["--tags", "-c"], type=CommaList(str),

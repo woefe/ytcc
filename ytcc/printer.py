@@ -23,7 +23,7 @@ from email.utils import format_datetime as rss2_date
 from abc import ABC, abstractmethod, ABCMeta
 from dataclasses import asdict
 from datetime import datetime, timezone
-from typing import List, Iterable, Dict, Any, NamedTuple, Optional
+from typing import List, Iterable, Dict, Any, NamedTuple, Optional, Union
 
 from wcwidth import wcswidth
 
@@ -149,9 +149,14 @@ class Printer(ABC):
 
 class TablePrinter(Printer):
 
-    def __init__(self, allow_truncate=True):
+    def __init__(self, truncate: Union[None, str, int] = "max"):
+        """Initialize a new TablePrinter.
+
+        :param truncate: Truncates row width. None to disable truncating, "max" to truncate to
+                         terminal width, an integer n to truncate to length n.
+        """
         super().__init__()
-        self.allow_truncate = allow_truncate
+        self.truncate = truncate
 
     def print(self, obj: TableData) -> None:
         table = obj.table()
@@ -196,9 +201,9 @@ class TablePrinter(Printer):
     def table_print(self, table: Table) -> None:
         transposed = zip(table.header, *table.data)
         col_widths = [max(map(wcswidth, column)) for column in transposed]
-        if self.allow_truncate:
+        if self.truncate is not None:
             columns = dict(zip(table.header, enumerate(col_widths)))
-            terminal_width = get_terminal_width()
+            terminal_width = get_terminal_width() if self.truncate == "max" else int(self.truncate)
             min_col_widths = (
                 ("duration", 7),
                 ("publish_date", 10),
