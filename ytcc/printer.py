@@ -23,14 +23,14 @@ from email.utils import format_datetime as rss2_date
 from abc import ABC, abstractmethod, ABCMeta
 from dataclasses import asdict
 from datetime import datetime, timezone
-from typing import List, Iterable, Dict, Any, NamedTuple, Optional
+from typing import List, Iterable, Dict, Any, NamedTuple, Optional, Union
 
 from wcwidth import wcswidth
 
 from ytcc import config
 from ytcc.database import MappedVideo, MappedPlaylist
 from ytcc.exceptions import YtccException
-from ytcc.terminal import printt
+from ytcc.terminal import printt, get_terminal_width
 
 
 class Table(NamedTuple):
@@ -149,6 +149,15 @@ class Printer(ABC):
 
 class TablePrinter(Printer):
 
+    def __init__(self, truncate: Union[None, str, int] = "max"):
+        """Initialize a new TablePrinter.
+
+        :param truncate: Truncates row width. None to disable truncating, "max" to truncate to
+                         terminal width, an integer n to truncate to length n.
+        """
+        super().__init__()
+        self.truncate = truncate
+
     def print(self, obj: TableData) -> None:
         table = obj.table()
         if self.filter is not None:
@@ -158,9 +167,21 @@ class TablePrinter(Printer):
 
     @staticmethod
     def print_col(text: str, width: int, background: Optional[int], bold: bool):
+        text = TablePrinter.wc_truncate(text, width)
         padding = " " * max(0, (width - wcswidth(text)))
         padded = text + padding
         printt(" " + padded + " ", background=background, bold=bold)
+
+    @staticmethod
+    def wc_truncate(text, max_len):
+        if max_len < 1:
+            raise ValueError("max_len must be greater or equal to 1")
+
+        i = 0
+        while wcswidth(text) > max_len > i:
+            text = text[:max_len - i - 1] + "…"
+            i = i + 1
+        return text
 
     @staticmethod
     def print_row(columns: List[str], widths: List[int],
@@ -177,12 +198,26 @@ class TablePrinter(Printer):
         TablePrinter.print_col(columns[-1], widths[-1], background, bold)
         print()
 
-    @staticmethod
-    def table_print(table: Table) -> None:
+    def table_print(self, table: Table) -> None:
         transposed = zip(table.header, *table.data)
         col_widths = [max(map(wcswidth, column)) for column in transposed]
+        if self.truncate is not None:
+            columns = dict(zip(table.header, enumerate(col_widths)))
+            terminal_width = get_terminal_width() if self.truncate == "max" else int(self.truncate)
+            min_col_widths = (
+                ("duration", 7),
+                ("publish_date", 10),
+                ("playlists", 9),
+                ("title", 21)
+            )
+            for column, min_col_width in min_col_widths:
+                printed_table_width = sum(col_widths) + 3 * (len(col_widths) - 1) + 2
+                index, col_width = columns.get(column, (-1, 0))
+                if terminal_width < printed_table_width and index >= 0:
+                    truncated_width = col_width - (printed_table_width - terminal_width)
+                    col_widths[index] = max(min_col_width, truncated_width)
 
-        TablePrinter.print_row(table.header, col_widths, bold=True)
+        self.print_row(table.header, col_widths, bold=True)
         header_line = "┼".join("─" * (width + 2) for width in col_widths)
         print(header_line)
 

@@ -24,7 +24,7 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
-make_table="ytcc --output table list --attributes id,title,publish_date,duration,playlists"
+make_table='ytcc --output table --truncate $(($(tput cols) - 3)) list --attributes id,title,publish_date,duration,playlists'
 key_bindings="
         tab: select/deselect
       enter: play video(s)
