@@ -1,6 +1,6 @@
 # Exporting your youtube subscriptions to a JSON file
 
-To do export your youtube subscriptions, follow these steps
+To export your youtube subscriptions, follow these steps
 
 1. After accessing the website, click on **Create new export and Deselect all.**
 2. Scroll down to *Youtube and Youtube Music.*

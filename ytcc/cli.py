@@ -567,9 +567,9 @@ def cleanup(ytcc: core.Ytcc, keep: Optional[int]):
 @click.argument("file", nargs=1, type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @pass_ytcc
 def import_(ytcc: core.Ytcc, file: Path):
-    """Import YouTube subscriptions from OPML file.
+    """Import YouTube subscriptions from JSON file.
 
-    You can export your YouTube subscriptions at https://www.youtube.com/subscription_manager.
+    You can export your YouTube subscriptions from https://takeout.google.com/ . By default, Google Takeout will export all your *Google* data, see this guide: https://github.com/TrevCan/ytcc/blob/master/doc/yt_export_subs.md
     """
     ytcc.import_yt_json(file)
 
