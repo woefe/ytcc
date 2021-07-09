@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 import datetime
 import logging
 import os
@@ -28,7 +27,6 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Iterable, List, Optional, Any, Dict, Tuple, Union
 from urllib.parse import parse_qs, urlparse
-from io import StringIO
 
 from ytcc import config
 from ytcc.config import Direction, VideoAttr
@@ -396,40 +394,40 @@ class Ytcc:
         """
         self.database.cleanup(keep)
 
-    def import_yt_opml(self, file: Path):
-
-
-        def printf(format, *args):
-            sys.stdout.write(format % args)
-
-
-
-        logger.info("Import JSON")
+    def import_yt_json(self, file: Path):
 
         # for every channel found, this should find the following
         # - yt channel rss url (https://www.youtube.com/feeds/videos.xml?channel_id={channel_id} )
         # - yt channel id [i]['snippet']['resourceId']['channelId']
          
-        io_file = StringIO(file)
         n_file = open(file)
 
         prefix_ytrss = "https://www.youtube.com/feeds/videos.xml?channel_id="
-        logger.info("PATH = " + file)
+        logger.info("File = " + file)
         obj_json = json.loads(n_file.read())
         len_json = len(obj_json)
-        printf("Found %d channels in JSON file\n\n", len_json)
+        logger.info("Found " + str(len_json) + " subscriptions in JSON file\n\n")
 
         for i in range(0,len_json):
             raw_channel_id = obj_json[i]['snippet']['resourceId']['channelId']
             rss_url = urlparse(prefix_ytrss + raw_channel_id)
             query_dict = parse_qs(rss_url.query, keep_blank_values=False)
             channel_id = query_dict.get("channel_id", [])
-            yt_url = f"https://www.youtube.com/channel/{channel_id}/videos"
+            yt_url = f"https://www.youtube.com/channel/{raw_channel_id}/videos"
             yt_title = obj_json[i]['snippet']['title']
+            name = yt_title
+            url = yt_url
+            try:
+                self.add_playlist(name, url)
+            except NameConflictError:
+                logger.warning("Ignoring playlist '%s', because it already subscribed", name)
+            except BadURLException:
+                logger.warning("Ignoring playlist '%s', "
+                     "because it is not supported by youtube-dl", name)
+            else:
+                logger.info("Added playlist '%s'", name)
 
-        printf("All done!!")
-            #printf("Channel ID: %s\n" ,channel_id)
-            #printf("Title: %s\n", yt_title)
-            #printf("YT url: %s\n", yt_url);
-
-
+            logger.debug("@Channel: " + str(i))
+            logger.debug(f"\tChannel ID: " + raw_channel_id)
+            logger.debug(f"\tYT URL " + yt_url)
+            logger.debug(f"\tRSS URL " + str(rss_url))

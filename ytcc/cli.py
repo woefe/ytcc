@@ -571,7 +571,7 @@ def import_(ytcc: core.Ytcc, file: Path):
 
     You can export your YouTube subscriptions at https://www.youtube.com/subscription_manager.
     """
-    ytcc.import_yt_opml(file)
+    ytcc.import_yt_json(file)
 
 
 @cli.command()
