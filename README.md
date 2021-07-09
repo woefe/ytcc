@@ -25,7 +25,7 @@ ytcc subscribe "Jupiter Broadcasting" "https://www.youtube.com/c/JupiterBroadcas
 ytcc subscribe "NCS: House" "https://www.youtube.com/playlist?list=PLRBp0Fe2GpgmsW46rJyudVFlY6IYjFBIK"
 ```
 
-Import subscriptions from YouTube's subscription manager export.
+Import subscriptions from Google's takeout data exporting tool ([Learn how to export your youtube subscriptions](doc/yt_export_subs.md).
 ```shell script
 ytcc import ~/Downloads/subscription_manager
 ```
