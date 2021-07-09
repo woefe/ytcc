@@ -22,6 +22,7 @@ import os
 import sqlite3
 import subprocess
 import time
+import json
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Iterable, List, Optional, Any, Dict, Tuple, Union
@@ -394,34 +395,59 @@ class Ytcc:
         self.database.cleanup(keep)
 
     def import_yt_opml(self, file: Path):
-        def _from_xml_element(elem: ET.Element) -> Tuple[str, str]:
-            rss_url = urlparse(elem.attrib["xmlUrl"])
+        # for every channel found, this should find the following
+        # - yt channel rss url (https://www.youtube.com/feeds/videos.xml?channel_id={channel_id} )
+        # - yt channel id [i]['snippet']['resourceId']['channelId']
+        # 
+
+        prefix_ytrss = "https://www.youtube.com/feeds/videos.xml?channel_id="
+        obj_json = json.loads(file.read())
+        len_json = len(obj_json)
+        printf("Found %d channels in JSON file\n\n", len_json)
+
+        for i in range(0,len_json):
+            raw_channel_id = obj_json[i]['snippet']['resourceId']['channelId']
+            rss_url = urlparse(prefix_ytrss + raw_channel_id)
             query_dict = parse_qs(rss_url.query, keep_blank_values=False)
             channel_id = query_dict.get("channel_id", [])
-            if len(channel_id) != 1:
-                message = f"'{str(file)}' is not a valid YouTube export file"
-                raise InvalidSubscriptionFileError(message)
-            yt_url = f"https://www.youtube.com/channel/{channel_id[0]}/videos"
-            return elem.attrib["title"], yt_url
+            
 
-        try:
-            tree = ET.parse(file)
-        except ET.ParseError as err:
-            raise InvalidSubscriptionFileError(
-                f"'{str(file)}' is not a valid YouTube export file"
-            ) from err
-        except OSError as err:
-            raise InvalidSubscriptionFileError(f"{str(file)} cannot be accessed") from err
+            yt_url = f"https://www.youtube.com/channel/{channel_id}/videos"
+            yt_title = obj_json[i]['snippet']['title']
+            #printf("Channel ID: %s\n" ,channel_id)
+            #printf("Title: %s\n", yt_title)
+            #printf("YT url: %s\n", yt_url);
 
-        root = tree.getroot()
-        for element in root.findall('.//outline[@type="rss"]'):
-            name, url = _from_xml_element(element)
-            try:
-                self.add_playlist(name, url)
-            except NameConflictError:
-                logger.warning("Ignoring playlist '%s', because it already subscribed", name)
-            except BadURLException:
-                logger.warning("Ignoring playlist '%s', "
-                               "because it is not supported by youtube-dl", name)
-            else:
-                logger.info("Added playlist '%s'", name)
+
+        
+        #def _from_xml_element(elem: ET.Element) -> Tuple[str, str]:
+        #    rss_url = urlparse(elem.attrib["xmlUrl"])
+        #    query_dict = parse_qs(rss_url.query, keep_blank_values=False)
+        #    channel_id = query_dict.get("channel_id", [])
+        #    if len(channel_id) != 1:
+        #        message = f"'{str(file)}' is not a valid YouTube export file"
+        #        raise InvalidSubscriptionFileError(message)
+        #    yt_url = f"https://www.youtube.com/channel/{channel_id[0]}/videos"
+        #    return elem.attrib["title"], yt_url
+
+        #try:
+        #    tree = ET.parse(file)
+        #except ET.ParseError as err:
+        #    raise InvalidSubscriptionFileError(
+        #        f"'{str(file)}' is not a valid YouTube export file"
+        #    ) from err
+        #except OSError as err:
+        #    raise InvalidSubscriptionFileError(f"{str(file)} cannot be accessed") from err
+
+        #root = tree.getroot()
+        #for element in root.findall('.//outline[@type="rss"]'):
+        #    name, url = _from_xml_element(element)
+        #    try:
+        #        self.add_playlist(name, url)
+        #    except NameConflictError:
+        #        logger.warning("Ignoring playlist '%s', because it already subscribed", name)
+        #    except BadURLException:
+        #        logger.warning("Ignoring playlist '%s', "
+        #                       "because it is not supported by youtube-dl", name)
+        #    else:
+        #        logger.info("Added playlist '%s'", name)
