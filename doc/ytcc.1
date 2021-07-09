@@ -3,6 +3,10 @@
 ytcc - a subscription wrapper for youtube-dl playlists
 .SH SYNOPSIS
 ytcc [OPTIONS...] COMMAND [ARGS...]
+
+ytcc import subscriptions.json
+
+ytcc update
 .SH DESCRIPTION
 Ytcc - the (not only) YouTube channel checker.
 
@@ -303,7 +307,9 @@ Show command help and exit.
 
 Import YouTube subscriptions from JSON file.
 
-You can export your YouTube subscriptions at https://www.youtube.com/subscription_manager.
+You can export your YouTube subscriptions at https://takeout.google.com/
+By default, all your *Google* data will be exported. Learn how to only export your youtube
+subscriptions here: https://github.com/TrevCan/ytcc/blob/master/doc/yt_export_subs.md .
 .P
 .B OPTIONS:
 .P
