@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
-
+import csv
 import datetime
 import logging
 import os
@@ -265,7 +265,8 @@ class Ytcc:
 
         return True
 
-    def add_playlist(self, name: str, url: str, reverse: bool = False) -> None:
+    def add_playlist(self, name: str, url: str, reverse: bool = False,
+                     skip_update_check: bool = False) -> None:
         ydl_opts = {
             **YTDL_COMMON_OPTS,
             "playliststart": 1,
@@ -304,18 +305,19 @@ class Ytcc:
             if not real_url:
                 raise BadURLException("The playlist URL cannot be found")
 
-            logger.info("Performing update check on 10 playlist items")
-            playlist = list(Fetcher(10).fetch(Playlist(name, real_url, reverse)))
-            if not playlist:
-                logger.warning("The playlist might be empty")
+            if not skip_update_check:
+                logger.info("Performing update check on 10 playlist items")
+                playlist = list(Fetcher(10).fetch(Playlist(name, real_url, reverse)))
+                if not playlist:
+                    logger.warning("The playlist might be empty")
 
-            if self._is_playlist_reverse(playlist):
-                logger.warning(
-                    "The playlist seems to be updated in opposite order. You probably won't "
-                    "receive any updates for this playlist. Use `ytcc reverse '%s'` to change the "
-                    "update behavior of the playlist.",
-                    name
-                )
+                if self._is_playlist_reverse(playlist):
+                    logger.warning(
+                        "The playlist seems to be updated in opposite order. You probably won't "
+                        "receive any updates for this playlist. Use `ytcc reverse '%s'` to change "
+                        "the update behavior of the playlist.",
+                        name
+                    )
 
         try:
             self.database.add_playlist(name, real_url, reverse)
@@ -414,10 +416,44 @@ class Ytcc:
             raise InvalidSubscriptionFileError(f"{str(file)} cannot be accessed") from err
 
         root = tree.getroot()
-        for element in root.findall('.//outline[@type="rss"]'):
-            name, url = _from_xml_element(element)
+        subscriptions = (
+            _from_xml_element(element)
+            for element in root.findall('.//outline[@type="rss"]')
+        )
+        self._bulk_subscribe(subscriptions)
+
+    def import_yt_csv(self, file: Path):
+        with open(file, newline='') as csvfile:
+            sample = csvfile.read(4096)
+            sniffer = csv.Sniffer()
+            dialect = sniffer.sniff(sample)
+
+            csvfile.seek(0)
+            rows = csv.reader(csvfile, dialect)
+
+            if sniffer.has_header(sample):
+                next(rows, None)
+
+            subscriptions = []
+            for row in rows:
+                # Ignore empty lines
+                if not row:
+                    continue
+
+                if len(row) != 3:
+                    raise InvalidSubscriptionFileError(
+                        f"{str(file)} has an invalid number of columns. Expecting: ID, URL, Name"
+                    )
+
+                yt_url = f"https://www.youtube.com/channel/{row[0]}/videos"
+                subscriptions.append((row[2], yt_url))
+
+            self._bulk_subscribe(subscriptions)
+
+    def _bulk_subscribe(self, subscriptions: Iterable[Tuple[str, str]]) -> None:
+        for name, url in subscriptions:
             try:
-                self.add_playlist(name, url)
+                self.add_playlist(name, url, skip_update_check=True)
             except NameConflictError:
                 logger.warning("Ignoring playlist '%s', because it already subscribed", name)
             except BadURLException:

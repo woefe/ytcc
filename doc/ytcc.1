@@ -1,4 +1,4 @@
-.TH ytcc 1 "Jun 2021" "2.3.0" "ytcc - a subscription wrapper for youtube-dl"
+.TH ytcc 1 "Jul 2021" "2.3.0" "ytcc - a subscription wrapper for youtube-dl"
 .SH NAME
 ytcc - a subscription wrapper for youtube-dl playlists
 .SH SYNOPSIS
@@ -301,11 +301,21 @@ Confirm the action without prompting.
 Show command help and exit.
 .SS import [OPTIONS] FILE
 
-Import YouTube subscriptions from OPML file.
+Import YouTube subscriptions from an OPML or CSV file.
 
-You can export your YouTube subscriptions at https://www.youtube.com/subscription_manager.
+The CSV file must have three columns in following order: Channel ID, Channel URL, Channel name.
+
+You can export your YouTube subscriptions at https://takeout.google.com. In the takeout you
+find a CSV file with your subscriptions. To speed up the takeout export only your
+subscriptions, not your videos, comments, etc.
+
+The OPML export was available on YouTube some time ago and old versions of ytcc were also able
+to export subscriptions in the OPML format.
 .P
 .B OPTIONS:
+.P
+.B -f, --format [opml|csv]
+Format of the file to import.  [default: csv]
 .P
 .B --help
 Show command help and exit.

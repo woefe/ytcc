@@ -564,14 +564,26 @@ def cleanup(ytcc: core.Ytcc, keep: Optional[int]):
 
 
 @cli.command("import")
+@click.option("--format", "-f", type=click.Choice(["opml", "csv"]), default="csv",
+              show_default=True, help="Format of the file to import.")
 @click.argument("file", nargs=1, type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @pass_ytcc
-def import_(ytcc: core.Ytcc, file: Path):
-    """Import YouTube subscriptions from OPML file.
+def import_(ytcc: core.Ytcc, format: str, file: Path):  # pylint: disable=redefined-builtin
+    """Import YouTube subscriptions from an OPML or CSV file.
 
-    You can export your YouTube subscriptions at https://www.youtube.com/subscription_manager.
+    The CSV file must have three columns in following order: Channel ID, Channel URL, Channel name.
+
+    You can export your YouTube subscriptions at https://takeout.google.com. In the takeout you
+    find a CSV file with your subscriptions. To speed up the takeout export only your
+    subscriptions, not your videos, comments, etc.
+
+    The OPML export was available on YouTube some time ago and old versions of ytcc were also able
+    to export subscriptions in the OPML format.
     """
-    ytcc.import_yt_opml(file)
+    if format == "opml":
+        ytcc.import_yt_opml(file)
+    elif format == "csv":
+        ytcc.import_yt_csv(file)
 
 
 @cli.command()
