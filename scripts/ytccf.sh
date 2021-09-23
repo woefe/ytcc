@@ -24,8 +24,9 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
-make_table='ytcc --output table --truncate $(($(tput cols) - 3)) list --attributes id,title,publish_date,duration,playlists'
-key_bindings="
+read TERM_LINES TERM_COLS < <(</dev/tty stty size)
+MAKE_TABLE='ytcc --output table --truncate $((2 * TERM_COLS / 3 - 3)) list --attributes id,title,publish_date,duration,playlists'
+KEY_BINDINGS="
         tab: select/deselect
       enter: play video(s)
   alt-enter: play audio track(s)
@@ -34,6 +35,52 @@ key_bindings="
       alt-m: mark selection as watched
       alt-u: mark last watched video as unwatched
       alt-h: show help"
+
+declare -r -x UEBERZUG_FIFO="$(mktemp --dry-run --suffix "fzf-$$-ueberzug")"
+declare -r -x PREVIEW_ID="preview"
+
+
+function draw_img_preview {
+    read TERM_LINES TERM_COLS < <(</dev/tty stty size)
+    X=$((2 * TERM_COLS / 3))
+    Y=3
+    LINES=$((TERM_LINES / 2 - 2))
+    COLUMNS=$((TERM_COLS / 3 ))
+    export TERM_LINES TERM_COLS
+
+    >"${UEBERZUG_FIFO}" declare -A -p cmd=( \
+        [action]=add [identifier]="${PREVIEW_ID}" \
+        [x]="${X}" [y]="${Y}" \
+        [width]="${COLUMNS}" [height]="${LINES}" \
+        [scaler]=fit_contain [scaling_position_x]=0.5 [scaling_position_y]=0.5 \
+        [path]="${@}")
+        # add [synchronously_draw]=True if you want to see each change
+}
+
+function start_ueberzug {
+    mkfifo "${UEBERZUG_FIFO}"
+    <"${UEBERZUG_FIFO}" \
+        ueberzug layer --parser bash --silent &
+    # prevent EOF
+    3>"${UEBERZUG_FIFO}" \
+        exec
+}
+
+
+function finalise {
+    3>&- \
+        exec
+    &>/dev/null \
+        rm "${UEBERZUG_FIFO}"
+    &>/dev/null \
+        kill "$(jobs -p)"
+}
+
+function get_thumbnail {
+    rm /tmp/ytccf_thumbnail 2>/dev/null
+    curl --silent -o /tmp/ytccf_thumbnail "$(ytcc -o xsv list --ids $1 --attributes thumbnail_url)"
+    draw_img_preview /tmp/ytccf_thumbnail
+}
 
 check_cmd() {
     if ! command -v "$1" &> /dev/null; then
@@ -68,7 +115,7 @@ OPTIONS:
   -h, --help                      Show this message and exit.
 
 
-KEY BINDINGS:$key_bindings
+KEY BINDINGS:$KEY_BINDINGS
 
 For more keybindings see fzf(1).
 EOF
@@ -79,31 +126,31 @@ while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in
     -p | --playlists)
-        make_table="$make_table -p '$2'"
+        MAKE_TABLE="$MAKE_TABLE -p '$2'"
         shift
         shift
         ;;
     -c | --tags)
-        make_table="$make_table -c '$2'"
+        MAKE_TABLE="$MAKE_TABLE -c '$2'"
         shift
         shift
         ;;
     -s | --since)
-        make_table="$make_table -s '$2'"
+        MAKE_TABLE="$MAKE_TABLE -s '$2'"
         shift
         shift
         ;;
     -t | --till)
-        make_table="$make_table -t '$2'"
+        MAKE_TABLE="$MAKE_TABLE -t '$2'"
         shift
         shift
         ;;
     -w | --watched)
-        make_table="$make_table -w"
+        MAKE_TABLE="$MAKE_TABLE -w"
         shift
         ;;
     -u | --unwatched)
-        make_table="$make_table -u"
+        MAKE_TABLE="$MAKE_TABLE -u"
         shift
         ;;
     -h | --help)
@@ -121,16 +168,22 @@ done
 check_cmd ytcc
 check_cmd fzf
 
-eval "$make_table" |
-    fzf --preview "ytcc --output xsv --separator ';' list --watched --unwatched -a description -i {1}" \
+trap finalise EXIT
+start_ueberzug
+
+export -f get_thumbnail draw_img_preview
+export TERM_COLS TERM_LINES
+
+eval "$MAKE_TABLE" |
+    SHELL=/usr/bin/bash fzf --preview "get_thumbnail {1}; ytcc --output xsv --separator ';' list --watched --unwatched -a description -i {1}" \
         --multi \
         --layout reverse \
-        --preview-window down:55%:wrap \
-        --bind "enter:execute%ytcc play {+1}%+reload%$make_table%" \
-        --bind "alt-enter:execute%ytcc play --audio-only {+1}%+reload%$make_table%" \
-        --bind "alt-d:execute%ytcc download {+1}%+reload%$make_table%" \
-        --bind "alt-r:execute%ytcc update%+reload%$make_table%" \
-        --bind "alt-h:execute%echo 'Key bindings:$key_bindings' | less%+reload%$make_table%" \
-        --bind "alt-m:reload%ytcc mark {+1}; $make_table%" \
-        --bind "alt-u:reload%ytcc ls --order-by watched desc --watched | head -n1 | ytcc unmark; $make_table%" \
+        --preview-window down:50%:wrap \
+        --bind "enter:execute%ytcc play {+1}%+reload%$MAKE_TABLE%" \
+        --bind "alt-enter:execute%ytcc play --audio-only {+1}%+reload%$MAKE_TABLE%" \
+        --bind "alt-d:execute%ytcc download {+1}%+reload%$MAKE_TABLE%" \
+        --bind "alt-r:execute%ytcc update%+reload%$MAKE_TABLE%" \
+        --bind "alt-h:execute%echo 'Key bindings:$KEY_BINDINGS' | less%+reload%$MAKE_TABLE%" \
+        --bind "alt-m:reload%ytcc mark {+1}; $MAKE_TABLE%" \
+        --bind "alt-u:reload%ytcc ls --order-by watched desc --watched | head -n1 | ytcc unmark; $MAKE_TABLE%" \
         --header-lines 2

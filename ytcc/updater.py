@@ -21,7 +21,7 @@ import logging
 import os
 from collections import defaultdict
 from concurrent.futures.thread import ThreadPoolExecutor as Pool
-from typing import List, Tuple, Any, Optional, Iterable
+from typing import List, Tuple, Any, Optional, Iterable, Dict
 
 from ytcc import config, Playlist, Database, Video
 from ytcc.utils import take, unpack_optional, lazy_import
@@ -107,6 +107,11 @@ class Fetcher:
                 if duration < 0:
                     logger.warning("Duration of video '%s' is unknown", title)
 
+                thumbnail_url = processed.get("thumbnail", None)
+                thumbnails = processed.get("thumbnails")
+                if thumbnails:
+                    thumbnail_url = self._get_highest_res_thumbnail(thumbnails).get("url")
+
                 logger.info("Processed video '%s'", processed.get("title"))
 
                 return e_hash, Video(
@@ -116,8 +121,19 @@ class Fetcher:
                     publish_date=publish_date,
                     watch_date=None,
                     duration=duration,
+                    thumbnail_url=thumbnail_url,
                     extractor_hash=e_hash
                 )
+
+    @staticmethod
+    def _get_highest_res_thumbnail(thumbnails: List[Dict[str, Any]]) -> Dict[str, Any]:
+        def _max_res(thumb: Dict[str, Any]) -> int:
+            try:
+                return int(thumb.get("width", 0)) * int(thumb.get("height", 0))
+            except ValueError:
+                return 0
+
+        return max(thumbnails, key=_max_res, default={})
 
     def fetch(self, playlist: Playlist) -> Iterable[Video]:
         for entry, e_hash in self.get_unprocessed_entries(playlist):

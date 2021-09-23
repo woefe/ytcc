@@ -75,6 +75,7 @@ class VideoAttr(str, Enum):
     PUBLISH_DATE = "publish_date"
     WATCHED = "watched"
     DURATION = "duration"
+    THUMBNAIL_URL = "thumbnail_url"
     EXTRACTOR_HASH = "extractor_hash"
     PLAYLISTS = "playlists"
 

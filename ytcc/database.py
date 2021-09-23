@@ -56,6 +56,7 @@ class Video:
     publish_date: float
     watch_date: Optional[float]
     duration: float
+    thumbnail_url: Optional[str]
     extractor_hash: str
 
     @property
@@ -75,7 +76,7 @@ class MappedPlaylist(Playlist):
 
 
 class Database:
-    VERSION = 4
+    VERSION = 5
 
     def __init__(self, path: str = ":memory:"):
         is_new_db = True
@@ -141,6 +142,7 @@ class Database:
                 duration       FLOAT,
                 publish_date   FLOAT,
                 watch_date     FLOAT,
+                thumbnail_url  VARCHAR,
                 extractor_hash VARCHAR UNIQUE
             );
 
@@ -241,25 +243,28 @@ class Database:
     def add_videos(self, videos: Iterable[Video], playlist: Playlist) -> None:
         insert_video = """
             INSERT INTO video
-                (title, url, description, duration, publish_date, watch_date, extractor_hash)
+                (title, url, description, duration, publish_date, watch_date,
+                 thumbnail_url, extractor_hash)
             VALUES
                 (:title, :url, :description, :duration, :publish_date, :watch_date,
-                 :extractor_hash)
+                 :thumbnail_url, :extractor_hash)
             ON CONFLICT (url) DO UPDATE
                 SET title = :title,
                     url = :url,
                     description = :description,
                     duration = :duration,
                     publish_date = :publish_date,
+                    thumbnail_url = :thumbnail_url,
                     extractor_hash = :extractor_hash
             """
         if sqlite3.sqlite_version_info < (3, 24, 0):
             insert_video = """
                 INSERT OR IGNORE INTO video
-                    (title, url, description, duration, publish_date, watch_date, extractor_hash)
+                    (title, url, description, duration, publish_date, watch_date,
+                     thumbnail_url, extractor_hash)
                 VALUES
                     (:title, :url, :description, :duration, :publish_date, :watch_date,
-                     :extractor_hash)
+                     :thumbnail_url, :extractor_hash)
                 """
         insert_playlist = """
             INSERT OR IGNORE INTO content (playlist_id, video_id)
@@ -334,6 +339,7 @@ class Database:
                     VideoAttr.PUBLISH_DATE: "publish_date",
                     VideoAttr.WATCHED: "watch_date",
                     VideoAttr.DURATION: "duration",
+                    VideoAttr.THUMBNAIL_URL: "thumbnail_url",
                     VideoAttr.EXTRACTOR_HASH: "extractor_hash",
                     VideoAttr.PLAYLISTS: "playlist_name",
                 }
@@ -343,8 +349,9 @@ class Database:
                     if col is not None:
                         yield col, ord_dir
 
-            order_by_clause = "ORDER BY "
-            order_by_clause += ", ".join(f"{col} {ord_dir}" for col, ord_dir in directions())
+            order_by_clause = ", ".join(f"{col} {ord_dir}" for col, ord_dir in directions())
+            if order_by_clause:
+                order_by_clause = "ORDER BY " + order_by_clause
         return order_by_clause
 
     def list_videos(
@@ -381,6 +388,7 @@ class Database:
                    v.duration       AS duration,
                    v.publish_date   AS publish_date,
                    v.watch_date     AS watch_date,
+                   v.thumbnail_url  AS thumbnail_url,
                    v.extractor_hash AS extractor_hash,
                    p.name           AS playlist_name,
                    p.url            AS playlist_url,
@@ -417,6 +425,7 @@ class Database:
                         publish_date=row["publish_date"],
                         watch_date=row["watch_date"],
                         duration=row["duration"],
+                        thumbnail_url=row["thumbnail_url"],
                         extractor_hash=row["extractor_hash"],
                         playlists=[
                             Playlist(

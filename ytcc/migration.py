@@ -69,7 +69,11 @@ ALTER TABLE playlist ADD COLUMN reverse BOOLEAN;
 UPDATE playlist SET reverse = false WHERE reverse IS NULL;
 """
 
-UPDATES = ["-- noop", "-- noop", V3_WATCH_DATE, V4_PLAYLIST_REVERSE]
+V5_VIDEO_THUMBNAIL_URL = """
+ALTER TABLE video ADD COLUMN thumbnail_URL VARCHAR;
+"""
+
+UPDATES = ["-- noop", "-- noop", V3_WATCH_DATE, V4_PLAYLIST_REVERSE, V5_VIDEO_THUMBNAIL_URL]
 
 
 def migrate(old_version: int, new_version: int, db_conn: sqlite3.Connection) -> None:
