@@ -24,7 +24,7 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
-read TERM_LINES TERM_COLS < <(</dev/tty stty size)
+FILTERS=''
 MAKE_TABLE='ytcc --output table --truncate $((2 * TERM_COLS / 3 - 3)) list --attributes id,title,publish_date,duration,playlists'
 KEY_BINDINGS="
         tab: select/deselect
@@ -36,11 +36,12 @@ KEY_BINDINGS="
       alt-u: mark last watched video as unwatched
       alt-h: show help"
 
+declare -r -x THUMBNAIL_DIR=$HOME/.cache/ytccf/thumbnails
 declare -r -x UEBERZUG_FIFO="$(mktemp --dry-run --suffix "fzf-$$-ueberzug")"
 declare -r -x PREVIEW_ID="preview"
 
 
-function draw_img_preview {
+function draw_preview {
     read TERM_LINES TERM_COLS < <(</dev/tty stty size)
     X=$((2 * TERM_COLS / 3))
     Y=3
@@ -57,6 +58,12 @@ function draw_img_preview {
         # add [synchronously_draw]=True if you want to see each change
 }
 
+function clear_preview {
+    >"${UEBERZUG_FIFO}" declare -A -p cmd=( \
+        [action]=remove [identifier]="${PREVIEW_ID}" \
+    )
+}
+
 function start_ueberzug {
     mkfifo "${UEBERZUG_FIFO}"
     <"${UEBERZUG_FIFO}" \
@@ -65,7 +72,6 @@ function start_ueberzug {
     3>"${UEBERZUG_FIFO}" \
         exec
 }
-
 
 function finalise {
     3>&- \
@@ -76,20 +82,26 @@ function finalise {
         kill "$(jobs -p)"
 }
 
-function get_thumbnail {
-    rm /tmp/ytccf_thumbnail 2>/dev/null
-    curl --silent -o /tmp/ytccf_thumbnail "$(ytcc -o xsv list --ids $1 --attributes thumbnail_url)"
-    draw_img_preview /tmp/ytccf_thumbnail
+function fetch_thumbnails() {
+    curl_args=""
+    for line in $(ytcc --output xsv list --attributes id,thumbnail_url $FILTERS); do
+        arr=(${line/,/ })
+        ((${#arr[@]} > 1)) \
+            && ! [[ -e $THUMBNAIL_DIR/${arr[0]} ]] \
+            && curl_args+=" -o $THUMBNAIL_DIR/${arr[0]} ${arr[1]}"
+    done
+    mkdir -p "$THUMBNAIL_DIR"
+    [[ $curl_args == "" ]] || curl -L --silent $curl_args
 }
 
-check_cmd() {
+function check_cmd() {
     if ! command -v "$1" &> /dev/null; then
         echo "Command '$1' not found. Aborting."
         exit 1
     fi
 }
 
-usage() {
+function usage() {
     cat <<EOF
 Usage: $0 [OPTIONS]
 
@@ -112,6 +124,7 @@ OPTIONS:
                                   playlists.
   -w, --watched                   Only watched videos are listed.
   -u, --unwatched                 Only unwatched videos are listed.
+      --clear-thumbnails          Empty the thumbnail cache.
   -h, --help                      Show this message and exit.
 
 
@@ -126,35 +139,39 @@ while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in
     -p | --playlists)
-        MAKE_TABLE="$MAKE_TABLE -p '$2'"
+        FILTERS="$FILTERS -p '$2'"
         shift
         shift
         ;;
     -c | --tags)
-        MAKE_TABLE="$MAKE_TABLE -c '$2'"
+        FILTERS="$FILTERS -c '$2'"
         shift
         shift
         ;;
     -s | --since)
-        MAKE_TABLE="$MAKE_TABLE -s '$2'"
+        FILTERS="$FILTERS -s '$2'"
         shift
         shift
         ;;
     -t | --till)
-        MAKE_TABLE="$MAKE_TABLE -t '$2'"
+        FILTERS="$FILTERS -t '$2'"
         shift
         shift
         ;;
     -w | --watched)
-        MAKE_TABLE="$MAKE_TABLE -w"
+        FILTERS="$FILTERS -w"
         shift
         ;;
     -u | --unwatched)
-        MAKE_TABLE="$MAKE_TABLE -u"
+        FILTERS="$FILTERS -u"
         shift
         ;;
     -h | --help)
         usage
+        exit
+        ;;
+    --clear-thumbnails)
+        rm -r "$THUMBNAIL_DIR" && echo "Successfully cleared thumbnail cache"
         exit
         ;;
     *)
@@ -164,26 +181,32 @@ while [[ $# -gt 0 ]]; do
         ;;
     esac
 done
+MAKE_TABLE="$MAKE_TABLE $FILTERS"
 
 check_cmd ytcc
 check_cmd fzf
+check_cmd ueberzug
+check_cmd stty
+check_cmd curl
 
-trap finalise EXIT
 start_ueberzug
+trap finalise EXIT
+fetch_thumbnails
 
-export -f get_thumbnail draw_img_preview
+read TERM_LINES TERM_COLS < <(</dev/tty stty size)
 export TERM_COLS TERM_LINES
+export -f draw_preview clear_preview
 
 eval "$MAKE_TABLE" |
-    SHELL=/usr/bin/bash fzf --preview "get_thumbnail {1}; ytcc --output xsv --separator ';' list --watched --unwatched -a description -i {1}" \
+    SHELL=/usr/bin/bash fzf --preview "draw_preview $THUMBNAIL_DIR/{1}; ytcc --output xsv --separator ';' list --watched --unwatched -a description -i {1}" \
         --multi \
         --layout reverse \
         --preview-window down:50%:wrap \
-        --bind "enter:execute%ytcc play {+1}%+reload%$MAKE_TABLE%" \
-        --bind "alt-enter:execute%ytcc play --audio-only {+1}%+reload%$MAKE_TABLE%" \
-        --bind "alt-d:execute%ytcc download {+1}%+reload%$MAKE_TABLE%" \
-        --bind "alt-r:execute%ytcc update%+reload%$MAKE_TABLE%" \
-        --bind "alt-h:execute%echo 'Key bindings:$KEY_BINDINGS' | less%+reload%$MAKE_TABLE%" \
+        --bind "enter:execute%clear_preview; ytcc play {+1}%+reload%$MAKE_TABLE%" \
+        --bind "alt-enter:execute%clear_preview; ytcc play --audio-only {+1}%+reload%$MAKE_TABLE%" \
+        --bind "alt-d:execute%clear_preview; ytcc download {+1}%+reload%$MAKE_TABLE%" \
+        --bind "alt-r:execute%clear_preview; ytcc update%+reload%$MAKE_TABLE%" \
+        --bind "alt-h:execute%clear_preview; echo 'Key bindings:$KEY_BINDINGS' | less%+reload%$MAKE_TABLE%" \
         --bind "alt-m:reload%ytcc mark {+1}; $MAKE_TABLE%" \
         --bind "alt-u:reload%ytcc ls --order-by watched desc --watched | head -n1 | ytcc unmark; $MAKE_TABLE%" \
         --header-lines 2
