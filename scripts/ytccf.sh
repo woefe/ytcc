@@ -45,7 +45,7 @@ function draw_preview {
     read TERM_LINES TERM_COLS < <(</dev/tty stty size)
     X=$((2 * TERM_COLS / 3))
     Y=3
-    LINES=$((TERM_LINES / 2 - 2))
+    LINES=$((TERM_LINES / 2 - 3))
     COLUMNS=$((TERM_COLS / 3 ))
     export TERM_LINES TERM_COLS
 
@@ -91,7 +91,10 @@ function fetch_thumbnails() {
             && curl_args+=" -o $THUMBNAIL_DIR/${arr[0]} ${arr[1]}"
     done
     mkdir -p "$THUMBNAIL_DIR"
-    [[ $curl_args == "" ]] || curl -L --silent $curl_args
+    if [[ $curl_args != "" ]]; then
+        echo INFO: Fetching thumbnails
+        curl -L --silent $curl_args
+    fi
 }
 
 function check_cmd() {
@@ -195,7 +198,7 @@ fetch_thumbnails
 
 read TERM_LINES TERM_COLS < <(</dev/tty stty size)
 export TERM_COLS TERM_LINES
-export -f draw_preview clear_preview
+export -f draw_preview clear_preview fetch_thumbnails
 
 eval "$MAKE_TABLE" |
     SHELL=/usr/bin/bash fzf --preview "draw_preview $THUMBNAIL_DIR/{1}; ytcc --output xsv --separator ';' list --watched --unwatched -a description -i {1}" \
@@ -205,7 +208,7 @@ eval "$MAKE_TABLE" |
         --bind "enter:execute%clear_preview; ytcc play {+1}%+reload%$MAKE_TABLE%" \
         --bind "alt-enter:execute%clear_preview; ytcc play --audio-only {+1}%+reload%$MAKE_TABLE%" \
         --bind "alt-d:execute%clear_preview; ytcc download {+1}%+reload%$MAKE_TABLE%" \
-        --bind "alt-r:execute%clear_preview; ytcc update%+reload%$MAKE_TABLE%" \
+        --bind "alt-r:execute%clear_preview; ytcc update; fetch_thumbnails%+reload%$MAKE_TABLE%" \
         --bind "alt-h:execute%clear_preview; echo 'Key bindings:$KEY_BINDINGS' | less%+reload%$MAKE_TABLE%" \
         --bind "alt-m:reload%ytcc mark {+1}; $MAKE_TABLE%" \
         --bind "alt-u:reload%ytcc ls --order-by watched desc --watched | head -n1 | ytcc unmark; $MAKE_TABLE%" \
