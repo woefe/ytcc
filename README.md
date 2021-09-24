@@ -65,8 +65,8 @@ Listen to some music without limitations.
 ytcc ls -p "NCS: House" | ytcc play --audio-only
 ```
 
-**Alternative terminal interface built on [fzf](https://github.com/junegunn/fzf)**.
-Requires fzf version 0.23.1 or newer.
+**Alternative terminal interface with thumbnail support.**
+Requires [fzf](https://github.com/junegunn/fzf) version 0.23.1 or newer, optionally [curl](https://curl.se/) and either [ueberzug](https://github.com/seebye/ueberzug) or [kitty](https://sw.kovidgoyal.net/kitty/).
 The script is automatically installed on most platforms during installation of ytcc.
 If it's not installed, you can download it from [here](https://github.com/woefe/ytcc/tree/master/scripts/ytccf.sh).
 ```shell script
