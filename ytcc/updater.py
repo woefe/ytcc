@@ -169,7 +169,7 @@ class Updater:
 
         with Pool(num_workers) as pool, Database(self.db_path) as database:
             playlists = database.list_playlists()
-            raw_entries = dict()
+            raw_entries = {}
             playlists_mapping = defaultdict(list)
             full_content = pool.map(self.get_new_entries, playlists)
             for entry, e_hash, playlist in itertools.chain.from_iterable(full_content):

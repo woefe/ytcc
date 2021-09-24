@@ -27,7 +27,7 @@ def compile_translations():
     return package_data
 
 
-with open("README.md", "r") as readme:
+with open("README.md", "r", encoding="utf-8") as readme:
     long_description = readme.read()
 
 setup(

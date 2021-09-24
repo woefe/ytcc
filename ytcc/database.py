@@ -215,7 +215,7 @@ class Database:
             FROM playlist AS p
                 LEFT OUTER JOIN tag AS t ON p.id = t.playlist;
             """
-        playlists: Dict[int, MappedPlaylist] = dict()
+        playlists: Dict[int, MappedPlaylist] = {}
         for row in self.connection.execute(query):
             playlist = playlists.get(row["id"])
             if playlist is None:
@@ -412,7 +412,7 @@ class Database:
         tags = unpack_optional(tags, list)
         ids = unpack_optional(ids, list)
 
-        videos: Dict[int, MappedVideo] = dict()
+        videos: Dict[int, MappedVideo] = {}
         with self.connection as con:
             for row in con.execute(query, [since, till, *ids, *tags, *playlists]):
                 video = videos.get(row["id"])

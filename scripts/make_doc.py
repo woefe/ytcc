@@ -33,7 +33,7 @@ class BlankUsageFormatter(click.HelpFormatter):
 
 def main():
     ctx = cli.make_context("ytcc", [""])
-    with open("doc/ytcc.1", "w") as manpage:
+    with open("doc/ytcc.1", "w", encoding="utf-8") as manpage:
         today = date.today().strftime('%b %Y')
         manpage.write(f'.TH ytcc 1 "{today}" "{__version__}" ')
         manpage.write('"ytcc - a subscription wrapper for youtube-dl"\n')
