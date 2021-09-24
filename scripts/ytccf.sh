@@ -141,10 +141,10 @@ MAKE_TABLE="$MAKE_TABLE $FILTERS"
 
 check_cmd ytcc
 check_cmd fzf
+check_cmd stty
 
 if [[ $THUMBNAILS -eq 1 ]]; then
     check_cmd curl
-    check_cmd stty
 
     function fetch_thumbnails() {
         curl_args=""
