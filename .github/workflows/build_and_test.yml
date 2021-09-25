@@ -60,7 +60,7 @@ jobs:
         python -m pytest
   shellcheck:
     runs-on: ubuntu-latest
-    steps
+    steps:
     - name: Install shellcheck
       run: |
           sudo apt-get update
