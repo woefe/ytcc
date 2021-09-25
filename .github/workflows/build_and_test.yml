@@ -58,3 +58,12 @@ jobs:
       run: |
         pip install pytest
         python -m pytest
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps
+    - name: Install shellcheck
+      run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+    - name: Check scripts with shellcheck
+      run: shellcheck scripts/*.sh
