@@ -230,7 +230,7 @@ fetch_thumbnails
 export -f draw_preview clear_preview fetch_thumbnails calculate_preview_size
 
 eval "$MAKE_TABLE" |
-    SHELL=/usr/bin/bash fzf --preview "draw_preview $THUMBNAIL_DIR/{1}; ytcc --output xsv --separator ';' list --watched --unwatched -a description -i {1}" \
+    SHELL=$(which bash) fzf --preview "draw_preview $THUMBNAIL_DIR/{1}; ytcc --output xsv --separator ';' list --watched --unwatched -a description -i {1}" \
         --multi \
         --layout reverse \
         --preview-window down:50%:wrap \
