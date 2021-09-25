@@ -91,7 +91,7 @@ class VideoPrintable(Printable):
 
     def table(self) -> Table:
         header = ["id", "url", "title", "description", "publish_date", "watched", "duration",
-                  "extractor_hash", "playlists"]
+                  "thumbnail_url", "extractor_hash", "playlists"]
 
         data = []
         for video in self.videos:
@@ -103,6 +103,7 @@ class VideoPrintable(Printable):
                 self._format_date(video.publish_date),
                 self._format_date(video.watch_date) if video.watch_date else "No",
                 self._format_duration(video.duration),
+                video.thumbnail_url or "",
                 video.extractor_hash,
                 ", ".join(map(lambda v: v.name, video.playlists))
             ])

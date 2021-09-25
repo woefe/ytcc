@@ -75,6 +75,7 @@ class VideoAttr(str, Enum):
     PUBLISH_DATE = "publish_date"
     WATCHED = "watched"
     DURATION = "duration"
+    THUMBNAIL_URL = "thumbnail_url"
     EXTRACTOR_HASH = "extractor_hash"
     PLAYLISTS = "playlists"
 
@@ -213,7 +214,7 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
         path = Path(default_cfg_file)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.touch()
-        with path.open("w") as conf_file:
+        with path.open("w", encoding="locale") as conf_file:
             dump(conf_file)
 
     return config
@@ -258,7 +259,7 @@ def load(override_cfg_file: Optional[str] = None):
             from_str = functools.partial(enum_from_str, typ)
         elif issubclass(typ, bool):
             from_str = bool_from_str
-        elif next((c for c in {int, float, str} if issubclass(typ, c)), None):
+        elif next((c for c in (int, float, str) if issubclass(typ, c)), None):
             from_str = typ
         else:
             raise TypeError(f"Unsupported config parameter type in {typ}")
