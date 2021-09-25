@@ -1,4 +1,4 @@
-.TH ytcc 1 "Jul 2021" "2.3.0" "ytcc - a subscription wrapper for youtube-dl"
+.TH ytcc 1 "Sep 2021" "2.4.0" "ytcc - a subscription wrapper for youtube-dl"
 .SH NAME
 ytcc - a subscription wrapper for youtube-dl playlists
 .SH SYNOPSIS
@@ -121,7 +121,7 @@ Lists videos that match the given filter options. By default, all unwatched vide
 .B OPTIONS:
 .P
 .B -a, --attributes COMMA_SEPARATED_VALUES
-Attributes of videos to be included in the output. Some of [id, url, title, description, publish_date, watched, duration, extractor_hash, playlists].
+Attributes of videos to be included in the output. Some of [id, url, title, description, publish_date, watched, duration, thumbnail_url, extractor_hash, playlists].
 .P
 .B -c, --tags COMMA_SEPARATED_VALUES
 Listed videos must be tagged with one of the given tags.
@@ -145,7 +145,7 @@ Only watched videos are listed.
 Only unwatched videos are listed.
 .P
 .B -o, --order-by <ATTRIBUTE DIRECTION>...
-Set the column and direction to sort listed videos. ATTRIBUTE is one of [id, url, title, description, publish_date, watched, duration, extractor_hash, playlists]. Direction is one of [asc, desc].
+Set the column and direction to sort listed videos. ATTRIBUTE is one of [id, url, title, description, publish_date, watched, duration, thumbnail_url, extractor_hash, playlists]. Direction is one of [asc, desc].
 .P
 .B --help
 Show command help and exit.
@@ -180,7 +180,7 @@ Only watched videos are listed.
 Only unwatched videos are listed.
 .P
 .B -o, --order-by <ATTRIBUTE DIRECTION>...
-Set the column and direction to sort listed videos. ATTRIBUTE is one of [id, url, title, description, publish_date, watched, duration, extractor_hash, playlists]. Direction is one of [asc, desc].
+Set the column and direction to sort listed videos. ATTRIBUTE is one of [id, url, title, description, publish_date, watched, duration, thumbnail_url, extractor_hash, playlists]. Direction is one of [asc, desc].
 .P
 .B --help
 Show command help and exit.
@@ -212,7 +212,7 @@ Only watched videos are listed.
 Only unwatched videos are listed.
 .P
 .B -o, --order-by <ATTRIBUTE DIRECTION>...
-Set the column and direction to sort listed videos. ATTRIBUTE is one of [id, url, title, description, publish_date, watched, duration, extractor_hash, playlists]. Direction is one of [asc, desc].
+Set the column and direction to sort listed videos. ATTRIBUTE is one of [id, url, title, description, publish_date, watched, duration, thumbnail_url, extractor_hash, playlists]. Direction is one of [asc, desc].
 .P
 .B --help
 Show command help and exit.
