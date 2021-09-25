@@ -1,5 +1,5 @@
 # ytcc - The YouTube channel checker
-# Copyright (C) 2020  Wolfgang Popp
+# Copyright (C) 2021  Wolfgang Popp
 #
 # This file is part of ytcc.
 #
@@ -15,6 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
+
 import csv
 import datetime
 import logging

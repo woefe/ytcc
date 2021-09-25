@@ -1,8 +1,8 @@
 # German translations for YTCC package.
-# Copyright (C) 2019 Wolfgang Popp
+# Copyright (C) 2021 Wolfgang Popp
 # This file is distributed under the same license as the YTCC package.
 #  <mail@wolfgang-popp.de>, 2019.
-# Wolfgang Popp <mail@wolfgang-popp.de>, 2017-2019.
+# Wolfgang Popp <mail@wolfgang-popp.de>, 2017-2021.
 #
 msgid ""
 msgstr ""
