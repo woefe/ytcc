@@ -19,6 +19,7 @@
 import configparser
 import functools
 import io
+import locale
 import logging
 import os
 import typing
@@ -205,8 +206,10 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
     if override_cfg_file:
         cfg_file_locations.append(override_cfg_file)
 
+    encoding = locale.getpreferredencoding(False) or "utf-8"
+
     logger.debug("Trying to read config from following locations: %s", cfg_file_locations)
-    readable_locations = config.read(cfg_file_locations)
+    readable_locations = config.read(cfg_file_locations, encoding=encoding)
     logger.debug("Config was read from following locations: %s", readable_locations)
 
     if not readable_locations:
@@ -214,7 +217,7 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
         path = Path(default_cfg_file)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.touch()
-        with path.open("w", encoding="locale") as conf_file:
+        with path.open("w", encoding=encoding) as conf_file:
             dump(conf_file)
 
     return config

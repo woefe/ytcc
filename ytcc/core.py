@@ -424,7 +424,7 @@ class Ytcc:
         self._bulk_subscribe(subscriptions)
 
     def import_yt_csv(self, file: Path):
-        with open(file, newline='', encoding="locale") as csvfile:
+        with open(file, newline='', encoding="utf-8") as csvfile:
             sample = csvfile.read(4096)
             sniffer = csv.Sniffer()
             dialect = sniffer.sniff(sample)
