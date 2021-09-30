@@ -111,16 +111,16 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     -t | --till)
-        FILTERS=(-t "$2")
+        FILTERS+=(-t "$2")
         shift
         shift
         ;;
     -w | --watched)
-        FILTERS=(-w)
+        FILTERS+=(-w)
         shift
         ;;
     -u | --unwatched)
-        FILTERS=(-u)
+        FILTERS+=(-u)
         shift
         ;;
     -h | --help)
