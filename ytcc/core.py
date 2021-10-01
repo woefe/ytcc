@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
-
+import asyncio
 import csv
 import datetime
 import logging
@@ -308,7 +308,7 @@ class Ytcc:
 
             if not skip_update_check:
                 logger.info("Performing update check on 10 playlist items")
-                playlist = list(Fetcher(10).fetch(Playlist(name, real_url, reverse)))
+                playlist = asyncio.run(Fetcher(10).fetch(Playlist(name, real_url, reverse)))
                 if not playlist:
                     logger.warning("The playlist might be empty")
 

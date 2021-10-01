@@ -15,17 +15,15 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
-
+import asyncio
 import datetime
 import itertools
 import logging
-import os
-from collections import defaultdict
-from concurrent.futures.thread import ThreadPoolExecutor as Pool
+from functools import partial
 from typing import List, Tuple, Any, Optional, Iterable, Dict
 
 from ytcc import config, Playlist, Database, Video
-from ytcc.utils import take, unpack_optional, lazy_import
+from ytcc.utils import take, lazy_import
 
 youtube_dl = lazy_import("youtube_dl")
 
@@ -50,14 +48,16 @@ class Fetcher:
             "age_limit": config.ytcc.age_limit
         }
 
-    def get_unprocessed_entries(self, playlist: Playlist) -> Iterable[Tuple[Any, str]]:
+    async def get_unprocessed_entries(self, playlist: Playlist) -> Iterable[Tuple[str, Any]]:
         ydl_opts = self.ydl_opts.copy()
         ydl_opts["playlistend"] = None if playlist.reverse else self.max_items
 
         with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
             logger.info("Checking playlist '%s'...", playlist.name)
             try:
-                info = ydl.extract_info(playlist.url, download=False, process=False)
+                loop = asyncio.get_event_loop()
+                info = await loop.run_in_executor(None, partial(ydl.extract_info, playlist.url,
+                                                                download=False, process=False))
             except youtube_dl.DownloadError as download_error:
                 logging.error("Failed to get playlist %s. Youtube-dl said: '%s'",
                               playlist.name, download_error)
@@ -65,17 +65,20 @@ class Fetcher:
                 entries = info.get("entries", [])
                 if playlist.reverse:
                     entries = reversed(list(entries))
+                result = []
                 for entry in take(self.max_items, entries):
                     e_hash = ydl._make_archive_id(entry)  # pylint: disable=protected-access
                     if e_hash is None:
                         logger.warning("Ignoring malformed playlist entry from %s", playlist.name)
                     else:
-                        yield entry, e_hash
+                        result.append((e_hash, entry))
+                return result
 
-    def process_entry(self, e_hash: str, entry: Any) -> Tuple[str, Optional[Video]]:
+    async def process_entry(self, e_hash: str, entry: Any) -> Tuple[str, Optional[Video]]:
         with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
             try:
-                processed = ydl.process_ie_result(entry, False)
+                loop = asyncio.get_event_loop()
+                processed = await loop.run_in_executor(None, ydl.process_ie_result, entry, False)
             except youtube_dl.DownloadError as download_error:
                 logging.warning("Failed to get a video. Youtube-dl said: '%s'", download_error)
                 return e_hash, None
@@ -136,11 +139,10 @@ class Fetcher:
 
         return max(thumbnails, key=_max_res, default={})
 
-    def fetch(self, playlist: Playlist) -> Iterable[Video]:
-        for entry, e_hash in self.get_unprocessed_entries(playlist):
-            video = self.process_entry(e_hash, entry)[1]
-            if video:
-                yield video
+    async def fetch(self, playlist: Playlist) -> List[Video]:
+        unprocessed = await self.get_unprocessed_entries(playlist)
+        processed = await asyncio.gather(*itertools.starmap(self.process_entry, unprocessed))
+        return [v for _, v in processed if v]
 
 
 class Updater:
@@ -149,39 +151,40 @@ class Updater:
         self.max_items = max_backlog
         self.max_fail = max_fail
         self.fetcher = Fetcher(max_backlog)
+        self.database = Database(self.db_path)
 
-    def get_new_entries(self, playlist: Playlist) -> List[Tuple[Any, str, Playlist]]:
-        with Database(self.db_path) as database:
-            hashes = frozenset(
-                x.extractor_hash
-                for x in database.list_videos(playlists=[playlist.name])
-            )
-            items = self.fetcher.get_unprocessed_entries(playlist)
+    def __enter__(self):
+        return self
 
-            return [
-                (entry, e_hash, playlist)
-                for entry, e_hash in items
-                if e_hash not in hashes
-                   and database.get_extractor_fail_count(e_hash) < self.max_fail
-            ]
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.database.__exit__(exc_type, exc_val, exc_tb)
+
+    async def get_new_entries(self, playlist: Playlist) -> Iterable[Tuple[Any, str]]:
+        hashes = frozenset(
+            x.extractor_hash
+            for x in self.database.list_videos(playlists=[playlist.name])
+        )
+        items = await self.fetcher.get_unprocessed_entries(playlist)
+
+        return [
+            (e_hash, entry)
+            for e_hash, entry in items
+            if e_hash not in hashes
+               and self.database.get_extractor_fail_count(e_hash) < self.max_fail
+        ]
+
+    async def update_playlist(self, playlist: Playlist):
+        new_entries = await self.get_new_entries(playlist)
+        result = await asyncio.gather(*itertools.starmap(self.fetcher.process_entry, new_entries))
+        for e_hash, video in result:
+            if video is not None:
+                self.database.add_videos([video], playlist)
+            else:
+                self.database.increase_extractor_fail_count(e_hash, max_fail=self.max_fail)
+
+    async def do_update(self):
+        playlists = self.database.list_playlists()
+        await asyncio.gather(*map(partial(self.update_playlist), playlists))
 
     def update(self):
-        num_workers = unpack_optional(os.cpu_count(), lambda: 1) * 4
-
-        with Pool(num_workers) as pool, Database(self.db_path) as database:
-            playlists = database.list_playlists()
-            raw_entries = {}
-            playlists_mapping = defaultdict(list)
-            full_content = pool.map(self.get_new_entries, playlists)
-            for entry, e_hash, playlist in itertools.chain.from_iterable(full_content):
-                raw_entries[e_hash] = entry
-                playlists_mapping[e_hash].append(playlist)
-
-            results = dict(pool.map(self.fetcher.process_entry, *zip(*raw_entries.items())))
-
-            for key in raw_entries:
-                for playlist in playlists_mapping[key]:
-                    if results[key] is not None:
-                        database.add_videos([results[key]], playlist)
-                    else:
-                        database.increase_extractor_fail_count(key, max_fail=self.max_fail)
+        asyncio.run(self.do_update())
