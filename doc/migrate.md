@@ -4,7 +4,7 @@ Chose one of three migration paths:
 - [Migrating using the migration script](#migrating-using-the-migration-script-recommended)
     - Recommended
     - Most complete migration
-    - Keeps all data from version 1, but does not populate the duration attribute of videos
+    - Keeps all data from version 1, but does not populate the duration and thumbnail attributes of videos
 - [Channel export and import](#channel-export-and-import)
     - Populates the duration attribute of videos, but loses the watched status
 - [Start from scratch](#start-from-scratch)
@@ -40,9 +40,9 @@ Warning: with following migration, you will lose the "watched" status of your vi
 3. Rename configuration file and database (e.g. with `mv ~/.config/ytcc ~/.config/ytcc.1`)
 4. Import your subscriptions with v2
     ```shell script
-    ytcc import subscriptions.opml
+    ytcc import --format opml subscriptions.opml
     ```
 5. (Optional) You might also want to adjust your config to the new format. See [Configuration](../README.md#configuration).
 
 ## Start from scratch
-If you think the procedures described above are not worth the effort, you can start from scratch by removing the `~/.config/ytcc` directory.
+If you think the procedures described above are not worth the effort, you can start from scratch by removing the configuration directory `~/.config/ytcc` directory and the database file (`~/.local/share/ytcc/ytcc.db` by default).

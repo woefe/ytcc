@@ -3,9 +3,10 @@
 
 Command line tool to keep track of your favorite playlists on YouTube and many other places.
 
-**Version 2.0.0 is out!**
+**Version 2 is out!**
 Read [the migration guide](https://github.com/woefe/ytcc/tree/master/doc/migrate.md) before upgrading to 2.0.0 or later!
 If you are looking for older versions, check the [Release](https://github.com/woefe/ytcc/releases) page and the [v1 branch](https://github.com/woefe/ytcc/tree/v1).
+The version 1 branch is supported until 2022-04-01. Migrate to v2 until then!
 
 
 ## Installation
@@ -19,13 +20,20 @@ See the [migration guide](https://github.com/woefe/ytcc/tree/master/doc/migrate.
 
 ## Usage
 
-"Subscribe" to playlists.
+Add "subscriptions".
 ```shell script
+# Any playlist supported by youtube-dl
 ytcc subscribe "Jupiter Broadcasting" "https://www.youtube.com/c/JupiterBroadcasting/videos"
 ytcc subscribe "NCS: House" "https://www.youtube.com/playlist?list=PLRBp0Fe2GpgmsW46rJyudVFlY6IYjFBIK"
+ytcc subscribe "Neus" "https://soundcloud.com/neus/tracks"
+
+# RSS feed podcasts
+ytcc subscribe "LINUX Unplugged" "https://linuxunplugged.com/rss"
+ytcc subscribe "Darknet Diaries" "https://feeds.megaphone.fm/darknetdiaries"
 ```
 
-Import subscriptions from Google Takeout.
+Import subscriptions from [Google Takeout](https://takeout.google.com/).
+*Hint*: When requesting a takeout make sure to select only the YouTube data, otherwise the takeout might take quite long to complete.
 ```shell script
 ytcc import ~/Downloads/Takeout/Youtube/subscriptions/subscriptions.csv
 ```
