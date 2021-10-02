@@ -77,6 +77,7 @@ if not new_db.parent.is_dir():
 
 try:
     import ytcc
+    import ytcc.core
     import ytcc.config
 except ImportError:
     error("Cannot import ytcc! Make sure ytcc version 2.0.0 or later is installed!")
@@ -92,7 +93,7 @@ video_query = """
     FROM video WHERE publisher = ?
     """
 
-with ytcc.Ytcc() as core_v2, sqlite3.connect(old_db) as con_v1:
+with ytcc.core.Ytcc() as core_v2, sqlite3.connect(old_db) as con_v1:
     for c_name, yt_channelid in con_v1.execute("SELECT displayname, yt_channelid FROM channel"):
         url = f"https://www.youtube.com/channel/{yt_channelid}/videos"
         try:
