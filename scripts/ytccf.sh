@@ -22,7 +22,7 @@ set -o pipefail
 set -o errexit
 set -o nounset
 
-declare -r -x THUMBNAIL_DIR=$HOME/.cache/ytccf/thumbnails
+declare -r -x THUMBNAIL_DIR=${XDG_CACHE_HOME:-$HOME/.cache}/ytccf/thumbnails
 FILTERS=()
 KEY_BINDINGS="
         tab: select/deselect
