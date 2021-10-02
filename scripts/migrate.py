@@ -115,9 +115,10 @@ with ytcc.Ytcc() as core_v2, sqlite3.connect(old_db) as con_v1:
                 publish_date=float(publish_date),
                 watch_date=None if not bool(int(watched)) else datetime.now().timestamp(),
                 duration=0,
+                thumbnail_url=None,
                 extractor_hash=f"youtube {yt_videoid}"
             )
             for yt_videoid, title, description, publish_date, watched
             in con_v1.execute(video_query, (yt_channelid,))
         )
-        core_v2.database.add_videos(videos, ytcc.Playlist(c_name, url))
+        core_v2.database.add_videos(videos, ytcc.Playlist(c_name, url, False))

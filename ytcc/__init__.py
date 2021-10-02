@@ -32,6 +32,7 @@ import sys
 from pathlib import Path
 from ytcc.database import Database, MappedVideo, Video, MappedPlaylist, Playlist
 from ytcc.exceptions import *
+from ytcc.core import Ytcc
 
 
 def _get_translations_path() -> str:
