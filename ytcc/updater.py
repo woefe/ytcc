@@ -17,13 +17,17 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 import asyncio
 import datetime
+import hashlib
 import itertools
 import logging
 from functools import partial
-from typing import List, Tuple, Any, Optional, Iterable, Dict
+from typing import List, Tuple, Any, Optional, Iterable, Dict, TYPE_CHECKING
 
 from ytcc import config, Playlist, Database, Video
 from ytcc.utils import take, lazy_import
+
+if TYPE_CHECKING:
+    from youtube_dl import YoutubeDL
 
 youtube_dl = lazy_import("youtube_dl")
 
@@ -35,6 +39,17 @@ _ytdl_logger.addHandler(logging.NullHandler())
 YTDL_COMMON_OPTS = {
     "logger": _ytdl_logger
 }
+
+
+def make_archive_id(ydl: "YoutubeDL", entry: Dict[str, Any]) -> Optional[str]:
+    # pylint: disable=protected-access
+    archive_id = ydl._make_archive_id(entry)
+    entry_type = entry.get("_type", "").lower()
+    if archive_id is None and entry.get("url") and entry_type in ("url", "url_transparent"):
+        entry = entry.copy()
+        entry["id"] = hashlib.sha256(entry["url"].encode()).hexdigest()
+        return ydl._make_archive_id(entry)
+    return archive_id
 
 
 class Fetcher:
@@ -52,6 +67,7 @@ class Fetcher:
         ydl_opts = self.ydl_opts.copy()
         ydl_opts["playlistend"] = None if playlist.reverse else self.max_items
 
+        result = []
         with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
             logger.info("Checking playlist '%s'...", playlist.name)
             try:
@@ -65,14 +81,13 @@ class Fetcher:
                 entries = info.get("entries", [])
                 if playlist.reverse:
                     entries = reversed(list(entries))
-                result = []
                 for entry in take(self.max_items, entries):
-                    e_hash = ydl._make_archive_id(entry)  # pylint: disable=protected-access
+                    e_hash = make_archive_id(ydl, entry)
                     if e_hash is None:
                         logger.warning("Ignoring malformed playlist entry from %s", playlist.name)
                     else:
                         result.append((e_hash, entry))
-                return result
+        return result
 
     async def process_entry(self, e_hash: str, entry: Any) -> Tuple[str, Optional[Video]]:
         with youtube_dl.YoutubeDL(self.ydl_opts) as ydl:
@@ -184,7 +199,7 @@ class Updater:
 
     async def do_update(self):
         playlists = self.database.list_playlists()
-        await asyncio.gather(*map(partial(self.update_playlist), playlists))
+        await asyncio.gather(*map(self.update_playlist, playlists))
 
     def update(self):
         asyncio.run(self.do_update())

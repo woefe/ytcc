@@ -33,7 +33,7 @@ from ytcc.config import Direction, VideoAttr
 from ytcc.database import Database, Video, MappedVideo, MappedPlaylist, Playlist
 from ytcc.exceptions import YtccException, BadURLException, NameConflictError, \
     PlaylistDoesNotExistException, InvalidSubscriptionFileError
-from ytcc.updater import Updater, Fetcher, YTDL_COMMON_OPTS
+from ytcc.updater import Updater, Fetcher, YTDL_COMMON_OPTS, make_archive_id
 from ytcc.utils import lazy_import
 
 youtube_dl = lazy_import("youtube_dl")
@@ -143,11 +143,12 @@ class Ytcc:
 
     @staticmethod
     def update(max_fail: Optional[int] = None, max_backlog: Optional[int] = None) -> None:
-        Updater(
+        with Updater(
             db_path=config.ytcc.db_path,
             max_fail=max_fail or config.ytcc.max_update_fail,
             max_backlog=max_backlog or config.ytcc.max_update_backlog
-        ).update()
+        ) as updater:
+            updater.update()
 
     @staticmethod
     def play_video(video: Video, audio_only: bool = False) -> bool:
@@ -298,7 +299,7 @@ class Ytcc:
 
             peek = list(info.get("entries"))
             for entry in peek:
-                if ydl._make_archive_id(entry) is None:  # pylint: disable=protected-access
+                if make_archive_id(ydl, entry) is None:
                     raise BadURLException("The given URL is not supported by ytcc, because it "
                                           "doesn't point to a playlist")
 
