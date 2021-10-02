@@ -1,21 +1,29 @@
 _ytcc_completion() {
-    local IFS=$'
-'
-    COMPREPLY=( $( env COMP_WORDS="${COMP_WORDS[*]}" \
-                   COMP_CWORD=$COMP_CWORD \
-                   _YTCC_COMPLETE=complete $1 ) )
+    local IFS=$'\n'
+    local response
+
+    response=$(env COMP_WORDS="${COMP_WORDS[*]}" COMP_CWORD=$COMP_CWORD _YTCC_COMPLETE=bash_complete $1)
+
+    for completion in $response; do
+        IFS=',' read type value <<< "$completion"
+
+        if [[ $type == 'dir' ]]; then
+            COMREPLY=()
+            compopt -o dirnames
+        elif [[ $type == 'file' ]]; then
+            COMREPLY=()
+            compopt -o default
+        elif [[ $type == 'plain' ]]; then
+            COMPREPLY+=($value)
+        fi
+    done
+
     return 0
 }
 
-_ytcc_completionetup() {
-    local COMPLETION_OPTIONS=""
-    local BASH_VERSION_ARR=(${BASH_VERSION//./ })
-    # Only BASH version 4.4 and later have the nosort option.
-    if [ ${BASH_VERSION_ARR[0]} -gt 4 ] || ([ ${BASH_VERSION_ARR[0]} -eq 4 ] && [ ${BASH_VERSION_ARR[1]} -ge 4 ]); then
-        COMPLETION_OPTIONS="-o nosort"
-    fi
-
-    complete $COMPLETION_OPTIONS -F _ytcc_completion ytcc
+_ytcc_completion_setup() {
+    complete -o nosort -F _ytcc_completion ytcc
 }
 
-_ytcc_completionetup;
+_ytcc_completion_setup;
+
