@@ -24,6 +24,7 @@ import textwrap
 from datetime import datetime
 from pathlib import Path
 
+# pylint: disable=invalid-name
 
 def error(message: str):
     print("Error:", message, file=sys.stderr)

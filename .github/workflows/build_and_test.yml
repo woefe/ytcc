@@ -53,7 +53,7 @@ jobs:
     - name: Linting with pylint
       run: |
         pip install pylint
-        pylint ytcc
+        pylint ytcc scripts/*.py
     - name: Run tests with pytest
       run: |
         pip install pytest
