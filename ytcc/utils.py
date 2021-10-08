@@ -62,10 +62,13 @@ def take(amount: int, iterable: Iterable[T]) -> Iterable[T]:
         yield elem
 
 
-def lazy_import(fullname: str) -> Any:
+def lazy_import(fullname: str, fallback: Optional[str] = None) -> Any:
     """Import a module lazily.
 
+    This is useful for large modules or modules that run slow code on import.
+
     :param fullname: The module to import
+    :param fallback: The module if `fullname` module cannot be found
     :return: A proxy object that lazily loads the module as soon as attributes are accessed.
     """
     class _LazyLoader:
@@ -74,7 +77,10 @@ def lazy_import(fullname: str) -> Any:
 
         def __getattr__(self, item):
             if self._mod is None:
-                self._mod = importlib.import_module(fullname)
+                try:
+                    self._mod = importlib.import_module(fullname)
+                except ImportError:
+                    self._mod = importlib.import_module(fallback)
             return getattr(self._mod, item)
 
     return _LazyLoader()

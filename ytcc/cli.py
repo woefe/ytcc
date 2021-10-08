@@ -596,14 +596,24 @@ def bug_report():
     the output of this command when filing a new bug report!
     """
     # pylint: disable=import-outside-toplevel
-    import youtube_dl.version
     import subprocess
     import sqlite3
     print("---ytcc version---")
     print(__version__)
-    print()
-    print("---youtube-dl version---")
-    print(youtube_dl.version.__version__)
+    try:
+        print()
+        import youtube_dl.version
+        print("---youtube-dl version---")
+        print(youtube_dl.version.__version__)
+    except ImportError:
+        pass
+    try:
+        print()
+        import yt_dlp.version
+        print("---yt-dlp version---")
+        print(yt_dlp.version.__version__)
+    except ImportError:
+        pass
     print()
     print("---SQLite version---")
     print("SQLite system library version:", sqlite3.sqlite_version)

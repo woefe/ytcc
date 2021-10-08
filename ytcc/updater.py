@@ -27,9 +27,12 @@ from ytcc import config, Playlist, Database, Video
 from ytcc.utils import take, lazy_import
 
 if TYPE_CHECKING:
-    from youtube_dl import YoutubeDL
+    try:
+        from yt_dlp import YoutubeDL  # pylint: disable=unused-import
+    except ImportError:
+        from youtube_dl import YoutubeDL
 
-youtube_dl = lazy_import("youtube_dl")
+youtube_dl = lazy_import("yt_dlp", "youtube_dl")
 
 logger = logging.getLogger(__name__)
 
