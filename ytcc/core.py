@@ -36,7 +36,7 @@ from ytcc.exceptions import YtccException, BadURLException, NameConflictError, \
 from ytcc.updater import Updater, Fetcher, YTDL_COMMON_OPTS, make_archive_id
 from ytcc.utils import lazy_import
 
-youtube_dl = lazy_import("youtube_dl")
+youtube_dl = lazy_import("yt_dlp", "youtube_dl")
 
 logger = logging.getLogger(__name__)
 
