@@ -229,7 +229,7 @@ def subscribe(ytcc: core.Ytcc, name: str, url: str, reverse: bool):
 
 
 @cli.command()
-@click.argument("name", autocompletion=playlist_completion)
+@click.argument("name", shell_complete=playlist_completion)
 @click.confirmation_option(
     prompt="Unsubscribing will remove videos from the database that are not part of another "
            "playlist. Do you really want to unsubscribe?"
@@ -250,7 +250,7 @@ def unsubscribe(ytcc: core.Ytcc, name: str):
 
 
 @cli.command()
-@click.argument("old", autocompletion=playlist_completion)
+@click.argument("old", shell_complete=playlist_completion)
 @click.argument("new")
 @pass_ytcc
 def rename(ytcc: core.Ytcc, old: str, new: str):
@@ -266,7 +266,7 @@ def rename(ytcc: core.Ytcc, old: str, new: str):
 
 
 @cli.command("reverse")
-@click.argument("playlists", nargs=-1, autocompletion=playlist_completion)
+@click.argument("playlists", nargs=-1, shell_complete=playlist_completion)
 @pass_ytcc
 def reverse_playlist(ytcc: core.Ytcc, playlists: Tuple[str, ...]):
     """Toggle the update behavior of playlists.
@@ -298,8 +298,8 @@ def subscriptions(ytcc: core.Ytcc, attributes: List[PlaylistAttr]):
 
 
 @cli.command()
-@click.argument("name", autocompletion=playlist_completion)
-@click.argument("tags", nargs=-1, autocompletion=tag_completion)
+@click.argument("name", shell_complete=playlist_completion)
+@click.argument("tags", nargs=-1, shell_complete=tag_completion)
 @pass_ytcc
 def tag(ytcc: core.Ytcc, name: str, tags: Tuple[str, ...]):
     """Set tags of a playlist.
@@ -463,7 +463,7 @@ def _get_videos(ytcc: core.Ytcc, ids: List[int]) -> Iterable[MappedVideo]:
               help="Don't print video metadata and description.")
 @click.option("--no-mark", "-m", is_flag=True, default=False,
               help="Don't mark the video as watched after playing it.")
-@click.argument("ids", nargs=-1, type=click.INT, autocompletion=ids_completion())
+@click.argument("ids", nargs=-1, type=click.INT, shell_complete=ids_completion())
 @pass_ytcc
 def play(ytcc: core.Ytcc, ids: Tuple[int, ...], audio_only: bool, no_meta: bool, no_mark: bool):
     """Play videos.
@@ -490,7 +490,7 @@ def play(ytcc: core.Ytcc, ids: Tuple[int, ...], audio_only: bool, no_meta: bool,
 
 
 @cli.command()
-@click.argument("ids", nargs=-1, type=click.INT, autocompletion=ids_completion())
+@click.argument("ids", nargs=-1, type=click.INT, shell_complete=ids_completion())
 @pass_ytcc
 def mark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
     """Mark videos as watched.
@@ -505,7 +505,7 @@ def mark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
 
 
 @cli.command()
-@click.argument("ids", nargs=-1, type=click.INT, autocompletion=ids_completion(True))
+@click.argument("ids", nargs=-1, type=click.INT, shell_complete=ids_completion(True))
 @pass_ytcc
 def unmark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
     """Mark videos as unwatched.
@@ -528,7 +528,7 @@ def unmark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
 @click.option("--subdirs/--no-subdirs", is_flag=True, default=None,
               help="Creates subdirectories per playlist. If a video is on multiple playlists, it "
                    "gets downloaded only once and symlinked to the other subdirectories.")
-@click.argument("ids", nargs=-1, type=click.INT, autocompletion=ids_completion())
+@click.argument("ids", nargs=-1, type=click.INT, shell_complete=ids_completion())
 @pass_ytcc
 def download(ytcc: core.Ytcc, ids: Tuple[int, ...], path: Path, audio_only: bool, no_mark: bool,
              subdirs: Optional[bool]):

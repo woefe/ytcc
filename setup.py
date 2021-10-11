@@ -41,7 +41,7 @@ setup(
     author_email=ytcc.__email__,
     license=ytcc.__license__,
     packages=find_packages(exclude=["test"]),
-    install_requires=["youtube_dl", "click", "wcwidth"],
+    install_requires=["youtube_dl", "click>=8.0", "wcwidth"],
     extras_require={
       "yt_dlp": ["yt_dlp"]
     },

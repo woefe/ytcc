@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
+import shutil
 import sys
 from enum import Enum
 from typing import Optional
@@ -165,5 +166,5 @@ def printt(*text, foreground: Optional[int] = None, background: Optional[int] = 
 
 
 def get_terminal_width() -> int:
-    width, _ = click.get_terminal_size()
+    width, _ = shutil.get_terminal_size()
     return width
