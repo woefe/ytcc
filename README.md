@@ -101,6 +101,10 @@ If no config file is found in these three locations, a default config file is cr
 # Directory where downloads are saved, when --path is not given
 download_dir = ~/Downloads
 
+# Downloads videos to subdirectories by playlist name. If a video is on multiple playlists, ytcc
+# will download the video only to one subdirectory and symlink it to the other subdirectories.
+download_subdirs = on
+
 # Parameters passed to mpv. Adjusting these might break video playback in ytcc!
 mpv_flags = --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best
 
@@ -164,6 +168,8 @@ default_action = play_video
 format = bestvideo[height<=?1080]+bestaudio/best
 
 # Output template (see OUTPUT TEMPLATE in youtube-dl manpage).
+# Note that the output template will be prefixed with the `download_dir` directory and the name of
+# the playlist if `download_sub_dir` is enabled.
 output_template = %(title)s.%(ext)s
 
 # If a merge is required according to format selection, merge to the given container format.

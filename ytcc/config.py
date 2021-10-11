@@ -130,6 +130,7 @@ class BaseConfig(ABC):
 
 class ytcc(BaseConfig):  # pylint: disable=invalid-name
     download_dir: str = "~/Downloads"
+    download_subdirs: bool = False
     mpv_flags: str = "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best"
     order_by: List[Tuple[VideoAttr, Direction]] = [
         (VideoAttr.PLAYLISTS, Direction.ASC),

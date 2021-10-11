@@ -185,7 +185,7 @@ class Ytcc:
         return False
 
     @staticmethod
-    def download_video(video: Video, path: str = "", audio_only: bool = False) -> bool:
+    def download_video(video: MappedVideo, path: str = "", audio_only: bool = False) -> bool:
         """Download the given video with youtube-dl.
 
         If the path is not given, the path is read from the config file.
@@ -195,6 +195,27 @@ class Ytcc:
         :param audio_only: If True, only the audio track is downloaded.
         :return: True, if the video was downloaded successfully. False otherwise.
         """
+        class GetFilenameProcessor(youtube_dl.postprocessor.common.PostProcessor):  # type: ignore
+            def __init__(self):
+                super().__init__()
+                self.actual_file = None
+
+            def run(self, information):
+                self.actual_file = information.get("filepath")
+                return [], information
+
+            def report_progress(self, *args, **kwargs):
+                pass
+
+        filename_processor = GetFilenameProcessor()
+
+        if 0 < config.youtube_dl.max_duration < video.duration:
+            logger.info(
+                "Skipping video %s, because it is longer than the configured maximum",
+                video.url
+            )
+            return False
+
         if path:
             download_dir = path
         elif config.ytcc.download_dir:
@@ -202,11 +223,52 @@ class Ytcc:
         else:
             download_dir = ""
 
+        subdir = ""
+        symlink_dirs = []
+        if config.ytcc.download_subdirs and video.playlists:
+            subdir = video.playlists[0].name
+            symlink_dirs = [
+                Path(download_dir, pl.name) for pl in video.playlists[1:]
+            ]
+
+        with youtube_dl.YoutubeDL(Ytcc._ydl_opts(download_dir, subdir, audio_only)) as ydl:
+            try:
+                # pylint: disable=protected-access
+                if isinstance(ydl._pps, list):
+                    ydl._pps.append(filename_processor)
+                elif isinstance(ydl._pps, dict):
+                    ydl._pps["post_process"].append(filename_processor)
+                info = ydl.extract_info(video.url, download=False, process=False)
+                if info.get("is_live", False) and config.youtube_dl.skip_live_stream:
+                    logger.info("Skipping livestream %s", video.url)
+                    return False
+
+                ydl.process_ie_result(info, download=True)
+            except youtube_dl.utils.YoutubeDLError as ydl_err:
+                logger.debug("youtube-dl failed with '%s'", ydl_err)
+                return False
+
+            actual_file = Path(filename_processor.actual_file)
+            if actual_file:
+                logger.debug("Downloaded '%s' to '%s'", video.title, str(actual_file))
+                for link_dir in symlink_dirs:
+                    link_dir.mkdir(parents=True, exist_ok=True)
+                    destination = link_dir / actual_file.relative_to(Path(download_dir) / subdir)
+                    try:
+                        destination.symlink_to(actual_file)
+                        logger.info("Symlinked '%s' to '%s'", actual_file, link_dir)
+                    except FileExistsError:
+                        logger.debug("Skipping symlink, because it already exists")
+
+            return True
+
+    @staticmethod
+    def _ydl_opts(download_dir: str, subdir: str, audio_only: bool) -> Dict[str, Any]:
         conf = config.youtube_dl
 
         ydl_opts: Dict[str, Any] = {
             **YTDL_COMMON_OPTS,
-            "outtmpl": os.path.join(download_dir, conf.output_template),
+            "outtmpl": os.path.join(download_dir, subdir, conf.output_template),
             "ratelimit": conf.ratelimit if conf.ratelimit > 0 else None,
             "retries": conf.retries,
             "merge_output_format": conf.merge_output_format,
@@ -234,25 +296,7 @@ class Ytcc:
                 ydl_opts["writeautomaticsub"] = True
                 ydl_opts["postprocessors"].append({"key": "FFmpegEmbedSubtitle"})
 
-        if 0 < conf.max_duration < video.duration:
-            logger.info(
-                "Skipping video %s, because it is longer than the configured maximum",
-                video.url
-            )
-            return False
-
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            try:
-                info = ydl.extract_info(video.url, download=False, process=False)
-                if info.get("is_live", False) and conf.skip_live_stream:
-                    logger.info("Skipping livestream %s", video.url)
-                    return False
-
-                ydl.process_ie_result(info, download=True)
-                return True
-            except youtube_dl.utils.YoutubeDLError as ydl_err:
-                logger.debug("youtube-dl failed with '%s'", ydl_err)
-                return False
+        return ydl_opts
 
     @staticmethod
     def _is_playlist_reverse(items: List[Video]) -> bool:

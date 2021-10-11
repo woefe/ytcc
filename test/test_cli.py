@@ -65,6 +65,7 @@ def cli_runner() -> Callable[..., Result]:
             conf_file.write("[ytcc]\n")
             conf_file.write(f"db_path={db_file.name}\n")
             conf_file.write(f"download_dir={download_dir}\n")
+            conf_file.write(f"download_subdirs=on\n")
 
             db_file.close()
             conf_file.close()
@@ -221,14 +222,21 @@ def test_download(cli_runner):
         result = runner("download", "1", subscribe=True, update=True)
         assert result.exit_code == 0
 
-        result = runner(
+        title = runner(
             "--output", "xsv",
             "list",
             "--attributes", "title",
             "--ids", "1",
             "--watched"
-        )
-        assert Path(runner.download_dir, result.stdout.splitlines()[0] + ".mkv").is_file()
+        ).stdout.splitlines()[0]
+        subdir = runner(
+            "--output", "xsv",
+            "list",
+            "--attributes", "playlists",
+            "--ids", "1",
+            "--watched"
+        ).stdout.splitlines()[0]
+        assert Path(runner.download_dir, subdir, title + ".mkv").is_file()
 
 
 def test_pipe_mark(cli_runner):
