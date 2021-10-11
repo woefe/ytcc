@@ -6,4 +6,6 @@ pydocstyle
 
 # Application dependencies
 click
+wcwidth
 youtube_dl
+yt_dlp
