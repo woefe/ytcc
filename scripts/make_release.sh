@@ -32,7 +32,7 @@ _YTCC_COMPLETE=zsh_source ytcc > scripts/completions/zsh/_ytcc
 _YTCC_COMPLETE=bash_source ytcc > scripts/completions/bash/ytcc.completion.sh
 _YTCC_COMPLETE=fish_source ytcc > scripts/completions/fish/ytcc.fish
 
-git commit ytcc/__init__.py doc/ytcc.1 -m "Release version $tagname"
+git commit ytcc/__init__.py doc/ytcc.1 scripts/completions -m "Release version $tagname"
 git tag -a "v$tagname" -m "Version $tagname"
 
 git show HEAD
