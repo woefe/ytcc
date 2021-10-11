@@ -4,6 +4,7 @@
 ```shell script
 pip install ytcc
 ```
+Or alternatively with [yt-dlp](https://github.com/yt-dlp/yt-dlp): `pip install ytcc[yt_dlp]`
 
 ## Arch Linux
 Install [ytcc](https://aur.archlinux.org/packages/ytcc/) or [ytcc-git](https://aur.archlinux.org/packages/ytcc-git/) from the AUR.
