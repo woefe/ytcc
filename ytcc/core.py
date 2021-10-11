@@ -185,7 +185,8 @@ class Ytcc:
         return False
 
     @staticmethod
-    def download_video(video: MappedVideo, path: str = "", audio_only: bool = False) -> bool:
+    def download_video(video: MappedVideo, path: str = "", audio_only: bool = False,
+                       subdirs: Optional[bool] = None) -> bool:
         """Download the given video with youtube-dl.
 
         If the path is not given, the path is read from the config file.
@@ -193,6 +194,7 @@ class Ytcc:
         :param video: The video to download.
         :param path: The directory where the download is saved.
         :param audio_only: If True, only the audio track is downloaded.
+        :param subdirs: Overrides config.ytcc.download_subdirs if not None.
         :return: True, if the video was downloaded successfully. False otherwise.
         """
         class GetFilenameProcessor(youtube_dl.postprocessor.common.PostProcessor):  # type: ignore
@@ -225,7 +227,7 @@ class Ytcc:
 
         subdir = ""
         symlink_dirs = []
-        if config.ytcc.download_subdirs and video.playlists:
+        if (subdirs if subdirs is not None else config.ytcc.download_subdirs) and video.playlists:
             subdir = video.playlists[0].name
             symlink_dirs = [
                 Path(download_dir, pl.name) for pl in video.playlists[1:]

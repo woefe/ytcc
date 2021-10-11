@@ -525,9 +525,13 @@ def unmark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
               help="Download only the audio track.")
 @click.option("--no-mark", "-m", is_flag=True, default=False,
               help="Don't mark the video as watched after downloading it.")
+@click.option("--subdirs/--no-subdirs", is_flag=True, default=None,
+              help="Creates subdirectories per playlist. If a video is on multiple playlists, it "
+                   "gets downloaded only once and symlinked to the other subdirectories.")
 @click.argument("ids", nargs=-1, type=click.INT, autocompletion=ids_completion())
 @pass_ytcc
-def download(ytcc: core.Ytcc, ids: Tuple[int, ...], path: Path, audio_only: bool, no_mark: bool):
+def download(ytcc: core.Ytcc, ids: Tuple[int, ...], path: Path, audio_only: bool, no_mark: bool,
+             subdirs: Optional[bool]):
     """Download videos.
 
     Downloads the videos identified by the given video IDs. If no IDs are given, ytcc tries to read
@@ -542,7 +546,7 @@ def download(ytcc: core.Ytcc, ids: Tuple[int, ...], path: Path, audio_only: bool
             video.title,
             ", ".join(f"'{pl.name}'" for pl in video.playlists)
         )
-        if ytcc.download_video(video, str(path), audio_only) and not no_mark:
+        if ytcc.download_video(video, str(path), audio_only, subdirs) and not no_mark:
             ytcc.mark_watched(video)
 
 
