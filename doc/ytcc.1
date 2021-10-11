@@ -1,4 +1,4 @@
-.TH ytcc 1 "Oct 2021" "2.4.2" "ytcc - a subscription wrapper for youtube-dl"
+.TH ytcc 1 "Oct 2021" "2.5.0" "ytcc - a subscription wrapper for youtube-dl"
 .SH NAME
 ytcc - a subscription wrapper for youtube-dl playlists
 .SH SYNOPSIS
@@ -278,6 +278,9 @@ Download only the audio track.
 .P
 .B -m, --no-mark
 Don't mark the video as watched after downloading it.
+.P
+.B --subdirs / --no-subdirs
+Creates subdirectories per playlist. If a video is on multiple playlists, it gets downloaded only once and symlinked to the other subdirectories.
 .P
 .B --help
 Show command help and exit.
