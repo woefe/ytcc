@@ -381,6 +381,20 @@ class Database:
         order_by_clause = self._make_order_by_clause(order_by)
 
         query = f"""
+            WITH ids as (
+                SELECT v.id
+                FROM video AS v
+                    JOIN content c ON v.id = c.video_id
+                    JOIN playlist p ON p.id = c.playlist_id
+                    LEFT JOIN tag AS t ON p.id = t.playlist
+                WHERE
+                    v.publish_date > ?
+                    AND v.publish_date < ?
+                    {watched_condition}
+                    {tag_condition}
+                    {id_condition}
+                    {playlist_condition}
+            )
             SELECT v.id             AS id,
                    v.title          AS title,
                    v.url            AS url,
@@ -396,14 +410,7 @@ class Database:
             FROM video AS v
                      JOIN content c ON v.id = c.video_id
                      JOIN playlist p ON p.id = c.playlist_id
-                     LEFT JOIN tag AS t ON p.id = t.playlist
-            WHERE
-                v.publish_date > ?
-                AND v.publish_date < ?
-                {watched_condition}
-                {tag_condition}
-                {id_condition}
-                {playlist_condition}
+            WHERE v.id in ids
             {order_by_clause}
             """
         since = unpack_optional(since, lambda: 0)
