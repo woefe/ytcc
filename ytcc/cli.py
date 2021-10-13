@@ -25,6 +25,7 @@ from typing import List, Callable, TypeVar, Generic, Optional, Iterable, Tuple, 
 
 import click
 from click.exceptions import Exit
+from click.shell_completion import CompletionItem
 
 from ytcc import __version__, __author__
 from ytcc import core, config
@@ -68,6 +69,21 @@ class TruncateVals(click.ParamType):
         except ValueError:
             self.fail(f"Unexpected value {value}. Must be 'no', 'max', or an integer")
 
+    def shell_complete(
+        self, ctx: click.Context, param: click.Parameter, incomplete: str
+    ) -> List[CompletionItem]:
+        completions = [
+            ("max", "truncates to terminal width"),
+            ("no", "disables truncating"),
+            ("82", "truncates to 82 characters width"),
+            ("120", "truncates to 120 characters width")
+        ]
+        return [
+            CompletionItem(value=val, help=description)
+            for val, description in completions
+            if val.startswith(incomplete)
+        ]
+
 
 version_text = f"""%(prog)s, version %(version)s
 
@@ -79,15 +95,16 @@ Public Licence for details.
 See `%(prog)s bug-report` for more detailed version information."""
 
 
-def _load_completion_conf(args: List[str]) -> None:
-    conf_path = None
-    try:
-        idx = args.index("--conf")
-    except ValueError:
-        pass
-    else:
-        if idx + 1 < len(args):
-            conf_path = args[idx + 1]
+def _load_completion_conf(ctx: click.Context) -> None:
+    def find_config(context):
+        if context is None:
+            return None
+        conf = context.params.get("conf")
+        if conf:
+            return conf
+        return find_config(context.parent)
+
+    conf_path = find_config(ctx)
 
     if conf_path:
         config.load(conf_path)
@@ -96,28 +113,29 @@ def _load_completion_conf(args: List[str]) -> None:
 
 
 def ids_completion(watched: bool = False):
-    def complete(ctx: Any, args: List[str],  # pylint: disable=unused-argument
-                 incomplete: str) -> List[Union[str, Tuple[str, str]]]:
+    def complete(ctx: click.Context, param: click.Parameter,  # pylint: disable=unused-argument
+                 incomplete: str) -> List[CompletionItem]:
         try:
-            _load_completion_conf(args)
+            _load_completion_conf(ctx)
         except BadConfigException:
             return []
 
         with core.Ytcc() as ytcc:
             ytcc.set_watched_filter(watched)
+            used_ids = list(map(str, ctx.params.get("ids") or []))
             return [
-                (v_id, title)
+                CompletionItem(value=v_id, help=title)
                 for v_id, title in map(lambda v: (str(v.id), v.title), ytcc.list_videos())
-                if v_id.startswith(incomplete)
+                if v_id.startswith(incomplete) and v_id not in used_ids
             ]
 
     return complete
 
 
-def playlist_completion(ctx: Any, args: List[str],  # pylint: disable=unused-argument
-                        incomplete: str) -> List[Union[str, Tuple[str, str]]]:
+def playlist_completion(ctx: click.Context, param: click.Parameter,  # pylint: disable=unused-argument
+                        incomplete: str) -> List[str]:
     try:
-        _load_completion_conf(args)
+        _load_completion_conf(ctx)
     except BadConfigException:
         return []
 
@@ -129,15 +147,19 @@ def playlist_completion(ctx: Any, args: List[str],  # pylint: disable=unused-arg
         ]
 
 
-def tag_completion(ctx: Any, args: List[str],  # pylint: disable=unused-argument
-                   incomplete: str) -> List[Union[str, Tuple[str, str]]]:
+def tags_completion(ctx: click.Context, param: click.Parameter,  # pylint: disable=unused-argument
+                    incomplete: str) -> List[str]:
     try:
-        _load_completion_conf(args)
+        _load_completion_conf(ctx)
     except BadConfigException:
         return []
 
     with core.Ytcc() as ytcc:
-        return [tag for tag in ytcc.list_tags() if incomplete.lower() in tag.lower()]
+        return [
+            tag for tag in ytcc.list_tags()
+            if incomplete.lower() in tag.lower() and tag not in ctx.params.get("tags", [])
+
+        ]
 
 
 @click.group()
@@ -299,7 +321,7 @@ def subscriptions(ytcc: core.Ytcc, attributes: List[PlaylistAttr]):
 
 @cli.command()
 @click.argument("name", shell_complete=playlist_completion)
-@click.argument("tags", nargs=-1, shell_complete=tag_completion)
+@click.argument("tags", nargs=-1, shell_complete=tags_completion)
 @pass_ytcc
 def tag(ytcc: core.Ytcc, name: str, tags: Tuple[str, ...]):
     """Set tags of a playlist.
