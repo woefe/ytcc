@@ -21,7 +21,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from sqlite3 import DatabaseError
-from typing import List, Callable, TypeVar, Generic, Optional, Iterable, Tuple, Any, Union
+from typing import List, Callable, TypeVar, Generic, Optional, Iterable, Tuple, Union
 
 import click
 from click.exceptions import Exit
@@ -147,6 +147,12 @@ def playlist_completion(ctx: click.Context, param: click.Parameter,  # pylint: d
         ]
 
 
+def playlists_completion(ctx: click.Context, param: click.Parameter, incomplete: str) -> List[str]:
+    candidates = playlist_completion(ctx, param, incomplete)
+    used_playlists = ctx.params.get("names") or []
+    return list(filter(lambda candidate: candidate not in used_playlists, candidates))
+
+
 def tags_completion(ctx: click.Context, param: click.Parameter,  # pylint: disable=unused-argument
                     incomplete: str) -> List[str]:
     try:
@@ -251,24 +257,27 @@ def subscribe(ytcc: core.Ytcc, name: str, url: str, reverse: bool):
 
 
 @cli.command()
-@click.argument("name", shell_complete=playlist_completion)
+@click.argument("names", nargs=-1, required=True, shell_complete=playlists_completion)
 @click.confirmation_option(
-    prompt="Unsubscribing will remove videos from the database that are not part of another "
-           "playlist. Do you really want to unsubscribe?"
+    prompt="Unsubscribing will remove videos and playlists from the database irrevocably. Do you "
+           "really want to continue?"
 )
 @pass_ytcc
-def unsubscribe(ytcc: core.Ytcc, name: str):
+def unsubscribe(ytcc: core.Ytcc, names: Iterable[str]):
     """Unsubscribe from a playlist.
 
-    Unsubscribes from the playlist identified by NAME.
+    Unsubscribes from the playlist identified by NAMES. Videos that are on any of the given
+    playlists will be removed from the database as well, unless the videos are on at least one
+    playlist not given in NAMES.
     """
-    try:
-        ytcc.delete_playlist(name)
-    except PlaylistDoesNotExistException as err:
-        logger.error("Playlist '%s' does not exist", name)
-        raise Exit(1) from err
-    else:
-        logger.info("Unsubscribed from %s", name)
+    for name in set(names):
+        try:
+            ytcc.delete_playlist(name)
+        except PlaylistDoesNotExistException as err:
+            logger.error("Playlist '%s' does not exist", name)
+            raise Exit(1) from err
+        else:
+            logger.info("Unsubscribed from %s", name)
 
 
 @cli.command()
