@@ -23,7 +23,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Iterable, Any, Optional, Dict, overload, Tuple
 
-from ytcc import config
 from ytcc.config import Direction, VideoAttr
 from ytcc.exceptions import IncompatibleDatabaseVersion, PlaylistDoesNotExistException
 from ytcc.migration import migrate
@@ -33,8 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 def logging_cb(querystr: str) -> None:
-    if logger.isEnabledFor(logging.DEBUG):
-        logger.debug("%s", " ".join(querystr.split()))
+    logger.debug("%s", " ".join(querystr.split()))
 
 
 def _placeholder(elements: List[Any]) -> str:
@@ -328,31 +326,29 @@ class Database:
 
     @staticmethod
     def _make_order_by_clause(order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None) -> str:
-        order_by_clause = ""
-        if config.ytcc.order_by:
-            def directions() -> Iterable[Tuple[str, str]]:
-                column_names = {
-                    VideoAttr.ID: "id",
-                    VideoAttr.URL: "url",
-                    VideoAttr.TITLE: "title",
-                    VideoAttr.DESCRIPTION: "description",
-                    VideoAttr.PUBLISH_DATE: "publish_date",
-                    VideoAttr.WATCHED: "watch_date",
-                    VideoAttr.DURATION: "duration",
-                    VideoAttr.THUMBNAIL_URL: "thumbnail_url",
-                    VideoAttr.EXTRACTOR_HASH: "extractor_hash",
-                    VideoAttr.PLAYLISTS: "playlist_name",
-                }
-                for untrusted_col, untrusted_dir in order_by or config.ytcc.order_by:
-                    ord_dir = 'ASC' if untrusted_dir == Direction.ASC else 'DESC'
-                    col = column_names.get(untrusted_col)
-                    if col is not None:
-                        yield col, ord_dir
+        def directions() -> Iterable[Tuple[str, str]]:
+            column_names = {
+                VideoAttr.ID: "id",
+                VideoAttr.URL: "url",
+                VideoAttr.TITLE: "title",
+                VideoAttr.DESCRIPTION: "description",
+                VideoAttr.PUBLISH_DATE: "publish_date",
+                VideoAttr.WATCHED: "watch_date",
+                VideoAttr.DURATION: "duration",
+                VideoAttr.THUMBNAIL_URL: "thumbnail_url",
+                VideoAttr.EXTRACTOR_HASH: "extractor_hash",
+                VideoAttr.PLAYLISTS: "playlist_name",
+            }
+            for untrusted_col, untrusted_dir in order_by or []:
+                ord_dir = 'ASC' if untrusted_dir == Direction.ASC else 'DESC'
+                col = column_names.get(untrusted_col)
+                if col is not None:
+                    yield col, ord_dir
 
-            order_by_clause = ", ".join(f"{col} {ord_dir}" for col, ord_dir in directions())
-            if order_by_clause:
-                order_by_clause = "ORDER BY " + order_by_clause
-        return order_by_clause
+        order_by_clause = ", ".join(f"{col} {ord_dir}" for col, ord_dir in directions())
+        if order_by_clause:
+            return "ORDER BY " + order_by_clause
+        return ""
 
     def list_videos(
         self,
@@ -451,6 +447,8 @@ class Database:
                         )
                     )
 
+        if ids and not order_by:
+            return [videos[video_id] for video_id in ids if video_id in videos]
         return videos.values()
 
     def cleanup(self, keep: int) -> None:

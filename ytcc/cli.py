@@ -324,10 +324,11 @@ def update(ytcc: core.Ytcc, max_fail: Optional[int], max_backlog: Optional[int])
     ytcc.update(max_fail, max_backlog)
 
 
-_video_attrs = click.Choice(list(VideoAttr))
+_video_attrs = click.Choice(list(map(lambda v: v.value, VideoAttr)))
 _video_attrs.name = "attribute"
-_dir = click.Choice(list(Direction))
+_dir = click.Choice(list(map(lambda v: v.value, Direction)))
 _dir.name = "direction"
+ClickOrderBy = Union[Tuple[Tuple[VideoAttr, Direction], ...], Tuple[VideoAttr, Direction]]
 common_list_options = [
     click.Option(["--tags", "-c"], type=CommaList(str),
                  help="Listed videos must be tagged with one of the given tags."),
@@ -370,18 +371,37 @@ def apply_filters(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datet
     ytcc.set_watched_filter(watched_filter)
 
 
+def set_order(ytcc: core.Ytcc, order_by: ClickOrderBy):
+    # The order_by option returned by click can be an
+    # - empty tuple
+    # - a tuple of two values
+    # - a tuple of tuples of two values
+    if (
+        isinstance(order_by, tuple)
+        and len(order_by) == 2
+        and isinstance(order_by[0], VideoAttr)
+        and isinstance(order_by[1], Direction)
+    ):
+        ytcc.set_listing_order([order_by])  # type: ignore
+    elif order_by != () and isinstance(order_by, tuple) and isinstance(order_by[0], tuple):
+        ytcc.set_listing_order(list(order_by))  # type: ignore
+    else:
+        ytcc.set_listing_order(config.ytcc.order_by)
+
+
 # pylint: disable=too-many-arguments
 def list_videos_impl(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
                      playlists: List[str], ids: List[int], attributes: List[str],
                      watched: bool, unwatched: bool,
-                     order_by: Optional[List[Tuple[VideoAttr, Direction]]]) -> None:
+                     order_by: ClickOrderBy) -> None:
     apply_filters(ytcc, tags, since, till, playlists, ids, watched, unwatched)
     if attributes:
         printer.filter = attributes
     else:
         printer.filter = config.ytcc.video_attrs
-    if order_by is not None:
-        ytcc.set_listing_order(order_by)
+
+    set_order(ytcc, order_by)
+
     printer.print(VideoPrintable(ytcc.list_videos()))
 
 
@@ -393,7 +413,7 @@ def list_videos_impl(ytcc: core.Ytcc, tags: List[str], since: datetime, till: da
 def list_videos(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
                 playlists: List[str], ids: List[int], attributes: List[str],
                 watched: bool, unwatched: bool,
-                order_by: Optional[List[Tuple[VideoAttr, Direction]]]):
+                order_by: ClickOrderBy):
     """List videos.
 
     Lists videos that match the given filter options. By default, all unwatched videos are listed.
@@ -406,7 +426,7 @@ def list_videos(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetim
 @pass_ytcc
 def list_ids(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
              playlists: List[str], ids: List[int], watched: bool, unwatched: bool,
-             order_by: Optional[List[Tuple[VideoAttr, Direction]]]):
+             order_by: ClickOrderBy):
     """List IDs of unwatched videos in XSV format.
 
     Basically an alias for `ytcc --output xsv list --attributes id`. This alias can be useful for
@@ -421,11 +441,10 @@ def list_ids(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
 @pass_ytcc
 def tui(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime, playlists: List[str],
         ids: List[int], watched: bool, unwatched,
-        order_by: Optional[List[Tuple[VideoAttr, Direction]]]):
+        order_by: ClickOrderBy):
     """Start an interactive terminal user interface."""
     apply_filters(ytcc, tags, since, till, playlists, ids, watched, unwatched)
-    if order_by is not None:
-        ytcc.set_listing_order(order_by)
+    set_order(ytcc, order_by)
     Interactive(ytcc).run()
 
 
@@ -453,6 +472,8 @@ def _get_videos(ytcc: core.Ytcc, ids: List[int]) -> Iterable[MappedVideo]:
     if ids:
         ytcc.set_video_id_filter(ids)
         ytcc.set_watched_filter(None)
+    else:
+        ytcc.set_listing_order(config.ytcc.order_by)
 
     return ytcc.list_videos()
 
