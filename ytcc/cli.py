@@ -640,6 +640,9 @@ def bug_report():
     except ImportError:
         pass
     print()
+    print("---Click version---")
+    print(click.__version__)
+    print()
     print("---SQLite version---")
     print("SQLite system library version:", sqlite3.sqlite_version)
     print("Python module version:", sqlite3.version)
@@ -649,7 +652,13 @@ def bug_report():
     print()
     print("---mpv version---")
     try:
-        subprocess.run(["mpv", "--version"], check=False)
+        completed_process = subprocess.run(
+            ["mpv", "--version"],
+            check=False,
+            capture_output=True,
+            text=True
+        )
+        print(completed_process.stdout.strip())
     except FileNotFoundError:
         print("mpv is not installed")
     print()
