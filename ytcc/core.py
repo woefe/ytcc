@@ -218,22 +218,16 @@ class Ytcc:
             )
             return False
 
-        if path:
-            download_dir = path
-        elif config.ytcc.download_dir:
-            download_dir = config.ytcc.download_dir
-        else:
-            download_dir = ""
-
+        download_dir = Path(path or config.ytcc.download_dir or "").expanduser()
         subdir = ""
         symlink_dirs = []
         if (subdirs if subdirs is not None else config.ytcc.download_subdirs) and video.playlists:
             subdir = video.playlists[0].name
             symlink_dirs = [
-                Path(download_dir, pl.name) for pl in video.playlists[1:]
+                download_dir / pl.name for pl in video.playlists[1:]
             ]
 
-        with youtube_dl.YoutubeDL(Ytcc._ydl_opts(download_dir, subdir, audio_only)) as ydl:
+        with youtube_dl.YoutubeDL(Ytcc._ydl_opts(str(download_dir), subdir, audio_only)) as ydl:
             try:
                 # pylint: disable=protected-access
                 if isinstance(ydl._pps, list):
@@ -250,12 +244,12 @@ class Ytcc:
                 logger.debug("youtube-dl failed with '%s'", ydl_err)
                 return False
 
-            actual_file = Path(filename_processor.actual_file)
+            actual_file = Path(filename_processor.actual_file).expanduser()
             if actual_file:
                 logger.debug("Downloaded '%s' to '%s'", video.title, str(actual_file))
                 for link_dir in symlink_dirs:
                     link_dir.mkdir(parents=True, exist_ok=True)
-                    destination = link_dir / actual_file.relative_to(Path(download_dir) / subdir)
+                    destination = link_dir / actual_file.relative_to(download_dir / subdir)
                     try:
                         destination.symlink_to(actual_file)
                         logger.info("Symlinked '%s' to '%s'", actual_file, link_dir)
