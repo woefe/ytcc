@@ -22,7 +22,7 @@ import textwrap as wrap
 from enum import Enum
 from typing import List, Optional, Tuple, Callable, NamedTuple, FrozenSet, TextIO, Dict
 
-from ytcc import terminal, _, config
+from ytcc import terminal, config
 from ytcc.core import Ytcc
 from ytcc.database import MappedVideo
 from ytcc.printer import Table, TableData, VideoPrintable, TablePrinter
@@ -47,12 +47,12 @@ class Action(Enum):
         return Action.__dict__.get(config.tui.default_action.value.upper(), Action.PLAY_VIDEO)
 
     SHOW_HELP = (None, FKeys.F1, None)
-    PLAY_VIDEO = (_("Play video"), FKeys.F2, lambda: config.theme.prompt_play_video)
-    PLAY_AUDIO = (_("Play audio"), FKeys.F3, lambda: config.theme.prompt_play_audio)
-    MARK_WATCHED = (_("Mark as watched"), FKeys.F4, lambda: config.theme.prompt_mark_watched)
+    PLAY_VIDEO = ("Play video", FKeys.F2, lambda: config.theme.prompt_play_video)
+    PLAY_AUDIO = ("Play audio", FKeys.F3, lambda: config.theme.prompt_play_audio)
+    MARK_WATCHED = ("Mark as watched", FKeys.F4, lambda: config.theme.prompt_mark_watched)
     REFRESH = (None, FKeys.F5, None)
-    DOWNLOAD_AUDIO = (_("Download audio"), FKeys.F7, lambda: config.theme.prompt_download_audio)
-    DOWNLOAD_VIDEO = (_("Download video"), FKeys.F6, lambda: config.theme.prompt_download_video)
+    DOWNLOAD_AUDIO = ("Download audio", FKeys.F7, lambda: config.theme.prompt_download_audio)
+    DOWNLOAD_VIDEO = ("Download video", FKeys.F6, lambda: config.theme.prompt_download_video)
     UNMARK = (None, FKeys.F8, None)
 
 
@@ -125,7 +125,7 @@ class Interactive:
             printt(prompt, foreground=self.get_prompt_color(), bold=True, replace=True)
 
         print()
-        print(_("Type a valid TAG. <F1> for help."))
+        print("Type a valid TAG. <F1> for help.")
         print_prompt()
 
         tag = ""
@@ -195,7 +195,7 @@ class Interactive:
             elif self.action is Action.SHOW_HELP:
                 self.action = self.previous_action
                 terminal.clear_screen()
-                print(_(
+                print(
                     "    <F1> Display this help text.\n"
                     "    <F2> Set action: Play video.\n"
                     "    <F3> Set action: Play audio.\n"
@@ -206,8 +206,8 @@ class Interactive:
                     "    <F8> Mark most recent video as unwatched.\n"
                     " <Enter> Accept first video.\n"
                     "<CTRL+D> Exit.\n"
-                ))
-                input(_("Press Enter to continue"))
+                )
+                input("Press Enter to continue")
             elif self.action is Action.UNMARK:
                 self.action = self.previous_action
                 self.core.unmark_recent()
@@ -233,14 +233,14 @@ class Interactive:
         return False
 
     def download_video(self, video: MappedVideo, audio_only: bool = False) -> bool:
-        print(_('Downloading "{video.title}" in playlist(s) "{playlists}"...').format(
-            video=video, playlists=", ".join(v.name for v in video.playlists)))
+        playlists = ", ".join(v.name for v in video.playlists)
+        print(f'Downloading "{video.title}" in playlist(s) "{playlists}"...')
 
         if self.core.download_video(video=video, audio_only=audio_only):
             self.core.mark_watched(video)
             return True
 
-        print(_("An Error occured while downloading the video"))
+        print("An Error occurred while downloading the video")
         return False
 
 
@@ -272,16 +272,16 @@ def print_meta(video: MappedVideo, stream: TextIO = sys.stdout) -> None:
                 printtln(sep * (padding + (sep_len % 2)))
 
         print_separator("Playing now", fat=True)
-        printt(_("         Title: "))
+        printt("         Title: ")
         printtln(video.title, bold=True)
-        printt(_("In playlist(s): "))
+        printt("In playlist(s): ")
         printtln(", ".join(v.name for v in video.playlists), bold=True)
 
         description = video.description
         if description is not None:
             columns = shutil.get_terminal_size().columns
             lines = description.splitlines()
-            print_separator(_("Video description"))
+            print_separator("Video description")
 
             for line in lines:
                 print(wrap.fill(line, width=columns))

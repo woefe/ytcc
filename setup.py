@@ -1,31 +1,7 @@
 #!/usr/bin/env python3
-import logging
-from glob import glob
-from pathlib import Path
-from subprocess import run
 from setuptools import setup, find_packages
+
 import ytcc
-
-
-def compile_translations():
-    po_files = glob("po/*.po")
-    package_data = []
-    for file in po_files:
-        lang = file[3:][:-3]
-        package_data_file = "resources/locale/" + lang + "/LC_MESSAGES/ytcc.mo"
-        out_file = Path("ytcc").joinpath(package_data_file)
-        out_file.parent.mkdir(parents=True, exist_ok=True)
-
-        try:
-            res = run(["msgfmt", "-o", str(out_file), file])
-        except FileNotFoundError:
-            logging.warning("msgfmt command not found. Ignoring translations")
-        else:
-            if res.returncode == 0:
-                package_data.append(package_data_file)
-
-    return package_data
-
 
 with open("README.md", "r", encoding="utf-8") as readme:
     long_description = readme.read()
@@ -49,9 +25,6 @@ setup(
     scripts=["scripts/ytccf.sh"],
     entry_points={
         "console_scripts": ["ytcc=ytcc.cli:main"]
-    },
-    package_data={
-        "ytcc": compile_translations()
     },
     project_urls={
         "Bug Reports": 'https://github.com/woefe/ytcc/issues',

@@ -17,34 +17,10 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import importlib
-from typing import TypeVar, Optional, Callable, Iterable, Any
+from typing import TypeVar, Optional, Iterable, Any
 
 # pylint: disable=invalid-name
 T = TypeVar("T")
-
-
-def unpack_optional(elem: Optional[T], default: Callable[[], T]) -> T:
-    """Unpack an Optional object.
-
-    :param elem: The Optional object to unpack
-    :param default: Factory for the default value returned, if the Optional is None
-    :return: The default value or the non-None element
-    """
-    if elem is None:
-        return default()
-    return elem
-
-
-def unpack_or_raise(elem: Optional[T], exception: Exception) -> T:
-    """Unpack an Optional object.
-
-    :param elem: The Optional object to unpack
-    :param exception: The exception to raise when the Optional is None
-    :return: The unpacked element
-    """
-    if elem is None:
-        raise exception
-    return elem
 
 
 def take(amount: int, iterable: Iterable[T]) -> Iterable[T]:

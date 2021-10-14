@@ -27,22 +27,5 @@ __version__ = "2.5.0"
 __author__ = __maintainer__ = "Wolfgang Popp"
 __email__ = "mail@wolfgang-popp.de"
 
-import gettext
-import sys
-from pathlib import Path
 from ytcc.database import Database, MappedVideo, Video, MappedPlaylist, Playlist
 from ytcc.exceptions import *
-
-
-def _get_translations_path() -> str:
-    path = Path(__file__)
-    path = path.parent.joinpath("resources", "locale")
-    if path.is_dir():
-        return str(path)
-
-    return sys.prefix + "/share/locale"
-
-
-gettext.bindtextdomain("ytcc", _get_translations_path())
-gettext.textdomain("ytcc")
-_ = gettext.gettext

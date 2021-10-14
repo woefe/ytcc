@@ -26,7 +26,6 @@ from typing import List, Iterable, Any, Optional, Dict, overload, Tuple
 from ytcc.config import Direction, VideoAttr
 from ytcc.exceptions import IncompatibleDatabaseVersion, PlaylistDoesNotExistException
 from ytcc.migration import migrate
-from ytcc.utils import unpack_optional
 
 logger = logging.getLogger(__name__)
 
@@ -409,11 +408,11 @@ class Database:
             WHERE v.id in ids
             {order_by_clause}
             """
-        since = unpack_optional(since, lambda: 0)
-        till = unpack_optional(till, lambda: float("inf"))
-        playlists = unpack_optional(playlists, list)
-        tags = unpack_optional(tags, list)
-        ids = unpack_optional(ids, list)
+        since = since or 0
+        till = till or float("inf")
+        playlists = playlists or []
+        tags = tags or []
+        ids = ids or []
 
         videos: Dict[int, MappedVideo] = {}
         with self.connection as con:
