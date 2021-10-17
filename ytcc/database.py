@@ -58,7 +58,7 @@ class Video:
 
     @property
     def watched(self) -> bool:
-        return self.publish_date is not None
+        return self.watch_date is not None
 
 
 @dataclass(frozen=True)
@@ -76,6 +76,14 @@ class Database:
     VERSION = 5
 
     def __init__(self, path: str = ":memory:"):
+        """Initialize a new database.
+
+        Creates the given path it does not yet exist and initializes the database.
+        I.e. populates the schema, enforces foreign keys, sets the database version.
+
+        :param path: The path where the SQLite3 database is stored. `:memory:` for an in-memory
+                     database.
+        """
         is_new_db = True
         if path != ":memory:":
             expanded_path = Path(path).expanduser()
@@ -155,6 +163,11 @@ class Database:
             self.connection.executescript(script)
 
     def get_extractor_fail_count(self, e_hash) -> int:
+        """Get the failure count for the given extractor hash.
+
+        :param e_hash: The extractor hash to get the failure count for.
+        :return: The failure count for the given extractor hash.
+        """
         query = "SELECT failure_count FROM extractor_meta WHERE extractor_hash = ?"
         count = self.connection.execute(query, (e_hash,)).fetchone()
         if count is None:
@@ -162,6 +175,13 @@ class Database:
         return int(count[0])
 
     def increase_extractor_fail_count(self, e_hash, max_fail=(1 << 63) - 1) -> None:
+        """Increase the failure count for the given extractor hash.
+
+        The failure count will not be increased if it exceeds `max_fail`.
+
+        :param e_hash: The extractor hash to increase the failure count.
+        :param max_fail: The maximum failure count.
+        """
         insert_query = """
             INSERT OR IGNORE INTO extractor_meta VALUES (:e_hash,0)
             """
@@ -176,22 +196,46 @@ class Database:
             self.connection.execute(increment_query, {"e_hash": e_hash, "max_fail": max_fail})
 
     def close(self) -> None:
+        """Commit pending transactions and close the database connection."""
         self.connection.commit()
         self.connection.close()
 
-    def add_playlist(self, name: str, url: str, reverse: bool = False) -> None:
+    def add_playlist(self, name: str, url: str, reverse: bool = False) -> bool:
+        """Add a new playlist.
+
+        :param name: Name of the playlist.
+        :param url: URL of the playlist.
+        :param reverse: True if the database should be updated in reverse order.
+        :raise sqlite3.IntegrityError: If the name or URL already exist in the database.
+        :return: True if the playlist was inserted successfully
+        """
         query = "INSERT INTO playlist (name, url, reverse) VALUES (?, ?, ?);"
         with self.connection:
             res = self.connection.execute(query, (name, url, reverse))
             return res.rowcount > 0
 
     def delete_playlist(self, name: str) -> bool:
+        """Delete the playlist with the given name.
+
+        Also deletes videos associated with the playlist. Videos that are on other playlists as
+        well will not be deleted.
+
+        :param name: The name of the playlist to delete.
+        :return: True if the playlist was removed successfully, False otherwise.
+        """
         query = "DELETE FROM playlist WHERE name = ?"
         with self.connection:
             res = self.connection.execute(query, (name,))
             return res.rowcount > 0
 
     def rename_playlist(self, oldname: str, newname: str) -> bool:
+        """Rename the playlist identified by `oldname` to `newname`.
+
+        :param oldname: The old name of the playlist.
+        :param newname: The new name of the playlist.
+        :return: True if the playlist was rename successfully. False if the playlist does not exist
+                 or the new name is already taken.
+        """
         query = "UPDATE playlist SET name = ? WHERE name = ?"
         try:
             with self.connection:
@@ -201,12 +245,23 @@ class Database:
             return False
 
     def reverse_playlist(self, playlist: str) -> bool:
+        """Change the update behavior of the given playlist.
+
+        Playlists update in reverse are checked for new videos in reverse order.
+
+        :param playlist: The name of the playlist whose update behavior should be changed
+        :return: True if the update behavior was changed successfully, False otherwise.
+        """
         query = "UPDATE playlist SET reverse = (reverse + 1) % 2 WHERE name = ?"
         with self.connection as con:
             res = con.execute(query, (playlist,))
             return res.rowcount > 0
 
     def list_playlists(self) -> Iterable[MappedPlaylist]:
+        """List all playlists saved in the database.
+
+        :return: The list of all playlists.
+        """
         query = """
             SELECT p.id AS id, p.name AS name, p.url AS url, p.reverse AS reverse, t.name AS tag
             FROM playlist AS p
@@ -224,15 +279,30 @@ class Database:
         return playlists.values()
 
     def tag_playlist(self, playlist: str, tags: List[str]) -> None:
+        """Set the given tags for the given playlist.
+
+        :param playlist: The playlist to tag.
+        :param tags: The tags to set for the given playlist.
+        :raises PlaylistDoesNotExistException: If the given playlist does not exist.
+        """
         query_pid = "SELECT id FROM playlist WHERE name = ?"
         query_clear = "DELETE FROM tag WHERE playlist = ?"
         query_insert = "INSERT OR IGNORE INTO tag (name, playlist) VALUES (?, ?)"
         with self.connection as con:
-            pid = int(con.execute(query_pid, (playlist,)).fetchone()["id"])
+            db_id = con.execute(query_pid, (playlist,)).fetchone()
+            if db_id is None:
+                raise PlaylistDoesNotExistException(
+                    f"Playlist \"{playlist}\" is not in the database."
+                )
+            pid = int(db_id["id"])
             con.execute(query_clear, (pid,))
             con.executemany(query_insert, ((tag, pid) for tag in tags))
 
     def list_tags(self) -> Iterable[str]:
+        """List all tags.
+
+        :return: The list of all tags.
+        """
         with self.connection as con:
             for row in con.execute("SELECT DISTINCT name FROM tag"):
                 yield row["name"]
