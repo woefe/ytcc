@@ -72,7 +72,7 @@ def filled_database() -> Callable[..., Database]:
                                (2, 3),
                                (3, 4);
                         """)
-            yield db
+                yield db
 
     return context
 
