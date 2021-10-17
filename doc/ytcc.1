@@ -1,4 +1,4 @@
-.TH ytcc 1 "Oct 2021" "2.5.0" "ytcc - a subscription wrapper for youtube-dl"
+.TH ytcc 1 "Oct 2021" "2.5.1" "ytcc - a subscription wrapper for youtube-dl"
 .SH NAME
 ytcc - a subscription wrapper for youtube-dl playlists
 .SH SYNOPSIS
@@ -41,11 +41,13 @@ Check the playlist in reverse order. This should be used for playlists where the
 .P
 .B --help
 Show command help and exit.
-.SS unsubscribe [OPTIONS] NAME
+.SS unsubscribe [OPTIONS] NAMES...
 
 Unsubscribe from a playlist.
 
-Unsubscribes from the playlist identified by NAME.
+Unsubscribes from the playlist identified by NAMES. Videos that are on any of the given
+playlists will be removed from the database as well, unless the videos are on at least one
+playlist not given in NAMES.
 .P
 .B OPTIONS:
 .P
