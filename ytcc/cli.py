@@ -656,20 +656,20 @@ def bug_report():
     import sqlite3
     print("---ytcc version---")
     print(__version__)
+    print()
+    print("---youtube-dl version---")
     try:
-        print()
         import youtube_dl.version
-        print("---youtube-dl version---")
         print(youtube_dl.version.__version__)
     except ImportError:
-        pass
+        print("youtube-dl not found")
+    print()
+    print("---yt-dlp version---")
     try:
-        print()
         import yt_dlp.version
-        print("---yt-dlp version---")
         print(yt_dlp.version.__version__)
     except ImportError:
-        pass
+        print("yt-dlp not found")
     print()
     print("---Click version---")
     print(click.__version__)
