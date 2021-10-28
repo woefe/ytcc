@@ -451,7 +451,7 @@ def list_videos_impl(
 
 
 @cli.command("list")
-@click.option("--attributes", "-a", type=CommaList(VideoAttr.from_str), default="",
+@click.option("--attributes", "-a", type=CommaList(VideoAttr.from_str),
               help="Attributes of videos to be included in the output. "
                    f"Some of [{', '.join(VideoAttr)}].")
 @pass_ytcc
