@@ -364,10 +364,8 @@ common_list_options = [
     click.Option(["--tags", "-c"], type=CommaList(str),
                  help="Listed videos must be tagged with one of the given tags."),
     click.Option(["--since", "-s"], type=click.DateTime(["%Y-%m-%d"]),
-                 default="1970-01-03",  # Minimum supported by .timestamp() on Windows
                  help="Listed videos must be published after the given date."),
-    click.Option(["--till", "-t"], type=click.DateTime(["%Y-%m-%d"]),
-                 default="3001-1-19",  # Maximum supported by .timestamp() on Windows (Y3K Bug)
+    click.Option(["--till", "-t"], type=click.DateTime(["%Y-%m-%d"]), show_default=False,
                  help="Listed videos must be published before the given date."),
     click.Option(["--playlists", "-p"], type=CommaList(str),
                  help="Listed videos must be in on of the given playlists."),
@@ -385,8 +383,16 @@ common_list_options = [
 ]
 
 
-def apply_filters(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
-                  playlists: List[str], ids: List[int], watched: bool, unwatched: bool) -> None:
+def apply_filters(
+    ytcc: core.Ytcc,
+    tags: Optional[List[str]],
+    since: Optional[datetime],
+    till: Optional[datetime],
+    playlists: Optional[List[str]],
+    ids: Optional[List[int]],
+    watched: bool,
+    unwatched: bool
+):
     if watched and unwatched:
         watched_filter = None
     elif watched and not unwatched:
@@ -421,10 +427,18 @@ def set_order(ytcc: core.Ytcc, order_by: ClickOrderBy):
 
 
 # pylint: disable=too-many-arguments
-def list_videos_impl(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
-                     playlists: List[str], ids: List[int], attributes: List[str],
-                     watched: bool, unwatched: bool,
-                     order_by: ClickOrderBy) -> None:
+def list_videos_impl(
+    ytcc: core.Ytcc,
+    tags: Optional[List[str]],
+    since: Optional[datetime],
+    till: Optional[datetime],
+    playlists: Optional[List[str]],
+    ids: Optional[List[int]],
+    attributes: Optional[List[str]],
+    watched: bool,
+    unwatched: bool,
+    order_by: ClickOrderBy
+):
     apply_filters(ytcc, tags, since, till, playlists, ids, watched, unwatched)
     if attributes:
         printer.filter = attributes
@@ -437,14 +451,22 @@ def list_videos_impl(ytcc: core.Ytcc, tags: List[str], since: datetime, till: da
 
 
 @cli.command("list")
-@click.option("--attributes", "-a", type=CommaList(VideoAttr.from_str),
+@click.option("--attributes", "-a", type=CommaList(VideoAttr.from_str), default="",
               help="Attributes of videos to be included in the output. "
                    f"Some of [{', '.join(VideoAttr)}].")
 @pass_ytcc
-def list_videos(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
-                playlists: List[str], ids: List[int], attributes: List[str],
-                watched: bool, unwatched: bool,
-                order_by: ClickOrderBy):
+def list_videos(
+    ytcc: core.Ytcc,
+    tags: Optional[List[str]],
+    since: Optional[datetime],
+    till: Optional[datetime],
+    playlists: Optional[List[str]],
+    ids: Optional[List[int]],
+    attributes: Optional[List[str]],
+    watched: bool,
+    unwatched: bool,
+    order_by: ClickOrderBy
+):
     """List videos.
 
     Lists videos that match the given filter options. By default, all unwatched videos are listed.
@@ -455,9 +477,17 @@ def list_videos(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetim
 
 @cli.command("ls")
 @pass_ytcc
-def list_ids(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
-             playlists: List[str], ids: List[int], watched: bool, unwatched: bool,
-             order_by: ClickOrderBy):
+def list_ids(
+    ytcc: core.Ytcc,
+    tags: Optional[List[str]],
+    since: Optional[datetime],
+    till: Optional[datetime],
+    playlists: Optional[List[str]],
+    ids: Optional[List[int]],
+    watched: bool,
+    unwatched: bool,
+    order_by: ClickOrderBy
+):
     """List IDs of unwatched videos in XSV format.
 
     Basically an alias for `ytcc --output xsv list --attributes id`. This alias can be useful for
@@ -470,9 +500,17 @@ def list_ids(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime,
 
 @cli.command()
 @pass_ytcc
-def tui(ytcc: core.Ytcc, tags: List[str], since: datetime, till: datetime, playlists: List[str],
-        ids: List[int], watched: bool, unwatched,
-        order_by: ClickOrderBy):
+def tui(
+    ytcc: core.Ytcc,
+    tags: Optional[List[str]],
+    since: Optional[datetime],
+    till: Optional[datetime],
+    playlists: Optional[List[str]],
+    ids: Optional[List[int]],
+    watched: bool,
+    unwatched: bool,
+    order_by: ClickOrderBy
+):
     """Start an interactive terminal user interface."""
     apply_filters(ytcc, tags, since, till, playlists, ids, watched, unwatched)
     set_order(ytcc, order_by)

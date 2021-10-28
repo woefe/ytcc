@@ -22,7 +22,6 @@ import logging
 import os
 import sqlite3
 import subprocess
-import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Iterable, List, Optional, Any, Dict, Tuple, Union
@@ -58,8 +57,8 @@ class Ytcc:
         self.video_id_filter: Optional[List[int]] = None
         self.playlist_filter: Optional[List[str]] = None
         self.tags_filter: Optional[List[str]] = None
-        self.date_begin_filter = 0.0
-        self.date_end_filter = (0.0, False)
+        self.date_begin_filter: Optional[float] = None
+        self.date_end_filter: Optional[float] = None
         self.include_watched_filter: Optional[bool] = False
         self.order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None
 
@@ -81,7 +80,7 @@ class Ytcc:
         if self._database is not None:
             self._database.close()
 
-    def set_playlist_filter(self, playlists: List[str]) -> None:
+    def set_playlist_filter(self, playlists: Optional[List[str]]) -> None:
         """Set the channel filter.
 
         The results when listing videos will only include videos by channels specified in the
@@ -91,23 +90,25 @@ class Ytcc:
         """
         self.playlist_filter = playlists
 
-    def set_date_begin_filter(self, begin: datetime.datetime) -> None:
+    def set_date_begin_filter(self, begin: Optional[datetime.datetime]) -> None:
         """Set the time filter.
 
         The results when listing videos will only include videos newer than the given time.
 
         :param begin: The lower bound of the time filter.
         """
-        self.date_begin_filter = begin.timestamp()
+        if begin is not None:
+            self.date_begin_filter = begin.timestamp()
 
-    def set_date_end_filter(self, end: datetime.datetime) -> None:
+    def set_date_end_filter(self, end: Optional[datetime.datetime]) -> None:
         """Set the time filter.
 
         The results when listing videos will only include videos older than the given time.
 
         :param end: The upper bound of the time filter.
         """
-        self.date_end_filter = (end.timestamp(), True)
+        if end is not None:
+            self.date_end_filter = end.timestamp()
 
     def set_watched_filter(self, enabled: Optional[bool] = False) -> None:
         """Set the "watched video" filter.
@@ -375,14 +376,9 @@ class Ytcc:
 
         :return: A list of videos.
         """
-        if not self.date_end_filter[1]:
-            date_end_filter = time.mktime(time.gmtime()) + 20
-        else:
-            date_end_filter = self.date_end_filter[0]
-
         return self.database.list_videos(
             since=self.date_begin_filter,
-            till=date_end_filter,
+            till=self.date_end_filter,
             watched=self.include_watched_filter,
             tags=self.tags_filter,
             playlists=self.playlist_filter,
