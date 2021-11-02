@@ -234,7 +234,7 @@ class Ytcc:
                 if isinstance(ydl._pps, list):
                     ydl._pps.append(filename_processor)
                 elif isinstance(ydl._pps, dict):
-                    ydl._pps["post_process"].append(filename_processor)
+                    ydl.add_post_processor(filename_processor, when="post_process")
                 info = ydl.extract_info(video.url, download=False, process=False)
                 if info.get("is_live", False) and config.youtube_dl.skip_live_stream:
                     logger.info("Skipping livestream %s", video.url)
