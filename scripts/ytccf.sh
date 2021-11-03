@@ -34,9 +34,6 @@ KEY_BINDINGS="
       alt-u: mark last watched video as unwatched
       alt-h: show help"
 
-# shellcheck disable=SC2016
-MAKE_TABLE='ytcc --output table --truncate $((2 * $(tput cols) / 3 - 3)) list --attributes id,title,publish_date,duration,playlists'
-
 if command -v ueberzug &> /dev/null || [[ $TERM == "xterm-kitty" ]]; then
     THUMBNAILS=1
 else
@@ -142,12 +139,17 @@ while [[ $# -gt 0 ]]; do
         ;;
     esac
 done
-MAKE_TABLE="$MAKE_TABLE ${FILTERS[*]}"
 
 check_cmd ytcc
 check_cmd fzf
 
+# shellcheck disable=SC2016
+MAKE_TABLE='ytcc --output table --truncate $(($(tput cols) - 3)) list --attributes id,title,publish_date,duration,playlists'
+
 if [[ $THUMBNAILS -eq 1 ]]; then
+    # shellcheck disable=SC2016
+    MAKE_TABLE='ytcc --output table --truncate $((2 * $(tput cols) / 3 - 3)) list --attributes id,title,publish_date,duration,playlists'
+
     check_cmd curl
     check_cmd stty
 
@@ -223,6 +225,7 @@ if [[ $THUMBNAILS -eq 1 ]]; then
     fi
 fi
 
+MAKE_TABLE="$MAKE_TABLE ${FILTERS[*]}"
 init_preview
 trap finalize_preview EXIT
 fetch_thumbnails
