@@ -89,6 +89,7 @@ def test_bug_report_command(cli_runner):
         assert f"db_path = {runner.db_file}" in result.stdout
 
 
+@pytest.mark.flaky
 def test_subscribe(cli_runner):
     with cli_runner() as runner:
         result = runner("subscribe", "WebDriver",
@@ -98,6 +99,7 @@ def test_subscribe(cli_runner):
         assert "WebDriver" in result.stdout
 
 
+@pytest.mark.flaky
 def test_subscribe_duplicate(cli_runner):
     with cli_runner() as runner:
         result = runner(
@@ -108,6 +110,7 @@ def test_subscribe_duplicate(cli_runner):
         assert result.exit_code != 0
 
 
+@pytest.mark.flaky
 def test_subscribe_bad_url(cli_runner, caplog):
     with cli_runner() as runner:
         result = runner("subscribe", "Test", "test.kom")
@@ -137,6 +140,7 @@ def test_rename(cli_runner):
         assert result.exit_code != 0
 
 
+@pytest.mark.flaky
 def test_import(cli_runner):
     with cli_runner() as runner:
         result = runner("import", "--format=opml", "test/data/subscriptions.small")
@@ -147,6 +151,7 @@ def test_import(cli_runner):
         assert "gotbletu" in result.stdout
 
 
+@pytest.mark.flaky
 def test_import_duplicate(cli_runner, caplog):
     with cli_runner() as runner:
         result = runner("import", "--format=opml", "test/data/subscriptions.duplicate")
@@ -176,6 +181,7 @@ def test_tag(cli_runner):
         assert len(json.loads(result.stdout)) == 20
 
 
+@pytest.mark.flaky
 def test_update(cli_runner, caplog):
     with cli_runner() as runner:
         result = runner("update", "--max-backlog", "20", subscribe=True)
@@ -217,6 +223,7 @@ def test_cleanup(cli_runner):
         assert len(outlines) == 18
 
 
+@pytest.mark.flaky
 def test_download(cli_runner):
     with cli_runner() as runner:
         result = runner("download", "1", subscribe=True, update=True)
@@ -247,6 +254,7 @@ def test_pipe_mark(cli_runner):
         assert runner("ls").stdout == ""
 
 
+@pytest.mark.flaky
 def test_play_video(cli_runner):
     with cli_runner() as runner:
         result = runner("play", "1", subscribe=True, update=True)
@@ -256,6 +264,7 @@ def test_play_video(cli_runner):
         assert len(result.stdout.splitlines()) == 19
 
 
+@pytest.mark.flaky
 def test_play_video_empty(cli_runner, caplog):
     with cli_runner() as runner:
         caplog.set_level("INFO")

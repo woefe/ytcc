@@ -57,7 +57,11 @@ jobs:
     - name: Run tests with pytest
       run: |
         pip install pytest
-        python -m pytest
+        python -m pytest -m "not flaky" -v
+    - name: Run flaky tests
+      run: |
+        python -m pytest -m flaky -v
+      continue-on-error: true
   shellcheck:
     runs-on: ubuntu-latest
     steps:
