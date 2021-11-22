@@ -143,12 +143,10 @@ done
 check_cmd ytcc
 check_cmd fzf
 
-# shellcheck disable=SC2016
-MAKE_TABLE='ytcc --output table --truncate $(($(tput cols) - 3)) list --attributes id,title,publish_date,duration,playlists'
+TABLE_WIDTH=$(($(tput cols) - 3))
 
 if [[ $THUMBNAILS -eq 1 ]]; then
-    # shellcheck disable=SC2016
-    MAKE_TABLE='ytcc --output table --truncate $((2 * $(tput cols) / 3 - 3)) list --attributes id,title,publish_date,duration,playlists'
+    TABLE_WIDTH=$((2 * $(tput cols) / 3 - 3))
 
     check_cmd curl
     check_cmd stty
@@ -225,7 +223,7 @@ if [[ $THUMBNAILS -eq 1 ]]; then
     fi
 fi
 
-MAKE_TABLE="$MAKE_TABLE ${FILTERS[*]}"
+MAKE_TABLE="ytcc --output table --truncate $TABLE_WIDTH list --attributes id,title,publish_date,duration,playlists ${FILTERS[*]}"
 init_preview
 trap finalize_preview EXIT
 fetch_thumbnails
