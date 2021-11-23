@@ -142,14 +142,16 @@ done
 
 check_cmd ytcc
 check_cmd fzf
+check_cmd stty
 
-TABLE_WIDTH=$(($(tput cols) - 3))
+# shellcheck disable=SC2016
+TABLE_WIDTH_CMD='$(($(stty size < /dev/tty | cut -d" " -f2) - 3))'
 
 if [[ $THUMBNAILS -eq 1 ]]; then
-    TABLE_WIDTH=$((2 * $(tput cols) / 3 - 3))
+    # shellcheck disable=SC2016
+    TABLE_WIDTH_CMD='$((2 * $(stty size < /dev/tty | cut -d" " -f2) / 3 - 3))'
 
     check_cmd curl
-    check_cmd stty
 
     function fetch_thumbnails() {
         local -a curl_args=()
@@ -223,7 +225,7 @@ if [[ $THUMBNAILS -eq 1 ]]; then
     fi
 fi
 
-MAKE_TABLE="ytcc --output table --truncate $TABLE_WIDTH list --attributes id,title,publish_date,duration,playlists ${FILTERS[*]}"
+MAKE_TABLE="ytcc --output table --truncate \"$TABLE_WIDTH_CMD\" list --attributes id,title,publish_date,duration,playlists ${FILTERS[*]}"
 init_preview
 trap finalize_preview EXIT
 fetch_thumbnails
