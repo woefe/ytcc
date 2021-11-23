@@ -93,22 +93,22 @@ while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in
     -p | --playlists)
-        FILTERS+=(-p "$2")
+        FILTERS+=(-p "'$2'")
         shift
         shift
         ;;
     -c | --tags)
-        FILTERS+=( -c "$2")
+        FILTERS+=( -c "'$2'")
         shift
         shift
         ;;
     -s | --since)
-        FILTERS+=( -s "$2")
+        FILTERS+=( -s "'$2'")
         shift
         shift
         ;;
     -t | --till)
-        FILTERS+=(-t "$2")
+        FILTERS+=(-t "'$2'")
         shift
         shift
         ;;
