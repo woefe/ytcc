@@ -91,24 +91,25 @@ EOF
 
 while [[ $# -gt 0 ]]; do
     key="$1"
+    printf -v safe_val %q "$2"
     case $key in
     -p | --playlists)
-        FILTERS+=(-p "'$2'")
+        FILTERS+=(-p "$safe_val")
         shift
         shift
         ;;
     -c | --tags)
-        FILTERS+=( -c "'$2'")
+        FILTERS+=( -c "$safe_val")
         shift
         shift
         ;;
     -s | --since)
-        FILTERS+=( -s "'$2'")
+        FILTERS+=( -s "$safe_val")
         shift
         shift
         ;;
     -t | --till)
-        FILTERS+=(-t "'$2'")
+        FILTERS+=(-t "$safe_val")
         shift
         shift
         ;;
