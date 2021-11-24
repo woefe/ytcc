@@ -101,8 +101,7 @@ with ytcc.core.Ytcc() as core_v2, sqlite3.connect(old_db) as con_v1:
             core_v2.add_playlist(c_name, url)
         except ytcc.BadURLException:
             print(
-                f"Ignoring {c_name}, because it is not supported by "
-                "youtube-dl or does not exist any more"
+                f"Ignoring {c_name}, because it is not supported or does not exist any more"
             )
             continue
         except ytcc.NameConflictError:

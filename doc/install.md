@@ -4,7 +4,6 @@
 ```shell script
 pip install ytcc
 ```
-Or alternatively with [yt-dlp](https://github.com/yt-dlp/yt-dlp): `pip install ytcc[yt_dlp]`
 
 ## Arch Linux
 Install [ytcc](https://aur.archlinux.org/packages/ytcc/) or [ytcc-git](https://aur.archlinux.org/packages/ytcc-git/) from the AUR.
@@ -46,11 +45,11 @@ You can start ytcc directly from the cloned repo, if all requirements are instal
 Hard requirements:
 - [Python 3.7](https://www.python.org/) or later
 - [Click](https://click.palletsprojects.com/en/7.x/)
-- [youtube-dl](https://github.com/ytdl-org/youtube-dl)
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) or [youtube-dl](https://github.com/ytdl-org/youtube-dl)
 - [wcwidth](https://github.com/jquast/wcwidth)
 
 Optional requirements:
-- [ffmpeg](https://ffmpeg.org/) for youtube-dl's `.mp4` or `.mkv` merging
+- [ffmpeg](https://ffmpeg.org/) for `.mp4` or `.mkv` merging
 - [mpv](https://mpv.io/), if you want to play audio or video
 
 Requirements for the ytccf.sh bash script:

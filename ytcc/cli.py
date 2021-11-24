@@ -192,8 +192,8 @@ def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: s
         truncate: Union[None, str, int]) -> None:
     """Ytcc - the (not only) YouTube channel checker.
 
-    Ytcc "subscribes" to playlists (supported by youtube-dl) and tracks new videos published to
-    those playlists.
+    Ytcc "subscribes" to playlists (supported by yt-dlp or youtube-dl) and tracks new videos
+    published to those playlists.
 
     To show the detailed help of a COMMAND run `ytcc COMMAND --help`.
     """
@@ -242,13 +242,12 @@ def subscribe(ytcc: core.Ytcc, name: str, url: str, reverse: bool):
     """Subscribe to a playlist.
 
     The NAME argument is the name used to refer to the playlist. The URL argument is the URL to a
-    playlist that is supported by youtube-dl.
+    playlist that is supported by yt-dlp or youtube-dl.
     """
     try:
         ytcc.add_playlist(name, url, reverse)
     except BadURLException as bad_url:
-        logger.error("The given URL does not point to a playlist or is not supported by "
-                     "youtube-dl")
+        logger.error("The given URL does not point to a playlist or is not supported")
         raise Exit(1) from bad_url
     except NameConflictError as name_conflict:
         logger.error("The given name is already used for another playlist "

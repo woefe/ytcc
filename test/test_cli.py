@@ -115,7 +115,7 @@ def test_subscribe_bad_url(cli_runner, caplog):
     with cli_runner() as runner:
         result = runner("subscribe", "Test", "test.kom")
         assert result.exit_code != 0
-        msg = "The given URL does not point to a playlist or is not supported by youtube-dl"
+        msg = "The given URL does not point to a playlist or is not supported"
         assert any(map(lambda r: r.msg == msg, caplog.records))
 
 

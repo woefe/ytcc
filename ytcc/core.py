@@ -188,7 +188,7 @@ class Ytcc:
     @staticmethod
     def download_video(video: MappedVideo, path: str = "", audio_only: bool = False,
                        subdirs: Optional[bool] = None) -> bool:
-        """Download the given video with youtube-dl.
+        """Download the given video.
 
         If the path is not given, the path is read from the config file.
 
@@ -242,7 +242,7 @@ class Ytcc:
 
                 ydl.process_ie_result(info, download=True)
             except youtube_dl.utils.YoutubeDLError as ydl_err:
-                logger.debug("youtube-dl failed with '%s'", ydl_err)
+                logger.debug("Download failed with '%s'", ydl_err)
                 return False
 
             actual_file = Path(filename_processor.actual_file).expanduser()
@@ -322,12 +322,12 @@ class Ytcc:
                 info = ydl.extract_info(url, download=False, process=True)
             except youtube_dl.utils.DownloadError as download_error:
                 logger.debug(
-                    "'%s' is not supported by youtube-dl. Youtube-dl's error: '%s'",
+                    "'%s' is not supported. Encountered error: '%s'",
                     url,
                     download_error
                 )
                 raise BadURLException(
-                    "URL is not supported by youtube-dl or does not exist"
+                    "URL is not supported or does not exist"
                 ) from download_error
 
             if info.get("_type") != "playlist":
@@ -336,7 +336,7 @@ class Ytcc:
                     url,
                     info
                 )
-                raise BadURLException("Not a playlist or not supported by youtube-dl")
+                raise BadURLException("Not a playlist or not supported")
 
             peek = list(info.get("entries"))
             for entry in peek:
@@ -495,7 +495,6 @@ class Ytcc:
             except NameConflictError:
                 logger.warning("Ignoring playlist '%s', because it already subscribed", name)
             except BadURLException:
-                logger.warning("Ignoring playlist '%s', "
-                               "because it is not supported by youtube-dl", name)
+                logger.warning("Ignoring playlist '%s', because it is not supported", name)
             else:
                 logger.info("Added playlist '%s'", name)

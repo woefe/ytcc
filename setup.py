@@ -8,7 +8,7 @@ with open("README.md", "r", encoding="utf-8") as readme:
 
 setup(
     name="ytcc",
-    description="A subscription wrapper for youtube-dl playlists",
+    description="Command line tool to keep track of your favorite playlists",
     long_description=long_description,
     long_description_content_type="text/markdown",
     version=ytcc.__version__,
@@ -17,9 +17,9 @@ setup(
     author_email=ytcc.__email__,
     license=ytcc.__license__,
     packages=find_packages(exclude=["test"]),
-    install_requires=["youtube_dl", "click>=8.0", "wcwidth"],
+    install_requires=["yt_dlp", "click>=8.0", "wcwidth"],
     extras_require={
-      "yt_dlp": ["yt_dlp"]
+      "youtube_dl": ["youtube_dl"]
     },
     python_requires=">=3.7, <4",
     scripts=["scripts/ytccf.sh"],

@@ -1,13 +1,13 @@
-.TH ytcc 1 "Nov 2021" "2.5.3" "ytcc - a subscription wrapper for youtube-dl"
+.TH ytcc 1 "Nov 2021" "2.5.3" "ytcc manual"
 .SH NAME
-ytcc - a subscription wrapper for youtube-dl playlists
+ytcc - Command line tool to keep track of your favorite playlists on YouTube and many other places
 .SH SYNOPSIS
 ytcc [OPTIONS...] COMMAND [ARGS...]
 .SH DESCRIPTION
 Ytcc - the (not only) YouTube channel checker.
 
-Ytcc "subscribes" to playlists (supported by youtube-dl) and tracks new videos published to
-those playlists.
+Ytcc "subscribes" to playlists (supported by yt-dlp or youtube-dl) and tracks new videos
+published to those playlists.
 
 To show the detailed help of a COMMAND run `ytcc COMMAND --help`.
 
@@ -32,7 +32,7 @@ Show help and exit.
 Subscribe to a playlist.
 
 The NAME argument is the name used to refer to the playlist. The URL argument is the URL to a
-playlist that is supported by youtube-dl.
+playlist that is supported by yt-dlp or youtube-dl.
 .P
 .B OPTIONS:
 .P
@@ -336,7 +336,7 @@ the output of this command when filing a new bug report!
 .B --help
 Show command help and exit.
 .SH SEE ALSO
-mpv(1), youtube-dl(1)
+mpv(1), yt-dlp(1), youtube-dl(1)
 .SS Project homepage
 https://github.com/woefe/ytcc
 .SS Bug Tracker

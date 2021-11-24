@@ -78,7 +78,7 @@ class Fetcher:
                 info = await loop.run_in_executor(None, partial(ydl.extract_info, playlist.url,
                                                                 download=False, process=False))
             except youtube_dl.DownloadError as download_error:
-                logging.error("Failed to get playlist %s. Youtube-dl said: '%s'",
+                logging.error("Failed to get playlist %s. Error was: '%s'",
                               playlist.name, download_error)
             else:
                 entries = info.get("entries", [])
@@ -106,7 +106,7 @@ class Fetcher:
             loop = asyncio.get_event_loop()
             processed = await loop.run_in_executor(None, self._process_ie, entry)
         except youtube_dl.DownloadError as download_error:
-            logging.warning("Failed to get a video. Youtube-dl said: '%s'", download_error)
+            logging.warning("Failed to get a video. Error was: '%s'", download_error)
             return e_hash, None
         else:
             title = processed.get("title")

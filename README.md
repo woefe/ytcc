@@ -22,7 +22,7 @@ See the [migration guide](https://github.com/woefe/ytcc/tree/master/doc/migrate.
 
 Add "subscriptions".
 ```shell script
-# Any playlist supported by youtube-dl
+# Any playlist supported by yt-dlp (or youtube-dl)
 ytcc subscribe "Jupiter Broadcasting" "https://www.youtube.com/c/JupiterBroadcasting/videos"
 ytcc subscribe "NCS: House" "https://www.youtube.com/playlist?list=PLRBp0Fe2GpgmsW46rJyudVFlY6IYjFBIK"
 ytcc subscribe "Neus" "https://soundcloud.com/neus/tracks"
@@ -163,11 +163,11 @@ default_action = play_video
 
 
 [youtube_dl]
-# Format (see FORMAT SELECTION in youtube-dl manpage). Make sure to use a video format here, if you
+# Format (see FORMAT SELECTION in yt-dlp manpage). Make sure to use a video format here, if you
 # want to be able to download videos.
 format = bestvideo[height<=?1080]+bestaudio/best
 
-# Output template (see OUTPUT TEMPLATE in youtube-dl manpage).
+# Output template (see OUTPUT TEMPLATE in yt-dlp manpage).
 # Note that the output template will be prefixed with the `download_dir` directory and the name of
 # the playlist if `download_sub_dir` is enabled.
 output_template = %(title)s.%(ext)s
