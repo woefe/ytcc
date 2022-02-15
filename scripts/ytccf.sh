@@ -91,7 +91,7 @@ EOF
 
 while [[ $# -gt 0 ]]; do
     key="$1"
-    printf -v safe_val %q "$2"
+    [[ $# -gt 1 ]] && printf -v safe_val %q "$2"
     case $key in
     -p | --playlists)
         FILTERS+=(-p "$safe_val")
