@@ -50,7 +50,8 @@ def make_archive_id(ydl: "YoutubeDL", entry: Dict[str, Any]) -> Optional[str]:
     entry_type = entry.get("_type", "").lower()
     if archive_id is None and entry.get("url") and entry_type in ("url", "url_transparent"):
         entry = entry.copy()
-        entry["id"] = hashlib.sha256(entry["url"].encode()).hexdigest()
+        plain_url, _ = youtube_dl.utils.unsmuggle_url(entry["url"])
+        entry["id"] = hashlib.sha256(plain_url.encode()).hexdigest()
         return ydl._make_archive_id(entry)
     return archive_id
 
@@ -114,7 +115,7 @@ class Fetcher:
                 logger.error("Failed to process a video, because its title is missing")
                 return e_hash, None
 
-            url = processed.get("webpage_url")
+            url, _ = youtube_dl.utils.unsmuggle_url(processed.get("webpage_url"))
             if not url:
                 logger.error(
                     "Failed to process a video '%s', because its URL is missing",
