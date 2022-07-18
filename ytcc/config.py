@@ -163,6 +163,7 @@ class theme(BaseConfig):  # pylint: disable=invalid-name
     prompt_play_video: Color = Color(4)
     prompt_mark_watched: Color = Color(1)
     table_alternate_background: Color = Color(245)
+    plain_label_text: Color = Color(244)
 
 
 class youtube_dl(BaseConfig):  # pylint: disable=invalid-name

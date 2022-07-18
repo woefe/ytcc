@@ -151,6 +151,7 @@ prompt_play_audio = 2
 prompt_play_video = 4
 prompt_mark_watched = 1
 table_alternate_background = 245
+plain_label_text = 244
 
 
 [tui]
