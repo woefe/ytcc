@@ -34,7 +34,7 @@ from ytcc.database import MappedVideo
 from ytcc.exceptions import BadConfigException, IncompatibleDatabaseVersion, BadURLException, \
     NameConflictError, PlaylistDoesNotExistException, YtccException
 from ytcc.printer import JSONPrinter, XSVPrinter, VideoPrintable, TablePrinter, \
-    PlaylistPrintable, Printer, RSSPrinter
+    PlaylistPrintable, Printer, RSSPrinter, PlainPrinter
 from ytcc.tui import print_meta, Interactive
 
 T = TypeVar("T")  # pylint: disable=invalid-name
@@ -175,12 +175,13 @@ def tags_completion(ctx: click.Context, param: click.Parameter,  # pylint: disab
 @click.option("--loglevel", "-l", type=click.Choice(["critical", "info", "debug"]), default="info",
               show_default=True,
               help="Set the log level. Overrides the log level configured in the config file.")
-@click.option("--output", "-o", type=click.Choice(["json", "table", "xsv", "rss"]),
+@click.option("--output", "-o", type=click.Choice(["json", "table", "xsv", "rss", "plain"]),
               default="table", show_default=True,
               help="Set output format. `json` prints in JSON format, which is usually not filtered"
                    " by --attribute options of commands. `table` prints a human readable table."
                    " `xsv` prints x-separated values, where x can be set with the -s option."
-                   " `rss` prints a RSS 2.0 feed of videos.")
+                   " `rss` prints a RSS 2.0 feed of videos. `plain` prints in a human readable"
+                   " text format.")
 @click.option("--separator", "-s", default=",", show_default=True,
               help="Set the delimiter used in XSV format.")
 @click.option("--truncate", "-t", default="max", show_default=True, type=TruncateVals(),
@@ -228,6 +229,8 @@ def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: s
         printer = XSVPrinter(separator)
     elif output == "rss":
         printer = RSSPrinter()
+    elif output == "plain":
+        printer = PlainPrinter()
 
 
 @cli.command()

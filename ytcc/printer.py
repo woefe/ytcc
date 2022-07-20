@@ -19,11 +19,12 @@
 import html
 import json
 import sys
+import textwrap
 import xml.etree.ElementTree as ET
-from email.utils import format_datetime as rss2_date
 from abc import ABC, abstractmethod, ABCMeta
 from dataclasses import asdict
 from datetime import datetime, timezone
+from email.utils import format_datetime as rss2_date
 from typing import List, Iterable, Dict, Any, NamedTuple, Optional, Union
 
 from wcwidth import wcswidth
@@ -248,6 +249,39 @@ class XSVPrinter(Printer):
         for row in table.data:
             line = self.separator.join(self.escape(cell) for cell in row)
             print(line)
+
+
+class PlainPrinter(Printer):
+
+    def print(self, obj: Printable) -> None:
+        def unsnake(string: str):
+            string = string.replace('_', " ")
+            return string[0].upper() + string[1:]
+
+        table = obj.table()
+        if self.filter is not None:
+            table = table.apply_filter(self.filter)
+
+        term_width = get_terminal_width()
+        for row in table.data:
+            for label, content in zip(table.header, map(str.strip, row)):
+                printt(
+                    f"{unsnake(label)}: ",
+                    foreground=config.theme.plain_label_text,
+                    force_color=True
+                )
+                if len(label) + len(content) < term_width:
+                    print(f"{content}")
+                else:
+                    print()
+                    for line in content.splitlines():
+                        print(textwrap.fill(
+                            line,
+                            width=term_width,
+                            initial_indent="  ",
+                            subsequent_indent="  "
+                        ))
+            print()
 
 
 class JSONPrinter(Printer):

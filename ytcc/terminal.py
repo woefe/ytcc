@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
-
+import os
 import shutil
 import sys
 from enum import Enum
@@ -129,7 +129,7 @@ def printtln(*text, foreground: Optional[int] = None, background: Optional[int] 
 
 
 def printt(*text, foreground: Optional[int] = None, background: Optional[int] = None,
-           bold: bool = False, replace: bool = False) -> None:
+           bold: bool = False, replace: bool = False, force_color: bool = False) -> None:
     """Print text on terminal styled with ANSI escape sequences.
 
     If stdout is not a TTY, no escape sequences will be printed. Supports 8-bit colors.
@@ -139,8 +139,9 @@ def printt(*text, foreground: Optional[int] = None, background: Optional[int] = 
     :param background: Background color.
     :param bold: Make text bold.
     :param replace: Replace the current line.
+    :param force_color: Print escape sequences even if TTY is detected.
     """
-    if not sys.stdout.isatty():
+    if not sys.stdout.isatty() and not force_color:
         print(*text, sep="", end="", flush=True)
         return
 
@@ -166,5 +167,9 @@ def printt(*text, foreground: Optional[int] = None, background: Optional[int] = 
 
 
 def get_terminal_width() -> int:
-    width, _ = shutil.get_terminal_size()
-    return width
+    try:
+        # Don't trust $COLUMNS if run as FZF preview command
+        return int(os.environ['FZF_PREVIEW_COLUMNS'])
+    except (KeyError, ValueError):
+        width, _ = shutil.get_terminal_size()
+        return width
