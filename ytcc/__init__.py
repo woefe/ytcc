@@ -23,7 +23,7 @@ signing up for a Google account.
 """
 
 __license__ = "GPLv3"
-__version__ = "2.5.5"
+__version__ = "2.6.0"
 __author__ = __maintainer__ = "Wolfgang Popp"
 __email__ = "mail@wolfgang-popp.de"
 
