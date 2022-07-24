@@ -3,20 +3,11 @@
 
 Command line tool to keep track of your favorite playlists on YouTube and many other places.
 
-**Version 2 is out!**
-Read [the migration guide](https://github.com/woefe/ytcc/tree/master/doc/migrate.md) before upgrading to 2.0.0 or later!
-If you are looking for older versions, check the [Release](https://github.com/woefe/ytcc/releases) page and the [v1 branch](https://github.com/woefe/ytcc/tree/v1).
-The version 1 branch is supported until 2022-04-01. Migrate to v2 until then!
-
-
 ## Installation
 ```shell script
 pip install ytcc
 ```
 Alternative installation methods are described in the [documentation](https://github.com/woefe/ytcc/tree/master/doc/install.md).
-
-## Migrating from version 1
-See the [migration guide](https://github.com/woefe/ytcc/tree/master/doc/migrate.md)
 
 ## Usage
 
