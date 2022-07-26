@@ -1,4 +1,0 @@
-[pydocstyle]
-inherit = false
-# Ignore missing docstrings for now, but existing docstrings must be correct.
-ignore = D1,D203,D213

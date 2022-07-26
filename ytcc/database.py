@@ -63,7 +63,7 @@ class Video:
 
 @dataclass(frozen=True)
 class MappedVideo(Video):
-    id: int
+    id: int  # pylint: disable=invalid-name
     playlists: List[Playlist]
 
 
