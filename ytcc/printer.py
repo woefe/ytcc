@@ -254,9 +254,14 @@ class XSVPrinter(Printer):
 class PlainPrinter(Printer):
 
     def print(self, obj: Printable) -> None:
-        def unsnake(string: str):
-            string = string.replace('_', " ")
+        def unsnake(string: str) -> str:
+            string = string.replace("_", " ")
             return string[0].upper() + string[1:]
+
+        def wrap_line(line: str) -> str:
+            return textwrap.fill(
+                line, width=term_width, initial_indent="  ", subsequent_indent="  "
+            )
 
         table = obj.table()
         if self.filter is not None:
@@ -265,22 +270,21 @@ class PlainPrinter(Printer):
         term_width = get_terminal_width()
         for row in table.data:
             for label, content in zip(table.header, map(str.strip, row)):
-                printt(
-                    f"{unsnake(label)}: ",
-                    foreground=config.theme.plain_label_text,
-                    force_color=True
-                )
-                if len(label) + len(content) < term_width:
-                    print(f"{content}")
-                else:
+                formatted_label = f"{unsnake(label)}: "
+                content_lines = content.splitlines()
+
+                printt(formatted_label, foreground=config.theme.plain_label_text, force_color=True)
+
+                if (
+                    len(content_lines) == 1
+                    and len(formatted_label) + len(content_lines[0]) < term_width
+                ):
+                    print(f"{content_lines[0]}")
+                elif content_lines:
                     print()
-                    for line in content.splitlines():
-                        print(textwrap.fill(
-                            line,
-                            width=term_width,
-                            initial_indent="  ",
-                            subsequent_indent="  "
-                        ))
+                    for wrapped_line in map(wrap_line, content_lines):
+                        print(wrapped_line)
+
             print()
 
 
