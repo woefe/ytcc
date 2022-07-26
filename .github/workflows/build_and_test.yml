@@ -51,7 +51,7 @@ jobs:
         pydocstyle ytcc
     - name: Linting with pylint
       run: |
-        pylint ytcc scripts/*.py
+        pylint --recursive=y ytcc scripts
     - name: Run tests with pytest
       run: |
         python -m pytest -m "not flaky" -v
