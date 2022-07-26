@@ -2,7 +2,7 @@
 mypy
 pytest
 pylint
-pydocstyle
+pydocstyle[toml]
 
 # Application dependencies
 click
