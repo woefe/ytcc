@@ -184,29 +184,28 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
 
     Searches at following locations:
     1. ``override_cfg_file``
-    2. ``$XDG_CONFIG_HOME/ytcc/ytcc.conf``
-    3. ``~/.config/ytcc/ytcc.conf``
-    4. ``~/.ytcc.conf``
+    3. ``~/.ytcc.conf``
+    4. ``$XDG_CONFIG_HOME/ytcc/ytcc.conf`` or ``~/.config/ytcc/ytcc.conf``
+    5. ``/etc/ytcc/ytcc.conf``
 
     If no config file is found in these three locations, a default config file is created in
-    ``~/.config/ytcc/ytcc.conf``
+    ``$XDG_CONFIG_HOME/ytcc/ytcc.conf`` or ``~/.config/ytcc/ytcc.conf``.
 
     :param override_cfg_file: Read the config from this file.
     :return: The dict-like config object
     """
-    config_dir = os.getenv("XDG_CONFIG_HOME")
-    if not config_dir:
-        config_dir = "~/.config"
-
-    global_cfg_file = "/etc/ytcc/ytcc.conf"
-    default_cfg_file = os.path.expanduser(config_dir + "/ytcc/ytcc.conf")
-    fallback_cfg_file = os.path.expanduser("~/.ytcc.conf")
-
     config = configparser.ConfigParser(interpolation=None)
 
-    cfg_file_locations = [global_cfg_file, default_cfg_file, fallback_cfg_file]
+    config_home = os.getenv("XDG_CONFIG_HOME", "~/.config")
+    default_cfg_file = Path(config_home, "ytcc/ytcc.conf").expanduser()
+
+    cfg_file_locations = [
+        Path("/etc/ytcc/ytcc.conf"),
+        default_cfg_file,
+        Path.home() / ".ytcc.conf",
+    ]
     if override_cfg_file:
-        cfg_file_locations.append(override_cfg_file)
+        cfg_file_locations.append(Path(override_cfg_file))
 
     encoding = locale.getpreferredencoding(False) or "utf-8"
 

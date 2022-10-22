@@ -78,11 +78,12 @@ ytccf.sh --help
 ## Configuration
 Ytcc searches for a configuration file at following locations:
 
-1. `$XDG_CONFIG_HOME/ytcc/ytcc.conf`
-2. `~/.config/ytcc/ytcc.conf`
-3. `~/.ytcc.conf`
+1. The file given with `-c` or `--config` options
+2. `~/.ytcc.conf`
+3. `$XDG_CONFIG_HOME/ytcc/ytcc.conf` or `~/.config/ytcc/ytcc.conf`
+4. `/etc/ytcc/ytcc.conf`
 
-If no config file is found in these three locations, a default config file is created at `~/.config/ytcc/ytcc.conf`.
+If no config file is found in these locations, a default config file is created at `$XDG_CONFIG_HOME/ytcc/ytcc.conf` or `~/.config/ytcc/ytcc.conf`
 
 ### Example config
 
