@@ -1,4 +1,4 @@
-.TH ytcc 1 "Jul 2022" "2.6.0" "ytcc manual"
+.TH ytcc 1 "Oct 2022" "2.6.1" "ytcc manual"
 .SH NAME
 ytcc - Command line tool to keep track of your favorite playlists on YouTube and many other places
 .SH SYNOPSIS
@@ -31,8 +31,9 @@ Show help and exit.
 
 Subscribe to a playlist.
 
-The NAME argument is the name used to refer to the playlist. The URL argument is the URL to a
-playlist that is supported by yt-dlp or youtube-dl.
+    The NAME argument is the name used to refer to the playlist. The URL argument is the URL to a
+    playlist that is supported by yt-dlp or youtube-dl.
+    
 .P
 .B OPTIONS:
 .P
@@ -45,9 +46,10 @@ Show command help and exit.
 
 Unsubscribe from a playlist.
 
-Unsubscribes from the playlist identified by NAMES. Videos that are on any of the given
-playlists will be removed from the database as well, unless the videos are on at least one
-playlist not given in NAMES.
+    Unsubscribes from the playlist identified by NAMES. Videos that are on any of the given
+    playlists will be removed from the database as well, unless the videos are on at least one
+    playlist not given in NAMES.
+    
 .P
 .B OPTIONS:
 .P
@@ -60,7 +62,8 @@ Show command help and exit.
 
 Rename a playlist.
 
-Renames the playlist OLD to NEW.
+    Renames the playlist OLD to NEW.
+    
 .P
 .B OPTIONS:
 .P
@@ -70,7 +73,8 @@ Show command help and exit.
 
 Toggle the update behavior of playlists.
 
-Playlists updated in reverse might lead to slow updates with the `update` command.
+    Playlists updated in reverse might lead to slow updates with the `update` command.
+    
 .P
 .B OPTIONS:
 .P
@@ -91,8 +95,9 @@ Show command help and exit.
 
 Set tags of a playlist.
 
-Sets the TAGS associated with the playlist called NAME. If no tags are given, all tags are
-removed from the given playlist.
+    Sets the TAGS associated with the playlist called NAME. If no tags are given, all tags are
+    removed from the given playlist.
+    
 .P
 .B OPTIONS:
 .P
@@ -102,7 +107,8 @@ Show command help and exit.
 
 Check if new videos are available.
 
-Downloads metadata of new videos (if any) without playing or downloading the videos.
+    Downloads metadata of new videos (if any) without playing or downloading the videos.
+    
 .P
 .B OPTIONS:
 .P
@@ -118,7 +124,8 @@ Show command help and exit.
 
 List videos.
 
-Lists videos that match the given filter options. By default, all unwatched videos are listed.
+    Lists videos that match the given filter options. By default, all unwatched videos are listed.
+    
 .P
 .B OPTIONS:
 .P
@@ -155,8 +162,9 @@ Show command help and exit.
 
 List IDs of unwatched videos in XSV format.
 
-Basically an alias for `ytcc --output xsv list --attributes id`. This alias can be useful for
-piping into the download, play, and mark commands. E.g: `ytcc ls | ytcc watch`
+    Basically an alias for `ytcc --output xsv list --attributes id`. This alias can be useful for
+    piping into the download, play, and mark commands. E.g: `ytcc ls | ytcc watch`
+    
 .P
 .B OPTIONS:
 .P
@@ -222,9 +230,10 @@ Show command help and exit.
 
 Play videos.
 
-Plays the videos identified by the given video IDs. If no IDs are given, ytcc tries to read IDs
-from stdin. If no IDs are given and no IDs were read from stdin, all unwatched videos are
-played.
+    Plays the videos identified by the given video IDs. If no IDs are given, ytcc tries to read IDs
+    from stdin. If no IDs are given and no IDs were read from stdin, all unwatched videos are
+    played.
+    
 .P
 .B OPTIONS:
 .P
@@ -243,9 +252,10 @@ Show command help and exit.
 
 Mark videos as watched.
 
-Marks videos as watched without playing or downloading them. If no IDs are given, ytcc tries to
-read IDs from stdin. If no IDs are given and no IDs were read from stdin, no videos are marked
-as watched.
+    Marks videos as watched without playing or downloading them. If no IDs are given, ytcc tries to
+    read IDs from stdin. If no IDs are given and no IDs were read from stdin, no videos are marked
+    as watched.
+    
 .P
 .B OPTIONS:
 .P
@@ -255,8 +265,9 @@ Show command help and exit.
 
 Mark videos as unwatched.
 
-Marks videos as unwatched. If no IDs are given, ytcc tries to read IDs from stdin. If no IDs
-are given and no IDs were read from stdin, no videos are marked as watched.
+    Marks videos as unwatched. If no IDs are given, ytcc tries to read IDs from stdin. If no IDs
+    are given and no IDs were read from stdin, no videos are marked as watched.
+    
 .P
 .B OPTIONS:
 .P
@@ -266,9 +277,10 @@ Show command help and exit.
 
 Download videos.
 
-Downloads the videos identified by the given video IDs. If no IDs are given, ytcc tries to read
-IDs from stdin. If no IDs are given and no IDs were read from stdin, all unwatched videos are
-downloaded.
+    Downloads the videos identified by the given video IDs. If no IDs are given, ytcc tries to read
+    IDs from stdin. If no IDs are given and no IDs were read from stdin, all unwatched videos are
+    downloaded.
+    
 .P
 .B OPTIONS:
 .P
@@ -290,9 +302,10 @@ Show command help and exit.
 
 Remove all watched videos from the database.
 
-WARNING!!! This removes all metadata of watched, marked as watched, and downloaded videos from
-ytcc's database. This cannot be undone! In most cases you won't need this command, but it is
-useful to keep the database size small.
+    WARNING!!! This removes all metadata of watched, marked as watched, and downloaded videos from
+    ytcc's database. This cannot be undone! In most cases you won't need this command, but it is
+    useful to keep the database size small.
+    
 .P
 .B OPTIONS:
 .P
@@ -308,14 +321,15 @@ Show command help and exit.
 
 Import YouTube subscriptions from an OPML or CSV file.
 
-The CSV file must have three columns in following order: Channel ID, Channel URL, Channel name.
+    The CSV file must have three columns in following order: Channel ID, Channel URL, Channel name.
 
-You can export your YouTube subscriptions at https://takeout.google.com. In the takeout you
-find a CSV file with your subscriptions. To speed up the takeout export only your
-subscriptions, not your videos, comments, etc.
+    You can export your YouTube subscriptions at https://takeout.google.com. In the takeout you
+    find a CSV file with your subscriptions. To speed up the takeout export only your
+    subscriptions, not your videos, comments, etc.
 
-The OPML export was available on YouTube some time ago and old versions of ytcc were also able
-to export subscriptions in the OPML format.
+    The OPML export was available on YouTube some time ago and old versions of ytcc were also able
+    to export subscriptions in the OPML format.
+    
 .P
 .B OPTIONS:
 .P
@@ -328,8 +342,9 @@ Show command help and exit.
 
 Show debug information for bug reports.
 
-Shows versions of dependencies and configuration relevant for any bug report. Please include
-the output of this command when filing a new bug report!
+    Shows versions of dependencies and configuration relevant for any bug report. Please include
+    the output of this command when filing a new bug report!
+    
 .P
 .B OPTIONS:
 .P
