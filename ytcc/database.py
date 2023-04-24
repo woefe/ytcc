@@ -347,6 +347,14 @@ class Database:
             playlist_id = fetch["id"]
             for video in videos:
                 cursor.execute(insert_video, asdict(video))
+                if isinstance(cursor.lastrowid, int):
+                    logger.info("Added video '%s' of playlist '%s' at ID %d",
+                        video.title,
+                        playlist.name,
+                        cursor.lastrowid
+                    )
+                else:
+                    logger.info("Processed video '%s' of playlist '%s'", video.title, playlist.name)
                 cursor.execute(insert_playlist, (playlist_id, video.url))
 
     @overload
