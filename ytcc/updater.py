@@ -172,7 +172,7 @@ class Fetcher:
             if thumbnails:
                 thumbnail_url = self._get_highest_res_thumbnail(thumbnails).get("url")
 
-            logger.info("Processed video '%s' of playlist '%s'", title, playlist.name)
+            logger.debug("Processed video '%s' of playlist '%s'", title, playlist.name)
 
             return e_hash, Video(
                 url=url,
