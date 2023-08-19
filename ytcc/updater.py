@@ -89,6 +89,27 @@ class Fetcher:
                 )
             else:
                 entries = info.get("entries", [])
+                # 2 options:
+                # - Some channels will directly list videos in the
+                #   `entries` field
+                # - Other channels will have tabs (Videos, Stream, Lives)
+                #   that are represented as sub-playlists in the `entries` field
+                # Note: This is mostly to support channels that enables that
+                # option without having the user to update the subscription.
+                if info.get("webpage_url_basename") not in ["videos",
+                                                            "playlist"]:
+                    logger.debug("Playlist has sub-playlists")
+                    # Entries is a list of info objects for Videos and
+                    # Livestreams
+                    tab_entries = entries
+                    entries = []
+                    for tab in tab_entries:
+                        # Try to find the "videos" tab
+                        # No webpage_url_basename field here :|
+                        # So we need to check that URL ends with /videos
+                        if tab.get("webpage_url").endswith("/videos"):
+                            entries = tab.get("entries", [])
+                            break
                 if playlist.reverse:
                     entries = reversed(list(entries))
                 for entry in take(self.max_items, entries):
