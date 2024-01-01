@@ -555,9 +555,10 @@ def _get_videos(ytcc: core.Ytcc, ids: List[int]) -> Iterable[MappedVideo]:
               help="Don't print video metadata and description.")
 @click.option("--no-mark", "-m", is_flag=True, default=False,
               help="Don't mark the video as watched after playing it.")
+@click.option("--speed", default=1, help="The playback speed to play the video(s) at")
 @click.argument("ids", nargs=-1, type=click.INT, shell_complete=ids_completion())
 @pass_ytcc
-def play(ytcc: core.Ytcc, ids: Tuple[int, ...], audio_only: bool, no_meta: bool, no_mark: bool):
+def play(ytcc: core.Ytcc, speed: float, ids: Tuple[int, ...], audio_only: bool, no_meta: bool, no_mark: bool):
     """Play videos.
 
     Plays the videos identified by the given video IDs. If no IDs are given, ytcc tries to read IDs
@@ -571,7 +572,7 @@ def play(ytcc: core.Ytcc, ids: Tuple[int, ...], audio_only: bool, no_meta: bool,
         loop_executed = True
         if not no_meta:
             print_meta(video, sys.stderr)
-        if ytcc.play_video(video, audio_only) and mark:
+        if ytcc.play_video(video, audio_only, speed) and mark:
             ytcc.mark_watched(video)
         elif not no_mark:
             logger.warning("The video player terminated with an error. "

@@ -152,7 +152,7 @@ class Ytcc:
             updater.update()
 
     @staticmethod
-    def play_video(video: Video, audio_only: bool = False) -> bool:
+    def play_video(video: Video, audio_only: bool = False, speed: float = 1) -> bool:
         """Play the given video with the mpv video player.
 
         The video will not be marked as watched, if the player exits unexpectedly (i.e. exits with
@@ -171,7 +171,7 @@ class Ytcc:
             mpv_flags = filter(bool, map(str.strip, config.ytcc.mpv_flags.split()))
             try:
                 command = [
-                    "mpv", *no_video_flag, *mpv_flags, video.url
+                    "mpv", *no_video_flag, f"--speed={speed}", *mpv_flags, video.url
                 ]
                 subprocess.run(command, check=True)
             except FileNotFoundError as fnfe:
