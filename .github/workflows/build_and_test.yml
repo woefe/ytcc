@@ -6,19 +6,40 @@ on:
   pull_request:
 
 jobs:
-  build:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: editorconfig-checker/action-editorconfig-checker@v2
+      - run: editorconfig-checker
+      - name: Type check with MyPy
+        run: |
+            mypy ytcc
+      - name: Check docstyle with pydocstyle
+        run: |
+            pydocstyle ytcc
+      - name: Linting with pylint
+        run: |
+            pylint --recursive=y ytcc scripts
+      - name: Install shellcheck
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y shellcheck
+      - name: Check scripts with shellcheck
+        run: shellcheck scripts/*.sh
+  test:
 
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
         os: [ubuntu-latest, macos-latest, windows-latest]
       fail-fast: false
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies on Ubuntu
@@ -43,15 +64,6 @@ jobs:
         python setup.py install
         python -m pip install --upgrade pip
         pip install -r devrequirements.txt
-    - name: Type check with MyPy
-      run: |
-        mypy ytcc
-    - name: Check docstyle with pydocstyle
-      run: |
-        pydocstyle ytcc
-    - name: Linting with pylint
-      run: |
-        pylint --recursive=y ytcc scripts
     - name: Run tests with pytest
       run: |
         python -m pytest -m "not flaky" -v
@@ -59,13 +71,3 @@ jobs:
       run: |
         python -m pytest -m flaky -v
       continue-on-error: true
-  shellcheck:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Install shellcheck
-      run: |
-          sudo apt-get update
-          sudo apt-get install -y shellcheck
-    - name: Check scripts with shellcheck
-      run: shellcheck scripts/*.sh
