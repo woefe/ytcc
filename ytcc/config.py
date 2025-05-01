@@ -24,7 +24,7 @@ import logging
 import os
 import typing
 from abc import ABC
-from enum import Enum, EnumMeta
+from enum import Enum
 from pathlib import Path
 from typing import Optional, TextIO, Type, Any, List, Callable, Tuple, Sequence
 
@@ -239,7 +239,7 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
 def load(override_cfg_file: Optional[str] = None):
     conf_parser = _get_config(override_cfg_file)
 
-    def enum_from_str(e_class: EnumMeta, str_val: str) -> Enum:
+    def enum_from_str(e_class: Type[Enum], str_val: str) -> Enum:
         field: Any
         for field in e_class:
             # Might also raise a ValueError
@@ -271,7 +271,7 @@ def load(override_cfg_file: Optional[str] = None):
             from_str: Callable[[str], Any] = functools.partial(list_from_str, elem_conv)
         elif get_type_origin(typ) is tuple:
             from_str = functools.partial(tuple_from_str, get_type_args(typ))
-        elif isinstance(typ, EnumMeta):
+        elif issubclass(typ, Enum):
             from_str = functools.partial(enum_from_str, typ)
         elif issubclass(typ, bool):
             from_str = bool_from_str

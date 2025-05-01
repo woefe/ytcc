@@ -73,6 +73,7 @@ SETUP_SQL_SCRIPT = """
         (3, 4);
 """
 
+
 @pytest.fixture
 def empty_database() -> Callable[..., Database]:
     @contextlib.contextmanager

@@ -69,7 +69,7 @@ def cli_runner() -> Callable[..., Result]:
             conf_file.write("[ytcc]\n")
             conf_file.write(f"db_path={db_file.name}\n")
             conf_file.write(f"download_dir={download_dir}\n")
-            conf_file.write(f"download_subdirs=on\n")
+            conf_file.write("download_subdirs=on\n")
 
             db_file.close()
             conf_file.close()
