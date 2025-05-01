@@ -39,16 +39,16 @@ __author__ = __maintainer__ = "Wolfgang Popp"
 __email__ = "mail@wolfgang-popp.de"
 
 __all__ = [
-    Database,
-    MappedVideo,
-    Video,
-    MappedPlaylist,
-    Playlist,
-    YtccException,
-    BadURLException,
-    NameConflictError,
-    PlaylistDoesNotExistException,
-    InvalidSubscriptionFileError,
-    BadConfigException,
-    IncompatibleDatabaseVersion,
+    "Database",
+    "MappedVideo",
+    "Video",
+    "MappedPlaylist",
+    "Playlist",
+    "YtccException",
+    "BadURLException",
+    "NameConflictError",
+    "PlaylistDoesNotExistException",
+    "InvalidSubscriptionFileError",
+    "BadConfigException",
+    "IncompatibleDatabaseVersion",
 ]
