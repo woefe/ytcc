@@ -55,5 +55,5 @@ Optional requirements:
 Requirements for the ytccf.sh bash script:
 - [fzf](https://github.com/junegunn/fzf) version 0.23.1 or newer
 - Optionally, for thumbnail support
-  - [curl](https://curl.se/)
-  - Either [ueberzug](https://github.com/seebye/ueberzug) or [kitty](https://sw.kovidgoyal.net/kitty/).
+    - [curl](https://curl.se/)
+    - Either [ueberzug](https://github.com/seebye/ueberzug) or [kitty](https://sw.kovidgoyal.net/kitty/).

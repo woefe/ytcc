@@ -49,10 +49,22 @@ class Action(Enum):
     SHOW_HELP = (None, FKeys.F1, None)
     PLAY_VIDEO = ("Play video", FKeys.F2, lambda: config.theme.prompt_play_video)
     PLAY_AUDIO = ("Play audio", FKeys.F3, lambda: config.theme.prompt_play_audio)
-    MARK_WATCHED = ("Mark as watched", FKeys.F4, lambda: config.theme.prompt_mark_watched)
+    MARK_WATCHED = (
+        "Mark as watched",
+        FKeys.F4,
+        lambda: config.theme.prompt_mark_watched,
+    )
     REFRESH = (None, FKeys.F5, None)
-    DOWNLOAD_AUDIO = ("Download audio", FKeys.F7, lambda: config.theme.prompt_download_audio)
-    DOWNLOAD_VIDEO = ("Download video", FKeys.F6, lambda: config.theme.prompt_download_video)
+    DOWNLOAD_AUDIO = (
+        "Download audio",
+        FKeys.F7,
+        lambda: config.theme.prompt_download_audio,
+    )
+    DOWNLOAD_VIDEO = (
+        "Download video",
+        FKeys.F6,
+        lambda: config.theme.prompt_download_video,
+    )
     UNMARK = (None, FKeys.F8, None)
 
 
@@ -95,7 +107,6 @@ class VideoSelection(TableData, dict):
 
 
 class Interactive:
-
     def __init__(self, core: Ytcc):
         self.core = core
         self.videos = list(core.list_videos())
@@ -228,8 +239,9 @@ class Interactive:
             self.core.mark_watched(video)
             return True
 
-        print("The video player terminated with an error. "
-              "The last video is not marked as watched!")
+        print(
+            "The video player terminated with an error. The last video is not marked as watched!"
+        )
         return False
 
     def download_video(self, video: MappedVideo, audio_only: bool = False) -> bool:
@@ -259,13 +271,14 @@ class StdOutOverride:
 
 def print_meta(video: MappedVideo, stream: TextIO = sys.stdout) -> None:
     with StdOutOverride(stream):
+
         def print_separator(text: Optional[str] = None, fat: bool = False) -> None:
             columns = shutil.get_terminal_size().columns
             sep = "━" if fat else "─"
             if not text:
                 print(sep * columns)
             else:
-                sep_len = (columns - len(text) - 2)
+                sep_len = columns - len(text) - 2
                 padding = sep_len // 2
                 printt(sep * padding)
                 printt(" ", text, " ", bold=fat)

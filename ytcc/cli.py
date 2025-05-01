@@ -31,10 +31,24 @@ from ytcc import __version__, __author__
 from ytcc import core, config
 from ytcc.config import PlaylistAttr, VideoAttr, Direction
 from ytcc.database import MappedVideo
-from ytcc.exceptions import BadConfigException, IncompatibleDatabaseVersion, BadURLException, \
-    NameConflictError, PlaylistDoesNotExistException, YtccException
-from ytcc.printer import JSONPrinter, XSVPrinter, VideoPrintable, TablePrinter, \
-    PlaylistPrintable, Printer, RSSPrinter, PlainPrinter
+from ytcc.exceptions import (
+    BadConfigException,
+    IncompatibleDatabaseVersion,
+    BadURLException,
+    NameConflictError,
+    PlaylistDoesNotExistException,
+    YtccException,
+)
+from ytcc.printer import (
+    JSONPrinter,
+    XSVPrinter,
+    VideoPrintable,
+    TablePrinter,
+    PlaylistPrintable,
+    Printer,
+    RSSPrinter,
+    PlainPrinter,
+)
 from ytcc.tui import print_meta, Interactive
 
 T = TypeVar("T")  # pylint: disable=invalid-name
@@ -76,7 +90,7 @@ class TruncateVals(click.ParamType):
             ("max", "truncates to terminal width"),
             ("no", "disables truncating"),
             ("82", "truncates to 82 characters width"),
-            ("120", "truncates to 120 characters width")
+            ("120", "truncates to 120 characters width"),
         ]
         return [
             CompletionItem(value=val, help=description)
@@ -113,8 +127,11 @@ def _load_completion_conf(ctx: click.Context) -> None:
 
 
 def ids_completion(watched: bool = False):
-    def complete(ctx: click.Context, param: click.Parameter,  # pylint: disable=unused-argument
-                 incomplete: str) -> List[CompletionItem]:
+    def complete(
+        ctx: click.Context,
+        param: click.Parameter,  # pylint: disable=unused-argument
+        incomplete: str,
+    ) -> List[CompletionItem]:
         try:
             _load_completion_conf(ctx)
         except BadConfigException:
@@ -132,8 +149,11 @@ def ids_completion(watched: bool = False):
     return complete
 
 
-def playlist_completion(ctx: click.Context, param: click.Parameter,  # pylint: disable=unused-argument
-                        incomplete: str) -> List[str]:
+def playlist_completion(
+    ctx: click.Context,
+    param: click.Parameter,  # pylint: disable=unused-argument
+    incomplete: str,
+) -> List[str]:
     try:
         _load_completion_conf(ctx)
     except BadConfigException:
@@ -153,8 +173,11 @@ def playlists_completion(ctx: click.Context, param: click.Parameter, incomplete:
     return list(filter(lambda candidate: candidate not in used_playlists, candidates))
 
 
-def tags_completion(ctx: click.Context, param: click.Parameter,  # pylint: disable=unused-argument
-                    incomplete: str) -> List[str]:
+def tags_completion(
+    ctx: click.Context,
+    param: click.Parameter,  # pylint: disable=unused-argument
+    incomplete: str,
+) -> List[str]:
     try:
         _load_completion_conf(ctx)
     except BadConfigException:
@@ -162,35 +185,66 @@ def tags_completion(ctx: click.Context, param: click.Parameter,  # pylint: disab
 
     with core.Ytcc() as ytcc:
         return [
-            tag for tag in ytcc.list_tags()
+            tag
+            for tag in ytcc.list_tags()
             if incomplete.lower() in tag.lower() and tag not in ctx.params.get("tags", [])
-
         ]
 
 
 @click.group()
-@click.option("--conf", "-c", type=click.Path(file_okay=True, dir_okay=False),
-              envvar="YTCC_CONFIG",
-              help="Override configuration file.")
-@click.option("--loglevel", "-l", type=click.Choice(["critical", "info", "debug"]), default="info",
-              show_default=True,
-              help="Set the log level. Overrides the log level configured in the config file.")
-@click.option("--output", "-o", type=click.Choice(["json", "table", "xsv", "rss", "plain"]),
-              default="table", show_default=True,
-              help="Set output format. `json` prints in JSON format, which is usually not filtered"
-                   " by --attribute options of commands. `table` prints a human readable table."
-                   " `xsv` prints x-separated values, where x can be set with the -s option."
-                   " `rss` prints a RSS 2.0 feed of videos. `plain` prints in a human readable"
-                   " text format.")
-@click.option("--separator", "-s", default=",", show_default=True,
-              help="Set the delimiter used in XSV format.")
-@click.option("--truncate", "-t", default="max", show_default=True, type=TruncateVals(),
-              help="Truncate the table output. 'max' truncates to terminal width, 'no' disables"
-                   " truncating, an integer N truncates to length N.")
+@click.option(
+    "--conf",
+    "-c",
+    type=click.Path(file_okay=True, dir_okay=False),
+    envvar="YTCC_CONFIG",
+    help="Override configuration file.",
+)
+@click.option(
+    "--loglevel",
+    "-l",
+    type=click.Choice(["critical", "info", "debug"]),
+    default="info",
+    show_default=True,
+    help="Set the log level. Overrides the log level configured in the config file.",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["json", "table", "xsv", "rss", "plain"]),
+    default="table",
+    show_default=True,
+    help="Set output format. `json` prints in JSON format, which is usually not filtered"
+    " by --attribute options of commands. `table` prints a human readable table."
+    " `xsv` prints x-separated values, where x can be set with the -s option."
+    " `rss` prints a RSS 2.0 feed of videos. `plain` prints in a human readable"
+    " text format.",
+)
+@click.option(
+    "--separator",
+    "-s",
+    default=",",
+    show_default=True,
+    help="Set the delimiter used in XSV format.",
+)
+@click.option(
+    "--truncate",
+    "-t",
+    default="max",
+    show_default=True,
+    type=TruncateVals(),
+    help="Truncate the table output. 'max' truncates to terminal width, 'no' disables"
+    " truncating, an integer N truncates to length N.",
+)
 @click.version_option(version=__version__, prog_name="ytcc", message=version_text)
 @click.pass_context
-def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: str,
-        truncate: Union[None, str, int]) -> None:
+def cli(
+    ctx: click.Context,
+    conf: Path,
+    loglevel: str,
+    output: str,
+    separator: str,
+    truncate: Union[None, str, int],
+) -> None:
     """Ytcc - the (not only) YouTube channel checker.
 
     Ytcc "subscribes" to playlists (supported by yt-dlp or youtube-dl) and tracks new videos
@@ -198,14 +252,15 @@ def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: s
 
     To show the detailed help of a COMMAND run `ytcc COMMAND --help`.
     """
-    debug_format = "[%(created)f] [%(processName)s/%(threadName)s] " \
-                   "%(name)s.%(levelname)s: %(message)s"
+    debug_format = (
+        "[%(created)f] [%(processName)s/%(threadName)s] %(name)s.%(levelname)s: %(message)s"
+    )
     log_format = "%(levelname)s: %(message)s"
 
     logging.basicConfig(
         level=loglevel.upper(),
         stream=sys.stderr,
-        format=debug_format if loglevel == "debug" else log_format
+        format=debug_format if loglevel == "debug" else log_format,
     )
     try:
         if conf is None:
@@ -236,10 +291,14 @@ def cli(ctx: click.Context, conf: Path, loglevel: str, output: str, separator: s
 @cli.command()
 @click.argument("name")
 @click.argument("url")
-@click.option("--reverse", is_flag=True, default=False,
-              help="Check the playlist in reverse order. This should be used for playlists where "
-                   "the latest videos are added to the end of the playlist. WARNING: Using this "
-                   "option on large playlists slows down updating!")
+@click.option(
+    "--reverse",
+    is_flag=True,
+    default=False,
+    help="Check the playlist in reverse order. This should be used for playlists where "
+    "the latest videos are added to the end of the playlist. WARNING: Using this "
+    "option on large playlists slows down updating!",
+)
 @pass_ytcc
 def subscribe(ytcc: core.Ytcc, name: str, url: str, reverse: bool):
     """Subscribe to a playlist.
@@ -253,8 +312,10 @@ def subscribe(ytcc: core.Ytcc, name: str, url: str, reverse: bool):
         logger.error("The given URL does not point to a playlist or is not supported")
         raise Exit(1) from bad_url
     except NameConflictError as name_conflict:
-        logger.error("The given name is already used for another playlist "
-                     "or the playlist is already subscribed")
+        logger.error(
+            "The given name is already used for another playlist "
+            "or the playlist is already subscribed"
+        )
         raise Exit(1) from name_conflict
 
 
@@ -262,7 +323,7 @@ def subscribe(ytcc: core.Ytcc, name: str, url: str, reverse: bool):
 @click.argument("names", nargs=-1, required=True, shell_complete=playlists_completion)
 @click.confirmation_option(
     prompt="Unsubscribing will remove videos and playlists from the database irrevocably. Do you "
-           "really want to continue?"
+    "really want to continue?"
 )
 @pass_ytcc
 def unsubscribe(ytcc: core.Ytcc, names: Iterable[str]):
@@ -317,9 +378,13 @@ def reverse_playlist(ytcc: core.Ytcc, playlists: Tuple[str, ...]):
 
 
 @cli.command()
-@click.option("--attributes", "-a", type=CommaList(PlaylistAttr.from_str),
-              help="Attributes of the playlist to be included in the output. "
-                   f"Some of [{', '.join(map(lambda x: x.value, list(PlaylistAttr)))}].")
+@click.option(
+    "--attributes",
+    "-a",
+    type=CommaList(PlaylistAttr.from_str),
+    help="Attributes of the playlist to be included in the output. "
+    f"Some of [{', '.join(map(lambda x: x.value, list(PlaylistAttr)))}].",
+)
 @pass_ytcc
 def subscriptions(ytcc: core.Ytcc, attributes: List[PlaylistAttr]):
     """List all subscriptions."""
@@ -344,10 +409,18 @@ def tag(ytcc: core.Ytcc, name: str, tags: Tuple[str, ...]):
 
 
 @cli.command()
-@click.option("--max-fail", "-f", type=click.INT,
-              help="Number of failed updates before a video is not checked for updates any more.")
-@click.option("--max-backlog", "-b", type=click.INT,
-              help="Number of videos in a playlist that are checked for updates.")
+@click.option(
+    "--max-fail",
+    "-f",
+    type=click.INT,
+    help="Number of failed updates before a video is not checked for updates any more.",
+)
+@click.option(
+    "--max-backlog",
+    "-b",
+    type=click.INT,
+    help="Number of videos in a playlist that are checked for updates.",
+)
 @pass_ytcc
 def update(ytcc: core.Ytcc, max_fail: Optional[int], max_backlog: Optional[int]):
     """Check if new videos are available.
@@ -363,25 +436,52 @@ _dir = click.Choice(list(map(lambda v: v.value, Direction)))
 _dir.name = "direction"
 ClickOrderBy = Union[Tuple[Tuple[VideoAttr, Direction], ...], Tuple[VideoAttr, Direction]]
 common_list_options = [
-    click.Option(["--tags", "-c"], type=CommaList(str),
-                 help="Listed videos must be tagged with one of the given tags."),
-    click.Option(["--since", "-s"], type=click.DateTime(["%Y-%m-%d"]),
-                 help="Listed videos must be published after the given date."),
-    click.Option(["--till", "-t"], type=click.DateTime(["%Y-%m-%d"]), show_default=False,
-                 help="Listed videos must be published before the given date."),
-    click.Option(["--playlists", "-p"], type=CommaList(str),
-                 help="Listed videos must be in on of the given playlists."),
-    click.Option(["--ids", "-i"], type=CommaList(int),
-                 help="Listed videos must have the given IDs."),
-    click.Option(["--watched", "-w"], is_flag=True, default=False,
-                 help="Only watched videos are listed."),
-    click.Option(["--unwatched", "-u"], is_flag=True, default=False,
-                 help="Only unwatched videos are listed."),
-    click.Option(["--order-by", "-o"], type=(_video_attrs, _dir), multiple=True,
-                 help="Set the column and direction to sort listed videos. "
-                      f"ATTRIBUTE is one of [{', '.join(VideoAttr)}]. "
-                      f"Direction is one of [{', '.join(Direction)}].")
-
+    click.Option(
+        ["--tags", "-c"],
+        type=CommaList(str),
+        help="Listed videos must be tagged with one of the given tags.",
+    ),
+    click.Option(
+        ["--since", "-s"],
+        type=click.DateTime(["%Y-%m-%d"]),
+        help="Listed videos must be published after the given date.",
+    ),
+    click.Option(
+        ["--till", "-t"],
+        type=click.DateTime(["%Y-%m-%d"]),
+        show_default=False,
+        help="Listed videos must be published before the given date.",
+    ),
+    click.Option(
+        ["--playlists", "-p"],
+        type=CommaList(str),
+        help="Listed videos must be in on of the given playlists.",
+    ),
+    click.Option(
+        ["--ids", "-i"],
+        type=CommaList(int),
+        help="Listed videos must have the given IDs.",
+    ),
+    click.Option(
+        ["--watched", "-w"],
+        is_flag=True,
+        default=False,
+        help="Only watched videos are listed.",
+    ),
+    click.Option(
+        ["--unwatched", "-u"],
+        is_flag=True,
+        default=False,
+        help="Only unwatched videos are listed.",
+    ),
+    click.Option(
+        ["--order-by", "-o"],
+        type=(_video_attrs, _dir),
+        multiple=True,
+        help="Set the column and direction to sort listed videos. "
+        f"ATTRIBUTE is one of [{', '.join(VideoAttr)}]. "
+        f"Direction is one of [{', '.join(Direction)}].",
+    ),
 ]
 
 
@@ -393,7 +493,7 @@ def apply_filters(
     playlists: Optional[List[str]],
     ids: Optional[List[int]],
     watched: bool,
-    unwatched: bool
+    unwatched: bool,
 ):
     if watched and unwatched:
         watched_filter = None
@@ -439,7 +539,7 @@ def list_videos_impl(
     attributes: Optional[List[str]],
     watched: bool,
     unwatched: bool,
-    order_by: ClickOrderBy
+    order_by: ClickOrderBy,
 ):
     apply_filters(ytcc, tags, since, till, playlists, ids, watched, unwatched)
     if attributes:
@@ -453,9 +553,12 @@ def list_videos_impl(
 
 
 @cli.command("list")
-@click.option("--attributes", "-a", type=CommaList(VideoAttr.from_str),
-              help="Attributes of videos to be included in the output. "
-                   f"Some of [{', '.join(VideoAttr)}].")
+@click.option(
+    "--attributes",
+    "-a",
+    type=CommaList(VideoAttr.from_str),
+    help=f"Attributes of videos to be included in the output. Some of [{', '.join(VideoAttr)}].",
+)
 @pass_ytcc
 def list_videos(
     ytcc: core.Ytcc,
@@ -467,14 +570,24 @@ def list_videos(
     attributes: Optional[List[str]],
     watched: bool,
     unwatched: bool,
-    order_by: ClickOrderBy
+    order_by: ClickOrderBy,
 ):
     """List videos.
 
     Lists videos that match the given filter options. By default, all unwatched videos are listed.
     """
-    list_videos_impl(ytcc, tags, since, till, playlists, ids, attributes, watched, unwatched,
-                     order_by)
+    list_videos_impl(
+        ytcc,
+        tags,
+        since,
+        till,
+        playlists,
+        ids,
+        attributes,
+        watched,
+        unwatched,
+        order_by,
+    )
 
 
 @cli.command("ls")
@@ -488,7 +601,7 @@ def list_ids(
     ids: Optional[List[int]],
     watched: bool,
     unwatched: bool,
-    order_by: ClickOrderBy
+    order_by: ClickOrderBy,
 ):
     """List IDs of unwatched videos in XSV format.
 
@@ -511,7 +624,7 @@ def tui(
     ids: Optional[List[int]],
     watched: bool,
     unwatched: bool,
-    order_by: ClickOrderBy
+    order_by: ClickOrderBy,
 ):
     """Start an interactive terminal user interface."""
     apply_filters(ytcc, tags, since, till, playlists, ids, watched, unwatched)
@@ -551,13 +664,29 @@ def _get_videos(ytcc: core.Ytcc, ids: List[int]) -> Iterable[MappedVideo]:
 
 @cli.command()
 @click.option("--audio-only", "-a", is_flag=True, default=False, help="Play only the audio track.")
-@click.option("--no-meta", "-i", is_flag=True, default=False,
-              help="Don't print video metadata and description.")
-@click.option("--no-mark", "-m", is_flag=True, default=False,
-              help="Don't mark the video as watched after playing it.")
+@click.option(
+    "--no-meta",
+    "-i",
+    is_flag=True,
+    default=False,
+    help="Don't print video metadata and description.",
+)
+@click.option(
+    "--no-mark",
+    "-m",
+    is_flag=True,
+    default=False,
+    help="Don't mark the video as watched after playing it.",
+)
 @click.argument("ids", nargs=-1, type=click.INT, shell_complete=ids_completion())
 @pass_ytcc
-def play(ytcc: core.Ytcc, ids: Tuple[int, ...], audio_only: bool, no_meta: bool, no_mark: bool):
+def play(
+    ytcc: core.Ytcc,
+    ids: Tuple[int, ...],
+    audio_only: bool,
+    no_meta: bool,
+    no_mark: bool,
+):
     """Play videos.
 
     Plays the videos identified by the given video IDs. If no IDs are given, ytcc tries to read IDs
@@ -574,8 +703,10 @@ def play(ytcc: core.Ytcc, ids: Tuple[int, ...], audio_only: bool, no_meta: bool,
         if ytcc.play_video(video, audio_only) and mark:
             ytcc.mark_watched(video)
         elif not no_mark:
-            logger.warning("The video player terminated with an error. "
-                           "The last video is not marked as watched!")
+            logger.warning(
+                "The video player terminated with an error. "
+                "The last video is not marked as watched!"
+            )
 
     if not loop_executed:
         logger.info("No videos to watch. No videos match the given criteria.")
@@ -611,19 +742,44 @@ def unmark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
 
 
 @cli.command()
-@click.option("--path", "-p", type=click.Path(file_okay=False, dir_okay=True), default="",
-              help="Set the download directory.")
-@click.option("--audio-only", "-a", is_flag=True, default=False,
-              help="Download only the audio track.")
-@click.option("--no-mark", "-m", is_flag=True, default=False,
-              help="Don't mark the video as watched after downloading it.")
-@click.option("--subdirs/--no-subdirs", is_flag=True, default=None,
-              help="Creates subdirectories per playlist. If a video is on multiple playlists, it "
-                   "gets downloaded only once and symlinked to the other subdirectories.")
+@click.option(
+    "--path",
+    "-p",
+    type=click.Path(file_okay=False, dir_okay=True),
+    default="",
+    help="Set the download directory.",
+)
+@click.option(
+    "--audio-only",
+    "-a",
+    is_flag=True,
+    default=False,
+    help="Download only the audio track.",
+)
+@click.option(
+    "--no-mark",
+    "-m",
+    is_flag=True,
+    default=False,
+    help="Don't mark the video as watched after downloading it.",
+)
+@click.option(
+    "--subdirs/--no-subdirs",
+    is_flag=True,
+    default=None,
+    help="Creates subdirectories per playlist. If a video is on multiple playlists, it "
+    "gets downloaded only once and symlinked to the other subdirectories.",
+)
 @click.argument("ids", nargs=-1, type=click.INT, shell_complete=ids_completion())
 @pass_ytcc
-def download(ytcc: core.Ytcc, ids: Tuple[int, ...], path: Path, audio_only: bool, no_mark: bool,
-             subdirs: Optional[bool]):
+def download(
+    ytcc: core.Ytcc,
+    ids: Tuple[int, ...],
+    path: Path,
+    audio_only: bool,
+    no_mark: bool,
+    subdirs: Optional[bool],
+):
     """Download videos.
 
     Downloads the videos identified by the given video IDs. If no IDs are given, ytcc tries to read
@@ -636,18 +792,20 @@ def download(ytcc: core.Ytcc, ids: Tuple[int, ...], path: Path, audio_only: bool
         logger.info(
             "Downloading video '%s' from playlist(s) %s",
             video.title,
-            ", ".join(f"'{pl.name}'" for pl in video.playlists)
+            ", ".join(f"'{pl.name}'" for pl in video.playlists),
         )
         if ytcc.download_video(video, str(path), audio_only, subdirs) and not no_mark:
             ytcc.mark_watched(video)
 
 
 @cli.command()
-@click.option("--keep", "-k", type=click.INT,
-              help="Number of videos to keep. Defaults to the max_update_backlog setting.")
-@click.confirmation_option(
-    prompt="Do you really want to remove watched videos from the database?"
+@click.option(
+    "--keep",
+    "-k",
+    type=click.INT,
+    help="Number of videos to keep. Defaults to the max_update_backlog setting.",
 )
+@click.confirmation_option(prompt="Do you really want to remove watched videos from the database?")
 @pass_ytcc
 def cleanup(ytcc: core.Ytcc, keep: Optional[int]):
     """Remove all watched videos from the database.
@@ -662,8 +820,14 @@ def cleanup(ytcc: core.Ytcc, keep: Optional[int]):
 
 
 @cli.command("import")
-@click.option("--format", "-f", type=click.Choice(["opml", "csv"]), default="csv",
-              show_default=True, help="Format of the file to import.")
+@click.option(
+    "--format",
+    "-f",
+    type=click.Choice(["opml", "csv"]),
+    default="csv",
+    show_default=True,
+    help="Format of the file to import.",
+)
 @click.argument("file", nargs=1, type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @pass_ytcc
 def import_(ytcc: core.Ytcc, format: str, file: Path):  # pylint: disable=redefined-builtin
@@ -694,12 +858,14 @@ def bug_report():
     # pylint: disable=import-outside-toplevel
     import subprocess
     import sqlite3
+
     print("---ytcc version---")
     print(__version__)
     print()
     print("---youtube-dl version---")
     try:
         import youtube_dl.version
+
         print(youtube_dl.version.__version__)
     except ImportError:
         print("youtube-dl not found")
@@ -707,6 +873,7 @@ def bug_report():
     print("---yt-dlp version---")
     try:
         import yt_dlp.version
+
         print(yt_dlp.version.__version__)
     except ImportError:
         print("yt-dlp not found")
@@ -724,10 +891,7 @@ def bug_report():
     print("---mpv version---")
     try:
         completed_process = subprocess.run(
-            ["mpv", "--version"],
-            check=False,
-            capture_output=True,
-            text=True
+            ["mpv", "--version"], check=False, capture_output=True, text=True
         )
         print(completed_process.stdout.strip())
     except FileNotFoundError:
@@ -746,9 +910,11 @@ def main():
         logger.debug("Unknown database error", exc_info=db_err)
         sys.exit(1)
     except IncompatibleDatabaseVersion:
-        logger.error("This version of ytcc is not compatible with the older database versions. "
-                     "See https://github.com/woefe/ytcc/blob/master/doc/migrate.md for more "
-                     "details.")
+        logger.error(
+            "This version of ytcc is not compatible with the older database versions. "
+            "See https://github.com/woefe/ytcc/blob/master/doc/migrate.md for more "
+            "details."
+        )
         sys.exit(1)
     except YtccException as exc:
         logger.error("%s", str(exc))

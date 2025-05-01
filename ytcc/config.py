@@ -35,28 +35,40 @@ from ytcc.exceptions import BadConfigException
 if hasattr(typing, "get_args"):
     get_type_args = typing.get_args  # type: ignore[attr-defined]
 else:
+
     def get_type_args(typ):
         return typ.__args__ if hasattr(typ, "__args__") else None
+
 
 if hasattr(typing, "get_origin"):
     get_type_origin = typing.get_origin  # type: ignore[attr-defined]
 else:
+
     def get_type_origin(typ):
         return typ.__origin__ if hasattr(typ, "__origin__") else None
 # pylint: enable=no-member
 
 logger = logging.getLogger(__name__)
 
-_BOOLEAN_STATES = {'1': True, 'yes': True, 'true': True, 'on': True,
-                   '0': False, 'no': False, 'false': False, 'off': False}
+_BOOLEAN_STATES = {
+    "1": True,
+    "yes": True,
+    "true": True,
+    "on": True,
+    "0": False,
+    "no": False,
+    "false": False,
+    "off": False,
+}
 
 
 class Color(int):
     def __new__(cls, val):
         i = super().__new__(cls, val)
         if 0 >= i >= 255:
-            raise ValueError(f"{val} is not a valid color. "
-                             "Must be in greater than 0 and less than 255")
+            raise ValueError(
+                f"{val} is not a valid color. Must be in greater than 0 and less than 255"
+            )
         return i
 
 
@@ -141,7 +153,7 @@ class ytcc(BaseConfig):  # pylint: disable=invalid-name
         VideoAttr.TITLE,
         VideoAttr.PUBLISH_DATE,
         VideoAttr.DURATION,
-        VideoAttr.PLAYLISTS
+        VideoAttr.PLAYLISTS,
     ]
     playlist_attrs: List[PlaylistAttr] = list(PlaylistAttr)
     db_path: str = "~/.local/share/ytcc/ytcc.db"
@@ -272,7 +284,6 @@ def load(override_cfg_file: Optional[str] = None):
 
     for clazz in BaseConfig.__subclasses__():
         for prop, conv in typing.get_type_hints(clazz).items():
-
             try:
                 str_val = conf_parser.get(clazz.__name__, prop, raw=True)
             except configparser.Error:
@@ -304,9 +315,7 @@ def dumps() -> str:
 
     for clazz in BaseConfig.__subclasses__():
         conf_parser[clazz.__name__] = {
-            k: _serialize(v)
-            for k, v in clazz.__dict__.items()
-            if not k.startswith("_")
+            k: _serialize(v) for k, v in clazz.__dict__.items() if not k.startswith("_")
         }
 
     conf_parser.write(strio)

@@ -39,9 +39,7 @@ logger = logging.getLogger(__name__)
 _ytdl_logger = logging.getLogger("youtube_dl")
 _ytdl_logger.propagate = False
 _ytdl_logger.addHandler(logging.NullHandler())
-YTDL_COMMON_OPTS = {
-    "logger": _ytdl_logger
-}
+YTDL_COMMON_OPTS = {"logger": _ytdl_logger}
 
 
 def make_archive_id(ydl: "YoutubeDL", entry: Dict[str, Any]) -> Optional[str]:
@@ -64,13 +62,12 @@ class Fetcher:
             "playliststart": 1,
             "playlistend": max_backlog,
             "noplaylist": False,
-            "age_limit": config.ytcc.age_limit
+            "age_limit": config.ytcc.age_limit,
         }
 
     async def get_unprocessed_entries(
         self, playlist: Playlist
     ) -> Iterable[Tuple[Playlist, str, Any]]:
-
         ydl_opts = self.ydl_opts.copy()
         ydl_opts["playlistend"] = None if playlist.reverse else self.max_items
 
@@ -79,13 +76,15 @@ class Fetcher:
             logger.info("Checking playlist '%s'...", playlist.name)
             try:
                 loop = asyncio.get_event_loop()
-                info = await loop.run_in_executor(None, partial(ydl.extract_info, playlist.url,
-                                                                download=False, process=False))
+                info = await loop.run_in_executor(
+                    None,
+                    partial(ydl.extract_info, playlist.url, download=False, process=False),
+                )
             except youtube_dl.DownloadError as download_error:
                 logger.error(
                     "Failed to get playlist '%s'. Error was: '%s'",
                     playlist.name,
-                    download_error
+                    download_error,
                 )
             else:
                 entries = info.get("entries", [])
@@ -111,7 +110,6 @@ class Fetcher:
     async def process_entry(
         self, playlist: Playlist, e_hash: str, entry: Any
     ) -> Tuple[str, Optional[Video]]:
-
         try:
             loop = asyncio.get_event_loop()
             processed = await loop.run_in_executor(None, self._process_ie, entry)
@@ -119,7 +117,7 @@ class Fetcher:
             logger.error(
                 "Failed to get a video of playlist '%s'. Error was: '%s'",
                 playlist.name,
-                download_error
+                download_error,
             )
             return e_hash, None
         else:
@@ -127,7 +125,7 @@ class Fetcher:
             if not title:
                 logger.error(
                     "Cannot process a video of playlist '%s', because the title is missing",
-                    playlist.name
+                    playlist.name,
                 )
                 return e_hash, None
 
@@ -136,7 +134,7 @@ class Fetcher:
                 logger.error(
                     "Cannot process video '%s' of playlist '%s', because the URL is missing",
                     title,
-                    playlist.name
+                    playlist.name,
                 )
                 return e_hash, None
 
@@ -144,7 +142,7 @@ class Fetcher:
                 logger.warning(
                     "Ignoring video '%s' of playlist '%s' due to age limit",
                     title,
-                    playlist.name
+                    playlist.name,
                 )
                 return e_hash, None
 
@@ -156,7 +154,7 @@ class Fetcher:
                 logger.warning(
                     "Publication date of video '%s' of playlist '%s' is unknown",
                     title,
-                    playlist.name
+                    playlist.name,
                 )
 
             duration = processed.get("duration") or -1
@@ -164,7 +162,7 @@ class Fetcher:
                 logger.warning(
                     "Duration of video '%s' of playlist '%s' is unknown",
                     title,
-                    playlist.name
+                    playlist.name,
                 )
 
             thumbnail_url = processed.get("thumbnail", None)
@@ -182,7 +180,7 @@ class Fetcher:
                 watch_date=None,
                 duration=duration,
                 thumbnail_url=thumbnail_url,
-                extractor_hash=e_hash
+                extractor_hash=e_hash,
             )
 
     @staticmethod
@@ -217,8 +215,7 @@ class Updater:
 
     async def get_new_entries(self, playlist: Playlist) -> Iterable[Tuple[Playlist, str, Any]]:
         hashes = frozenset(
-            x.extractor_hash
-            for x in self.database.list_videos(playlists=[playlist.name])
+            x.extractor_hash for x in self.database.list_videos(playlists=[playlist.name])
         )
         items = await self.fetcher.get_unprocessed_entries(playlist)
 
@@ -226,7 +223,7 @@ class Updater:
             (playlist, e_hash, entry)
             for playlist, e_hash, entry in items
             if e_hash not in hashes
-               and self.database.get_extractor_fail_count(e_hash) < self.max_fail
+            and self.database.get_extractor_fail_count(e_hash) < self.max_fail
         ]
 
     async def update_playlist(self, playlist: Playlist):

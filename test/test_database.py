@@ -23,8 +23,14 @@ from typing import Iterator, Callable, Optional, List, Iterable
 
 import pytest
 
-from ytcc import Database, MappedPlaylist, PlaylistDoesNotExistException, Playlist, Video, \
-    MappedVideo
+from ytcc import (
+    Database,
+    MappedPlaylist,
+    PlaylistDoesNotExistException,
+    Playlist,
+    Video,
+    MappedVideo,
+)
 
 
 @pytest.fixture
@@ -81,31 +87,65 @@ MAPPED_PLAYLISTS = {
     "pl1": MappedPlaylist("pl1", "a", False, ["tag1", "tag2"]),
     "pl2": MappedPlaylist("pl2", "b", False, []),
     "pl3": MappedPlaylist("pl3", "c", True, []),
-    "pl4": MappedPlaylist("pl4", "d", False, ["tag1"])
+    "pl4": MappedPlaylist("pl4", "d", False, ["tag1"]),
 }
 
 PLAYLISTS = {
     "pl1": Playlist("pl1", "a", False),
     "pl2": Playlist("pl2", "b", False),
     "pl3": Playlist("pl3", "c", True),
-    "pl4": Playlist("pl4", "d", False)
+    "pl4": Playlist("pl4", "d", False),
 }
 
 VIDEOS = {
-    1: MappedVideo(id=1, title='title1', url='url1', description='description',
-                   duration=1.1, publish_date=131231.0, watch_date=None,
-                   extractor_hash='ext hash1', thumbnail_url=None, playlists=[PLAYLISTS["pl1"]]),
-    2: MappedVideo(id=2, title='title2', url='url2', description='description',
-                   duration=1.2, publish_date=131231.0, watch_date=None,
-                   extractor_hash='ext hash2', thumbnail_url=None,
-                   playlists=[PLAYLISTS["pl1"], PLAYLISTS["pl2"]]),
-    3: MappedVideo(id=3, title='title', url='url3', description='description',
-                   duration=1.2, publish_date=131231.0, watch_date=123441.0,
-                   extractor_hash='ext hash3', thumbnail_url=None, playlists=[PLAYLISTS["pl2"]]),
-    4: MappedVideo(id=4, title='title', url='url4', description='description',
-                   duration=5.2, publish_date=131231.0, watch_date=123442.0,
-                   extractor_hash='ext hash4', thumbnail_url='thumbnail_URL',
-                   playlists=[PLAYLISTS["pl3"]])
+    1: MappedVideo(
+        id=1,
+        title="title1",
+        url="url1",
+        description="description",
+        duration=1.1,
+        publish_date=131231.0,
+        watch_date=None,
+        extractor_hash="ext hash1",
+        thumbnail_url=None,
+        playlists=[PLAYLISTS["pl1"]],
+    ),
+    2: MappedVideo(
+        id=2,
+        title="title2",
+        url="url2",
+        description="description",
+        duration=1.2,
+        publish_date=131231.0,
+        watch_date=None,
+        extractor_hash="ext hash2",
+        thumbnail_url=None,
+        playlists=[PLAYLISTS["pl1"], PLAYLISTS["pl2"]],
+    ),
+    3: MappedVideo(
+        id=3,
+        title="title",
+        url="url3",
+        description="description",
+        duration=1.2,
+        publish_date=131231.0,
+        watch_date=123441.0,
+        extractor_hash="ext hash3",
+        thumbnail_url=None,
+        playlists=[PLAYLISTS["pl2"]],
+    ),
+    4: MappedVideo(
+        id=4,
+        title="title",
+        url="url4",
+        description="description",
+        duration=5.2,
+        publish_date=131231.0,
+        watch_date=123442.0,
+        extractor_hash="ext hash4",
+        thumbnail_url="thumbnail_URL",
+        playlists=[PLAYLISTS["pl3"]],
+    ),
 }
 
 
@@ -263,7 +303,7 @@ def test_add_videos(filled_database):
                 watch_date=None,
                 duration=5.0,
                 thumbnail_url=None,
-                extractor_hash="e_hash 5"
+                extractor_hash="e_hash 5",
             ),
             Video(
                 title="title",
@@ -273,8 +313,8 @@ def test_add_videos(filled_database):
                 watch_date=None,
                 duration=5.0,
                 thumbnail_url=None,
-                extractor_hash="e_hash 6"
-            )
+                extractor_hash="e_hash 6",
+            ),
         ]
         db.add_videos(videos, pl)
         pl1_videos = list(db.list_videos(playlists=["pl1"]))

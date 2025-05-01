@@ -30,8 +30,13 @@ from urllib.parse import parse_qs, urlparse
 from ytcc import config
 from ytcc.config import Direction, VideoAttr
 from ytcc.database import Database, Video, MappedVideo, MappedPlaylist, Playlist
-from ytcc.exceptions import YtccException, BadURLException, NameConflictError, \
-    PlaylistDoesNotExistException, InvalidSubscriptionFileError
+from ytcc.exceptions import (
+    YtccException,
+    BadURLException,
+    NameConflictError,
+    PlaylistDoesNotExistException,
+    InvalidSubscriptionFileError,
+)
 from ytcc.updater import Updater, Fetcher, YTDL_COMMON_OPTS, make_archive_id
 from ytcc.utils import lazy_import
 
@@ -147,7 +152,7 @@ class Ytcc:
         with Updater(
             db_path=config.ytcc.db_path,
             max_fail=max_fail or config.ytcc.max_update_fail,
-            max_backlog=max_backlog or config.ytcc.max_update_backlog
+            max_backlog=max_backlog or config.ytcc.max_update_backlog,
         ) as updater:
             updater.update()
 
@@ -170,15 +175,18 @@ class Ytcc:
         if video:
             mpv_flags = filter(bool, map(str.strip, config.ytcc.mpv_flags.split()))
             try:
-                command = [
-                    "mpv", *no_video_flag, *mpv_flags, video.url
-                ]
+                command = ["mpv", *no_video_flag, *mpv_flags, video.url]
                 subprocess.run(command, check=True)
             except FileNotFoundError as fnfe:
                 raise YtccException("Could not locate the mpv video player!") from fnfe
             except subprocess.CalledProcessError as cpe:
-                logger.debug("MPV failed! Command: %s; Stdout: %s; Stderr %s; Returncode: %s",
-                             cpe.cmd, cpe.stdout, cpe.stderr, cpe.returncode)
+                logger.debug(
+                    "MPV failed! Command: %s; Stdout: %s; Stderr %s; Returncode: %s",
+                    cpe.cmd,
+                    cpe.stdout,
+                    cpe.stderr,
+                    cpe.returncode,
+                )
                 return False
 
             return True
@@ -186,8 +194,12 @@ class Ytcc:
         return False
 
     @staticmethod
-    def download_video(video: MappedVideo, path: str = "", audio_only: bool = False,
-                       subdirs: Optional[bool] = None) -> bool:
+    def download_video(
+        video: MappedVideo,
+        path: str = "",
+        audio_only: bool = False,
+        subdirs: Optional[bool] = None,
+    ) -> bool:
         """Download the given video.
 
         If the path is not given, the path is read from the config file.
@@ -198,6 +210,7 @@ class Ytcc:
         :param subdirs: Overrides config.ytcc.download_subdirs if not None.
         :return: True, if the video was downloaded successfully. False otherwise.
         """
+
         class GetFilenameProcessor(youtube_dl.postprocessor.common.PostProcessor):  # type: ignore
             def __init__(self):
                 super().__init__()
@@ -215,7 +228,7 @@ class Ytcc:
         if 0 < config.youtube_dl.max_duration < video.duration:
             logger.info(
                 "Skipping video %s, because it is longer than the configured maximum",
-                video.url
+                video.url,
             )
             return False
 
@@ -224,9 +237,7 @@ class Ytcc:
         symlink_dirs = []
         if (subdirs if subdirs is not None else config.ytcc.download_subdirs) and video.playlists:
             subdir = video.playlists[0].name
-            symlink_dirs = [
-                download_dir / pl.name for pl in video.playlists[1:]
-            ]
+            symlink_dirs = [download_dir / pl.name for pl in video.playlists[1:]]
 
         with youtube_dl.YoutubeDL(Ytcc._ydl_opts(str(download_dir), subdir, audio_only)) as ydl:
             try:
@@ -271,18 +282,17 @@ class Ytcc:
             "merge_output_format": conf.merge_output_format,
             "restrictfilenames": conf.restrict_filenames,
             "ignoreerrors": False,
-            "postprocessors": [
-                {
-                    "key": "FFmpegMetadata"
-                }
-            ]
+            "postprocessors": [{"key": "FFmpegMetadata"}],
         }
 
         if audio_only:
             ydl_opts["format"] = "bestaudio/best"
             if conf.thumbnail:
                 ydl_opts["writethumbnail"] = True
-                extract_audio_pp = {'key': 'FFmpegExtractAudio', 'preferredcodec': "m4a"}
+                extract_audio_pp = {
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "m4a",
+                }
                 ydl_opts["postprocessors"].insert(0, extract_audio_pp)
                 ydl_opts["postprocessors"].append({"key": "EmbedThumbnail"})
         else:
@@ -308,14 +318,19 @@ class Ytcc:
 
         return True
 
-    def add_playlist(self, name: str, url: str, reverse: bool = False,
-                     skip_update_check: bool = False) -> None:
+    def add_playlist(
+        self,
+        name: str,
+        url: str,
+        reverse: bool = False,
+        skip_update_check: bool = False,
+    ) -> None:
         ydl_opts = {
             **YTDL_COMMON_OPTS,
             "playliststart": 1,
             "playlistend": 10,
             "noplaylist": False,
-            "extract_flat": "in_playlist"
+            "extract_flat": "in_playlist",
         }
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             try:
@@ -324,25 +339,25 @@ class Ytcc:
                 logger.debug(
                     "'%s' is not supported. Encountered error: '%s'",
                     url,
-                    download_error
+                    download_error,
                 )
-                raise BadURLException(
-                    "URL is not supported or does not exist"
-                ) from download_error
+                raise BadURLException("URL is not supported or does not exist") from download_error
 
             if info.get("_type") != "playlist":
                 logger.debug(
                     "'%s' doesn't seem point to a playlist. Extractor info is: '%s'",
                     url,
-                    info
+                    info,
                 )
                 raise BadURLException("Not a playlist or not supported")
 
             peek = list(info.get("entries"))
             for entry in peek:
                 if make_archive_id(ydl, entry) is None:
-                    raise BadURLException("The given URL is not supported by ytcc, because it "
-                                          "doesn't point to a playlist")
+                    raise BadURLException(
+                        "The given URL is not supported by ytcc, because it "
+                        "doesn't point to a playlist"
+                    )
 
             real_url = info.get("webpage_url")
             if not real_url:
@@ -359,7 +374,7 @@ class Ytcc:
                         "The playlist seems to be updated in opposite order. You probably won't "
                         "receive any updates for this playlist. Use `ytcc reverse '%s'` to change "
                         "the update behavior of the playlist.",
-                        name
+                        name,
                     )
 
         try:
@@ -367,7 +382,7 @@ class Ytcc:
         except sqlite3.IntegrityError as integrity_error:
             logger.debug(
                 "Cannot subscribe to playlist due to integrity constraint error: %s",
-                integrity_error
+                integrity_error,
             )
             raise NameConflictError("Playlist already exists") from integrity_error
 
@@ -383,7 +398,7 @@ class Ytcc:
             tags=self.tags_filter,
             playlists=self.playlist_filter,
             ids=self.video_id_filter,
-            order_by=self.order_by
+            order_by=self.order_by,
         )
 
     def mark_watched(self, video: Union[List[int], int, MappedVideo]) -> None:
@@ -393,22 +408,24 @@ class Ytcc:
         self.database.mark_unwatched(video)
 
     def unmark_recent(self):
-        videos = list(self.database.list_videos(
-            watched=True,
-            order_by=[(VideoAttr.WATCHED, Direction.DESC)]
-        ))
+        videos = list(
+            self.database.list_videos(watched=True, order_by=[(VideoAttr.WATCHED, Direction.DESC)])
+        )
         if videos:
             self.mark_unwatched(videos[0])
 
     def delete_playlist(self, name: str) -> None:
         if not self.database.delete_playlist(name):
-            raise PlaylistDoesNotExistException(f"Could not remove playlist {name}, because "
-                                                "it does not exist")
+            raise PlaylistDoesNotExistException(
+                f"Could not remove playlist {name}, because it does not exist"
+            )
 
     def rename_playlist(self, oldname: str, newname: str) -> None:
         if not self.database.rename_playlist(oldname, newname):
-            raise NameConflictError("Renaming failed. Either the old name does not exist or the "
-                                    "new name is already used.")
+            raise NameConflictError(
+                "Renaming failed. Either the old name does not exist or the "
+                "new name is already used."
+            )
 
     def reverse_playlist(self, playlist: str) -> None:
         if not self.database.reverse_playlist(playlist):
@@ -455,13 +472,12 @@ class Ytcc:
 
         root = tree.getroot()
         subscriptions = (
-            _from_xml_element(element)
-            for element in root.findall('.//outline[@type="rss"]')
+            _from_xml_element(element) for element in root.findall('.//outline[@type="rss"]')
         )
         self._bulk_subscribe(subscriptions)
 
     def import_yt_csv(self, file: Path):
-        with open(file, newline='', encoding="utf-8") as csvfile:
+        with open(file, newline="", encoding="utf-8") as csvfile:
             sample = csvfile.read(4096)
             sniffer = csv.Sniffer()
             dialect = sniffer.sniff(sample)

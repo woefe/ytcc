@@ -272,7 +272,9 @@ class Database:
             playlist = playlists.get(row["id"])
             if playlist is None:
                 tags = [row["tag"]] if row["tag"] else []
-                playlists[row["id"]] = MappedPlaylist(row["name"], row["url"], row["reverse"], tags)
+                playlists[row["id"]] = MappedPlaylist(
+                    row["name"], row["url"], row["reverse"], tags
+                )
             else:
                 playlists[row["id"]].tags.append(row["tag"])
 
@@ -292,7 +294,7 @@ class Database:
             db_id = con.execute(query_pid, (playlist,)).fetchone()
             if db_id is None:
                 raise PlaylistDoesNotExistException(
-                    f"Playlist \"{playlist}\" is not in the database."
+                    f'Playlist "{playlist}" is not in the database.'
                 )
             pid = int(db_id["id"])
             con.execute(query_clear, (pid,))
@@ -342,7 +344,7 @@ class Database:
             fetch = cursor.fetchone()
             if fetch is None:
                 raise PlaylistDoesNotExistException(
-                    f"Playlist \"{playlist.name}\" is not in the database."
+                    f'Playlist "{playlist.name}" is not in the database.'
                 )
             playlist_id = fetch["id"]
             for video in videos:
@@ -350,31 +352,25 @@ class Database:
                 cursor.execute(insert_playlist, (playlist_id, video.url))
 
     @overload
-    def mark_watched(self, video: List[int]) -> None:
-        ...
+    def mark_watched(self, video: List[int]) -> None: ...
 
     @overload
-    def mark_watched(self, video: int) -> None:
-        ...
+    def mark_watched(self, video: int) -> None: ...
 
     @overload
-    def mark_watched(self, video: MappedVideo) -> None:
-        ...
+    def mark_watched(self, video: MappedVideo) -> None: ...
 
     def mark_watched(self, video: Any) -> None:
         self._mark(video, datetime.now().timestamp())
 
     @overload
-    def mark_unwatched(self, video: List[int]) -> None:
-        ...
+    def mark_unwatched(self, video: List[int]) -> None: ...
 
     @overload
-    def mark_unwatched(self, video: int) -> None:
-        ...
+    def mark_unwatched(self, video: int) -> None: ...
 
     @overload
-    def mark_unwatched(self, video: MappedVideo) -> None:
-        ...
+    def mark_unwatched(self, video: MappedVideo) -> None: ...
 
     def mark_unwatched(self, video: Any) -> None:
         self._mark(video, None)
@@ -394,7 +390,9 @@ class Database:
             con.executemany(query, ((val, int(video)) for video in videos))
 
     @staticmethod
-    def _make_order_by_clause(order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None) -> str:
+    def _make_order_by_clause(
+        order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None,
+    ) -> str:
         def directions() -> Iterable[Tuple[str, str]]:
             column_names = {
                 VideoAttr.ID: "id",
@@ -409,7 +407,7 @@ class Database:
                 VideoAttr.PLAYLISTS: "playlist_name",
             }
             for untrusted_col, untrusted_dir in order_by or []:
-                ord_dir = 'ASC' if untrusted_dir == Direction.ASC else 'DESC'
+                ord_dir = "ASC" if untrusted_dir == Direction.ASC else "DESC"
                 col = column_names.get(untrusted_col)
                 if col is not None:
                     yield col, ord_dir
@@ -427,9 +425,8 @@ class Database:
         tags: Optional[List[str]] = None,
         playlists: Optional[List[str]] = None,
         ids: Optional[List[int]] = None,
-        order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None
+        order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None,
     ) -> Iterable[MappedVideo]:
-
         tag_condition = f"AND t.name IN ({_placeholder(tags)})" if tags is not None else ""
         id_condition = f"AND v.id IN ({_placeholder(ids)})" if ids is not None else ""
 
@@ -440,7 +437,7 @@ class Database:
         watched_condition = {
             None: "",
             True: "AND v.watch_date IS NOT NULL",
-            False: "AND v.watch_date IS NULL"
+            False: "AND v.watch_date IS NULL",
         }.get(watched, "")
 
         order_by_clause = self._make_order_by_clause(order_by)
@@ -503,16 +500,16 @@ class Database:
                             Playlist(
                                 row["playlist_name"],
                                 row["playlist_url"],
-                                row["playlist_reverse"]
+                                row["playlist_reverse"],
                             )
-                        ]
+                        ],
                     )
                 else:
                     videos[row["id"]].playlists.append(
                         Playlist(
                             row["playlist_name"],
                             row["playlist_url"],
-                            row["playlist_reverse"]
+                            row["playlist_reverse"],
                         )
                     )
 

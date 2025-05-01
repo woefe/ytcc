@@ -47,6 +47,7 @@ def lazy_import(fullname: str, fallback: Optional[str] = None) -> Any:
     :param fallback: The module if `fullname` module cannot be found
     :return: A proxy object that lazily loads the module as soon as attributes are accessed.
     """
+
     class _LazyLoader:
         def __init__(self):
             self._mod = None
