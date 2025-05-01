@@ -16,9 +16,8 @@ jobs:
           python-version: 3.13
       - name: Setup ytcc and Python dependencies
         run: |
-          python setup.py install
-          python -m pip install --upgrade pip
           pip install -r devrequirements.txt
+          python setup.py install
       - name: Check editorconfig
         run: ec
       - name: Type check with MyPy
@@ -67,9 +66,8 @@ jobs:
           brew install ffmpeg gettext mpv
       - name: Setup ytcc and Python dependencies
         run: |
-          python setup.py install
-          python -m pip install --upgrade pip
           pip install -r devrequirements.txt
+          python setup.py install
       - name: Run tests with pytest
         run: |
           python -m pytest -m "not flaky" -v
