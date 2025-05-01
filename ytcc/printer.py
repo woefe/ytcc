@@ -160,8 +160,9 @@ class TablePrinter(Printer):
     def __init__(self, truncate: Union[None, str, int] = "max"):
         """Initialize a new TablePrinter.
 
-        :param truncate: Truncates row width. None to disable truncating, "max" to truncate to
-                         terminal width, an integer n to truncate to length n.
+        :param truncate:
+            Truncates row width. None to disable truncating, "max" to truncate to terminal width,
+            an integer n to truncate to length n.
         """
         super().__init__()
         self.truncate = truncate

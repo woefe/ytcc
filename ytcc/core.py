@@ -165,8 +165,9 @@ class Ytcc:
 
         :param video: The video to play.
         :param audio_only: If True, only the audio track of the video is played
-        :return: False if the given video_id does not exist or the player closed with a non-zero
-         exit code. True if the video was played successfully.
+        :return:
+            False if the given video_id does not exist or the player closed with a non-zero
+            exit code. True if the video was played successfully.
         """
         no_video_flag = []
         if audio_only:

@@ -24,6 +24,8 @@ set -o nounset
 
 declare -r -x THUMBNAIL_DIR=${XDG_CACHE_HOME:-$HOME/.cache}/ytccf/thumbnails
 FILTERS=()
+
+# editorconfig-checker-disable
 KEY_BINDINGS="
         tab: select/deselect
       enter: play video(s)
@@ -33,6 +35,7 @@ KEY_BINDINGS="
       alt-m: mark selection as watched
       alt-u: mark last watched video as unwatched
       alt-h: show help"
+# editorconfig-checker-enable
 
 if command -v ueberzug &> /dev/null || [[ $TERM == "xterm-kitty" ]]; then
     THUMBNAILS=1
@@ -55,6 +58,7 @@ function check_cmd() {
 }
 
 function usage() {
+# editorconfig-checker-disable
     cat <<EOF
 Usage: $0 [OPTIONS]
 
@@ -86,6 +90,7 @@ KEY BINDINGS:$KEY_BINDINGS
 
 For more keybindings see fzf(1).
 EOF
+# editorconfig-checker-enable
 }
 
 

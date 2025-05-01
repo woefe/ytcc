@@ -81,8 +81,8 @@ class Database:
         Creates the given path it does not yet exist and initializes the database.
         I.e. populates the schema, enforces foreign keys, sets the database version.
 
-        :param path: The path where the SQLite3 database is stored. `:memory:` for an in-memory
-                     database.
+        :param path:
+            The path where the SQLite3 database is stored. `:memory:` for an in-memory database.
         """
         is_new_db = True
         if path != ":memory:":
@@ -233,8 +233,9 @@ class Database:
 
         :param oldname: The old name of the playlist.
         :param newname: The new name of the playlist.
-        :return: True if the playlist was rename successfully. False if the playlist does not exist
-                 or the new name is already taken.
+        :return:
+            True if the playlist was rename successfully. False if the playlist does not exist or
+            the new name is already taken.
         """
         query = "UPDATE playlist SET name = ? WHERE name = ?"
         try:
@@ -311,12 +312,26 @@ class Database:
 
     def add_videos(self, videos: Iterable[Video], playlist: Playlist) -> None:
         insert_video = """
-            INSERT INTO video
-                (title, url, description, duration, publish_date, watch_date,
-                 thumbnail_url, extractor_hash)
-            VALUES
-                (:title, :url, :description, :duration, :publish_date, :watch_date,
-                 :thumbnail_url, :extractor_hash)
+            INSERT INTO video (
+                title,
+                url,
+                description,
+                duration,
+                publish_date,
+                watch_date,
+                thumbnail_url,
+                extractor_hash
+            )
+            VALUES (
+                :title,
+                :url,
+                :description,
+                :duration,
+                :publish_date,
+                :watch_date,
+                :thumbnail_url,
+                :extractor_hash
+            )
             ON CONFLICT (url) DO UPDATE
                 SET title = :title,
                     url = :url,
@@ -328,12 +343,26 @@ class Database:
             """
         if sqlite3.sqlite_version_info < (3, 24, 0):
             insert_video = """
-                INSERT OR IGNORE INTO video
-                    (title, url, description, duration, publish_date, watch_date,
-                     thumbnail_url, extractor_hash)
-                VALUES
-                    (:title, :url, :description, :duration, :publish_date, :watch_date,
-                     :thumbnail_url, :extractor_hash)
+                INSERT OR IGNORE INTO video (
+                    title,
+                    url,
+                    description,
+                    duration,
+                    publish_date,
+                    watch_date,
+                    thumbnail_url,
+                    extractor_hash
+                )
+                VALUES (
+                    :title,
+                    :url,
+                    :description,
+                    :duration,
+                    :publish_date,
+                    :watch_date,
+                    :thumbnail_url,
+                    :extractor_hash
+                )
                 """
         insert_playlist = """
             INSERT OR IGNORE INTO content (playlist_id, video_id)
@@ -457,21 +486,22 @@ class Database:
                     {id_condition}
                     {playlist_condition}
             )
-            SELECT v.id             AS id,
-                   v.title          AS title,
-                   v.url            AS url,
-                   v.description    AS description,
-                   v.duration       AS duration,
-                   v.publish_date   AS publish_date,
-                   v.watch_date     AS watch_date,
-                   v.thumbnail_url  AS thumbnail_url,
-                   v.extractor_hash AS extractor_hash,
-                   p.name           AS playlist_name,
-                   p.url            AS playlist_url,
-                   p.reverse        AS playlist_reverse
+            SELECT
+                v.id             AS id,
+                v.title          AS title,
+                v.url            AS url,
+                v.description    AS description,
+                v.duration       AS duration,
+                v.publish_date   AS publish_date,
+                v.watch_date     AS watch_date,
+                v.thumbnail_url  AS thumbnail_url,
+                v.extractor_hash AS extractor_hash,
+                p.name           AS playlist_name,
+                p.url            AS playlist_url,
+                p.reverse        AS playlist_reverse
             FROM video AS v
-                     JOIN content c ON v.id = c.video_id
-                     JOIN playlist p ON p.id = c.playlist_id
+                JOIN content c ON v.id = c.video_id
+                JOIN playlist p ON p.id = c.playlist_id
             WHERE v.id in ids
             {order_by_clause}
             """
@@ -527,16 +557,14 @@ class Database:
             FROM video
             WHERE id IN (
                 SELECT v.id
-                FROM video AS v
-                         JOIN content AS cv ON v.id = cv.video_id
+                FROM video AS v JOIN content AS cv ON v.id = cv.video_id
                 WHERE v.watch_date IS NOT NULL
-                  AND (
-                          SELECT count(*)
-                          FROM video AS w
-                                   JOIN content AS cw ON w.id = cw.video_id
-                          WHERE v.publish_date < w.publish_date
+                    AND (
+                        SELECT count(*)
+                        FROM video AS w JOIN content AS cw ON w.id = cw.video_id
+                        WHERE v.publish_date < w.publish_date
                             AND cv.playlist_id = cw.playlist_id
-                      ) >= ?
+                    ) >= ?
             );
             """
         with self.connection as con:

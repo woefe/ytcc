@@ -33,6 +33,46 @@ from ytcc import (
 )
 
 
+SETUP_SQL_SCRIPT = """
+    INSERT INTO playlist (id, name, url, reverse)
+    VALUES
+        (1, 'pl1', 'a', false),
+        (2, 'pl2', 'b', false),
+        (3, 'pl3', 'c', true),
+        (4, 'pl4', 'd', false);
+
+    INSERT INTO tag (playlist, name)
+    VALUES
+        (1, 'tag1'),
+        (1, 'tag2'),
+        (4, 'tag1');
+
+    INSERT INTO video (
+        id,
+        title,
+        url,
+        description,
+        duration,
+        publish_date,
+        watch_date,
+        extractor_hash,
+        thumbnail_URL
+    )
+    VALUES
+        (1, 'title1', 'url1', 'description', 1.1, 131231.0, NULL, 'ext hash1', NULL),
+        (2, 'title2', 'url2', 'description', 1.2, 131231.0, NULL, 'ext hash2', NULL),
+        (3, 'title', 'url3', 'description', 1.2, 131231.0, 123441.0, 'ext hash3', NULL),
+        (4, 'title', 'url4', 'description', 5.2, 131231.0, 123442.0, 'ext hash4', 'thumbnail_URL');
+
+    INSERT INTO content (playlist_id, video_id)
+    VALUES
+        (1, 1),
+        (1, 2),
+        (2, 2),
+        (2, 3),
+        (3, 4);
+"""
+
 @pytest.fixture
 def empty_database() -> Callable[..., Database]:
     @contextlib.contextmanager
@@ -53,31 +93,7 @@ def filled_database() -> Callable[..., Database]:
             db_file.close()
             with Database(db_file.name) as db:
                 with db.connection as con:
-                    con.executescript("""
-                        INSERT INTO playlist (id, name, url, reverse)
-                        VALUES (1, 'pl1', 'a', false),
-                               (2, 'pl2', 'b', false),
-                               (3, 'pl3', 'c', true),
-                               (4, 'pl4', 'd', false);
-
-                        INSERT INTO tag (playlist, name)
-                        VALUES (1, 'tag1'),
-                               (1, 'tag2'),
-                               (4, 'tag1');
-
-                        INSERT INTO video (id, title, url, description, duration, publish_date, watch_date, extractor_hash, thumbnail_URL)
-                        VALUES (1, 'title1', 'url1', 'description', 1.1, 131231.0, NULL, 'ext hash1', NULL),
-                               (2, 'title2', 'url2', 'description', 1.2, 131231.0, NULL, 'ext hash2', NULL),
-                               (3, 'title', 'url3', 'description', 1.2, 131231.0, 123441.0, 'ext hash3', NULL),
-                               (4, 'title', 'url4', 'description', 5.2, 131231.0, 123442.0, 'ext hash4', 'thumbnail_URL');
-
-                        INSERT INTO content (playlist_id, video_id)
-                        VALUES (1, 1),
-                               (1, 2),
-                               (2, 2),
-                               (2, 3),
-                               (3, 4);
-                        """)
+                    con.executescript(SETUP_SQL_SCRIPT)
                 yield db
 
     return context

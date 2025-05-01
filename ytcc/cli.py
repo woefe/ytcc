@@ -51,7 +51,7 @@ from ytcc.printer import (
 )
 from ytcc.tui import print_meta, Interactive
 
-T = TypeVar("T")  # pylint: disable=invalid-name
+T = TypeVar("T")
 printer: Printer
 logger = logging.getLogger(__name__)
 pass_ytcc = click.make_pass_decorator(core.Ytcc)
@@ -63,7 +63,7 @@ class CommaList(click.ParamType, Generic[T]):
     def __init__(self, validator: Callable[[str], T]):
         self.validator = validator
 
-    def convert(self, value, param, ctx) -> List[T]:  # pylint: disable=inconsistent-return-statements
+    def convert(self, value, param, ctx) -> List[T]:
         try:
             return [self.validator(elem.strip()) for elem in value.split(",")]
         except ValueError:
@@ -73,7 +73,7 @@ class CommaList(click.ParamType, Generic[T]):
 class TruncateVals(click.ParamType):
     name = "truncate"
 
-    def convert(self, value, param, ctx) -> Union[None, str, int]:  # pylint: disable=inconsistent-return-statements
+    def convert(self, value, param, ctx) -> Union[None, str, int]:
         if value == "max":
             return "max"
         if value == "no":

@@ -18,3 +18,9 @@ indent_size = 2
 
 [*.py]
 max_line_length = 99
+
+[COPYING]
+indent_size = 1
+
+[doc/ytcc.1]
+trim_trailing_whitespace = false
