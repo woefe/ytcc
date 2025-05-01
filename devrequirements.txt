@@ -4,6 +4,7 @@ pytest
 ruff
 pydocstyle[toml]
 editorconfig-checker
+setuptools
 
 # Application dependencies
 click
