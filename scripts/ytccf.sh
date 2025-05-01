@@ -186,7 +186,7 @@ if [[ $THUMBNAILS -eq 1 ]]; then
     if [[ $TERM == "xterm-kitty" ]]; then
         function draw_preview {
             calculate_preview_size
-            kitty icat --transfer-mode file -z=-1 --place=${COLUMNS}x${LINES}@${X}x${Y} --scale-up "${@}"
+            kitty icat --transfer-mode file -z=-1 --place="${COLUMNS}x${LINES}@${X}x${Y}" --scale-up "${@}"
         }
     else
         check_cmd ueberzug
