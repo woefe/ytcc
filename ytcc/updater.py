@@ -177,7 +177,7 @@ class Fetcher:
             return e_hash, Video(
                 url=url,
                 title=title,
-                description=processed.get("description", ""),
+                description=processed.get("description") or "",
                 publish_date=publish_date,
                 watch_date=None,
                 duration=duration,

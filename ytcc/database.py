@@ -493,7 +493,7 @@ class Database:
                         id=row["id"],
                         url=row["url"],
                         title=row["title"],
-                        description=row["description"],
+                        description=row["description"] or "",
                         publish_date=row["publish_date"],
                         watch_date=row["watch_date"],
                         duration=row["duration"],
