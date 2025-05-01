@@ -883,7 +883,6 @@ def bug_report():
     print()
     print("---SQLite version---")
     print("SQLite system library version:", sqlite3.sqlite_version)
-    print("Python module version:", sqlite3.version)
     print()
     print("---python version---")
     print(sys.version)
