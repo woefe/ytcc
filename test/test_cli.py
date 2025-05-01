@@ -42,12 +42,14 @@ class YtccRunner(CliRunner):
 
         if kwargs.get("subscribe", False):
             from ytcc.database import Database
+
             with Database(self.db_file) as db:
                 db.add_playlist(WEBDRIVER_PLAYLIST.name, WEBDRIVER_PLAYLIST.url)
             del kwargs["subscribe"]
 
         if kwargs.get("update", False):
             from ytcc.database import Database
+
             with Database(self.db_file) as db:
                 db.add_videos(WEBDRIVER_VIDEOS, WEBDRIVER_PLAYLIST)
             del kwargs["update"]
@@ -59,13 +61,15 @@ class YtccRunner(CliRunner):
 def cli_runner() -> Callable[..., Result]:
     @contextlib.contextmanager
     def context() -> YtccRunner:
-        with NamedTemporaryFile(delete=False) as db_file, \
-                NamedTemporaryFile("w", delete=False) as conf_file, \
-                TemporaryDirectory() as download_dir:
+        with (
+            NamedTemporaryFile(delete=False) as db_file,
+            NamedTemporaryFile("w", delete=False) as conf_file,
+            TemporaryDirectory() as download_dir,
+        ):
             conf_file.write("[ytcc]\n")
             conf_file.write(f"db_path={db_file.name}\n")
             conf_file.write(f"download_dir={download_dir}\n")
-            conf_file.write(f"download_subdirs=on\n")
+            conf_file.write("download_subdirs=on\n")
 
             db_file.close()
             conf_file.close()
@@ -81,6 +85,7 @@ def cli_runner() -> Callable[..., Result]:
 
 def test_bug_report_command(cli_runner):
     from ytcc import __version__
+
     with cli_runner() as runner:
         result = runner("bug-report")
         assert result.exit_code == 0
@@ -92,8 +97,11 @@ def test_bug_report_command(cli_runner):
 @pytest.mark.flaky
 def test_subscribe(cli_runner):
     with cli_runner() as runner:
-        result = runner("subscribe", "WebDriver",
-                        "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw/videos")
+        result = runner(
+            "subscribe",
+            "WebDriver",
+            "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw/videos",
+        )
         assert result.exit_code == 0
         result = runner("--output", "xsv", "subscriptions")
         assert "WebDriver" in result.stdout
@@ -103,9 +111,10 @@ def test_subscribe(cli_runner):
 def test_subscribe_duplicate(cli_runner):
     with cli_runner() as runner:
         result = runner(
-            "subscribe", "WebDriver",
+            "subscribe",
+            "WebDriver",
             "https://www.youtube.com/channel/UCsLiV4WJfkTEHH0b9PmRklw/videos",
-            subscribe=True
+            subscribe=True,
         )
         assert result.exit_code != 0
 
@@ -230,18 +239,24 @@ def test_download(cli_runner):
         assert result.exit_code == 0
 
         title = runner(
-            "--output", "xsv",
+            "--output",
+            "xsv",
             "list",
-            "--attributes", "title",
-            "--ids", "1",
-            "--watched"
+            "--attributes",
+            "title",
+            "--ids",
+            "1",
+            "--watched",
         ).stdout.splitlines()[0]
         subdir = runner(
-            "--output", "xsv",
+            "--output",
+            "xsv",
             "list",
-            "--attributes", "playlists",
-            "--ids", "1",
-            "--watched"
+            "--attributes",
+            "playlists",
+            "--ids",
+            "1",
+            "--watched",
         ).stdout.splitlines()[0]
         assert Path(runner.download_dir, subdir, title + ".mkv").is_file()
 

@@ -1,8 +1,10 @@
 # Devtools
 mypy
 pytest
-pylint
+ruff
 pydocstyle[toml]
+editorconfig-checker
+setuptools
 
 # Application dependencies
 click

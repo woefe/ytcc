@@ -81,8 +81,8 @@ class Database:
         Creates the given path it does not yet exist and initializes the database.
         I.e. populates the schema, enforces foreign keys, sets the database version.
 
-        :param path: The path where the SQLite3 database is stored. `:memory:` for an in-memory
-                     database.
+        :param path:
+            The path where the SQLite3 database is stored. `:memory:` for an in-memory database.
         """
         is_new_db = True
         if path != ":memory:":
@@ -233,8 +233,9 @@ class Database:
 
         :param oldname: The old name of the playlist.
         :param newname: The new name of the playlist.
-        :return: True if the playlist was rename successfully. False if the playlist does not exist
-                 or the new name is already taken.
+        :return:
+            True if the playlist was rename successfully. False if the playlist does not exist or
+            the new name is already taken.
         """
         query = "UPDATE playlist SET name = ? WHERE name = ?"
         try:
@@ -272,7 +273,9 @@ class Database:
             playlist = playlists.get(row["id"])
             if playlist is None:
                 tags = [row["tag"]] if row["tag"] else []
-                playlists[row["id"]] = MappedPlaylist(row["name"], row["url"], row["reverse"], tags)
+                playlists[row["id"]] = MappedPlaylist(
+                    row["name"], row["url"], row["reverse"], tags
+                )
             else:
                 playlists[row["id"]].tags.append(row["tag"])
 
@@ -292,7 +295,7 @@ class Database:
             db_id = con.execute(query_pid, (playlist,)).fetchone()
             if db_id is None:
                 raise PlaylistDoesNotExistException(
-                    f"Playlist \"{playlist}\" is not in the database."
+                    f'Playlist "{playlist}" is not in the database.'
                 )
             pid = int(db_id["id"])
             con.execute(query_clear, (pid,))
@@ -309,12 +312,26 @@ class Database:
 
     def add_videos(self, videos: Iterable[Video], playlist: Playlist) -> None:
         insert_video = """
-            INSERT INTO video
-                (title, url, description, duration, publish_date, watch_date,
-                 thumbnail_url, extractor_hash)
-            VALUES
-                (:title, :url, :description, :duration, :publish_date, :watch_date,
-                 :thumbnail_url, :extractor_hash)
+            INSERT INTO video (
+                title,
+                url,
+                description,
+                duration,
+                publish_date,
+                watch_date,
+                thumbnail_url,
+                extractor_hash
+            )
+            VALUES (
+                :title,
+                :url,
+                :description,
+                :duration,
+                :publish_date,
+                :watch_date,
+                :thumbnail_url,
+                :extractor_hash
+            )
             ON CONFLICT (url) DO UPDATE
                 SET title = :title,
                     url = :url,
@@ -326,12 +343,26 @@ class Database:
             """
         if sqlite3.sqlite_version_info < (3, 24, 0):
             insert_video = """
-                INSERT OR IGNORE INTO video
-                    (title, url, description, duration, publish_date, watch_date,
-                     thumbnail_url, extractor_hash)
-                VALUES
-                    (:title, :url, :description, :duration, :publish_date, :watch_date,
-                     :thumbnail_url, :extractor_hash)
+                INSERT OR IGNORE INTO video (
+                    title,
+                    url,
+                    description,
+                    duration,
+                    publish_date,
+                    watch_date,
+                    thumbnail_url,
+                    extractor_hash
+                )
+                VALUES (
+                    :title,
+                    :url,
+                    :description,
+                    :duration,
+                    :publish_date,
+                    :watch_date,
+                    :thumbnail_url,
+                    :extractor_hash
+                )
                 """
         insert_playlist = """
             INSERT OR IGNORE INTO content (playlist_id, video_id)
@@ -342,7 +373,7 @@ class Database:
             fetch = cursor.fetchone()
             if fetch is None:
                 raise PlaylistDoesNotExistException(
-                    f"Playlist \"{playlist.name}\" is not in the database."
+                    f'Playlist "{playlist.name}" is not in the database.'
                 )
             playlist_id = fetch["id"]
             for video in videos:
@@ -350,31 +381,25 @@ class Database:
                 cursor.execute(insert_playlist, (playlist_id, video.url))
 
     @overload
-    def mark_watched(self, video: List[int]) -> None:
-        ...
+    def mark_watched(self, video: List[int]) -> None: ...
 
     @overload
-    def mark_watched(self, video: int) -> None:
-        ...
+    def mark_watched(self, video: int) -> None: ...
 
     @overload
-    def mark_watched(self, video: MappedVideo) -> None:
-        ...
+    def mark_watched(self, video: MappedVideo) -> None: ...
 
     def mark_watched(self, video: Any) -> None:
         self._mark(video, datetime.now().timestamp())
 
     @overload
-    def mark_unwatched(self, video: List[int]) -> None:
-        ...
+    def mark_unwatched(self, video: List[int]) -> None: ...
 
     @overload
-    def mark_unwatched(self, video: int) -> None:
-        ...
+    def mark_unwatched(self, video: int) -> None: ...
 
     @overload
-    def mark_unwatched(self, video: MappedVideo) -> None:
-        ...
+    def mark_unwatched(self, video: MappedVideo) -> None: ...
 
     def mark_unwatched(self, video: Any) -> None:
         self._mark(video, None)
@@ -394,7 +419,9 @@ class Database:
             con.executemany(query, ((val, int(video)) for video in videos))
 
     @staticmethod
-    def _make_order_by_clause(order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None) -> str:
+    def _make_order_by_clause(
+        order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None,
+    ) -> str:
         def directions() -> Iterable[Tuple[str, str]]:
             column_names = {
                 VideoAttr.ID: "id",
@@ -409,7 +436,7 @@ class Database:
                 VideoAttr.PLAYLISTS: "playlist_name",
             }
             for untrusted_col, untrusted_dir in order_by or []:
-                ord_dir = 'ASC' if untrusted_dir == Direction.ASC else 'DESC'
+                ord_dir = "ASC" if untrusted_dir == Direction.ASC else "DESC"
                 col = column_names.get(untrusted_col)
                 if col is not None:
                     yield col, ord_dir
@@ -427,9 +454,8 @@ class Database:
         tags: Optional[List[str]] = None,
         playlists: Optional[List[str]] = None,
         ids: Optional[List[int]] = None,
-        order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None
+        order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None,
     ) -> Iterable[MappedVideo]:
-
         tag_condition = f"AND t.name IN ({_placeholder(tags)})" if tags is not None else ""
         id_condition = f"AND v.id IN ({_placeholder(ids)})" if ids is not None else ""
 
@@ -440,7 +466,7 @@ class Database:
         watched_condition = {
             None: "",
             True: "AND v.watch_date IS NOT NULL",
-            False: "AND v.watch_date IS NULL"
+            False: "AND v.watch_date IS NULL",
         }.get(watched, "")
 
         order_by_clause = self._make_order_by_clause(order_by)
@@ -460,21 +486,22 @@ class Database:
                     {id_condition}
                     {playlist_condition}
             )
-            SELECT v.id             AS id,
-                   v.title          AS title,
-                   v.url            AS url,
-                   v.description    AS description,
-                   v.duration       AS duration,
-                   v.publish_date   AS publish_date,
-                   v.watch_date     AS watch_date,
-                   v.thumbnail_url  AS thumbnail_url,
-                   v.extractor_hash AS extractor_hash,
-                   p.name           AS playlist_name,
-                   p.url            AS playlist_url,
-                   p.reverse        AS playlist_reverse
+            SELECT
+                v.id             AS id,
+                v.title          AS title,
+                v.url            AS url,
+                v.description    AS description,
+                v.duration       AS duration,
+                v.publish_date   AS publish_date,
+                v.watch_date     AS watch_date,
+                v.thumbnail_url  AS thumbnail_url,
+                v.extractor_hash AS extractor_hash,
+                p.name           AS playlist_name,
+                p.url            AS playlist_url,
+                p.reverse        AS playlist_reverse
             FROM video AS v
-                     JOIN content c ON v.id = c.video_id
-                     JOIN playlist p ON p.id = c.playlist_id
+                JOIN content c ON v.id = c.video_id
+                JOIN playlist p ON p.id = c.playlist_id
             WHERE v.id in ids
             {order_by_clause}
             """
@@ -503,16 +530,16 @@ class Database:
                             Playlist(
                                 row["playlist_name"],
                                 row["playlist_url"],
-                                row["playlist_reverse"]
+                                row["playlist_reverse"],
                             )
-                        ]
+                        ],
                     )
                 else:
                     videos[row["id"]].playlists.append(
                         Playlist(
                             row["playlist_name"],
                             row["playlist_url"],
-                            row["playlist_reverse"]
+                            row["playlist_reverse"],
                         )
                     )
 
@@ -530,16 +557,14 @@ class Database:
             FROM video
             WHERE id IN (
                 SELECT v.id
-                FROM video AS v
-                         JOIN content AS cv ON v.id = cv.video_id
+                FROM video AS v JOIN content AS cv ON v.id = cv.video_id
                 WHERE v.watch_date IS NOT NULL
-                  AND (
-                          SELECT count(*)
-                          FROM video AS w
-                                   JOIN content AS cw ON w.id = cw.video_id
-                          WHERE v.publish_date < w.publish_date
+                    AND (
+                        SELECT count(*)
+                        FROM video AS w JOIN content AS cw ON w.id = cw.video_id
+                        WHERE v.publish_date < w.publish_date
                             AND cv.playlist_id = cw.playlist_id
-                      ) >= ?
+                    ) >= ?
             );
             """
         with self.connection as con:

@@ -34,12 +34,14 @@ class BlankUsageFormatter(click.HelpFormatter):
 def main():
     ctx = cli.make_context("ytcc", [""])
     with open("doc/ytcc.1", "w", encoding="utf-8") as manpage:
-        today = date.today().strftime('%b %Y')
+        today = date.today().strftime("%b %Y")
         manpage.write(f'.TH ytcc 1 "{today}" "{__version__}" ')
         manpage.write('"ytcc manual"\n')
         manpage.write(".SH NAME\n")
-        manpage.write("ytcc - Command line tool to keep track of your favorite playlists on "
-                      "YouTube and many other places\n")
+        manpage.write(
+            "ytcc - Command line tool to keep track of your favorite playlists on "
+            "YouTube and many other places\n"
+        )
         manpage.write(".SH SYNOPSIS\n")
         manpage.write("ytcc [OPTIONS...] COMMAND [ARGS...]\n")
 
@@ -80,13 +82,15 @@ def main():
             manpage.write(", ".join(help_opt.opts))
             manpage.write("\nShow command help and exit.\n")
 
-        manpage.write(".SH SEE ALSO\n"
-                      "mpv(1), yt-dlp(1), youtube-dl(1)\n"
-                      ".SS Project homepage\n"
-                      "https://github.com/woefe/ytcc\n"
-                      ".SS Bug Tracker\n"
-                      "https://github.com/woefe/ytcc/issues\n")
+        manpage.write(
+            ".SH SEE ALSO\n"
+            "mpv(1), yt-dlp(1), youtube-dl(1)\n"
+            ".SS Project homepage\n"
+            "https://github.com/woefe/ytcc\n"
+            ".SS Bug Tracker\n"
+            "https://github.com/woefe/ytcc/issues\n"
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

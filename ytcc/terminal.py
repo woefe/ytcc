@@ -49,7 +49,6 @@ _KNOWN_KEYS = {
     "\x1bOu": FKeys.F6,
     "\x1bOv": FKeys.F7,
     "\x1bOl": FKeys.F8,
-
     # rxvt
     "\x1b[11~": FKeys.F1,
     "\x1b[12~": FKeys.F2,
@@ -59,14 +58,12 @@ _KNOWN_KEYS = {
     "\x1b[17~": FKeys.F6,
     "\x1b[18~": FKeys.F7,
     "\x1b[19~": FKeys.F8,
-
     # linux
     "\x1b[[A": FKeys.F1,
     "\x1b[[B": FKeys.F2,
     "\x1b[[C": FKeys.F3,
     "\x1b[[D": FKeys.F4,
     "\x1b[[E": FKeys.F5,
-
     # Windows
     "\x00;": FKeys.F1,
     "\x00<": FKeys.F2,
@@ -76,7 +73,6 @@ _KNOWN_KEYS = {
     "\x00@": FKeys.F6,
     "\x00A": FKeys.F7,
     "\x00B": FKeys.F8,
-
     # other
     "\x7f": FKeys.DEL,  # Linux
     "\x08": FKeys.DEL,  # Windows
@@ -114,8 +110,13 @@ def clear_screen() -> None:
     click.clear()
 
 
-def printtln(*text, foreground: Optional[int] = None, background: Optional[int] = None,
-             bold: bool = False, replace: bool = False) -> None:
+def printtln(
+    *text,
+    foreground: Optional[int] = None,
+    background: Optional[int] = None,
+    bold: bool = False,
+    replace: bool = False,
+) -> None:
     """Like printt, but print newline at the end.
 
     :param text: The text to print, elements are concatenated without a separator.
@@ -128,8 +129,14 @@ def printtln(*text, foreground: Optional[int] = None, background: Optional[int] 
     print()
 
 
-def printt(*text, foreground: Optional[int] = None, background: Optional[int] = None,
-           bold: bool = False, replace: bool = False, force_color: bool = False) -> None:
+def printt(
+    *text,
+    foreground: Optional[int] = None,
+    background: Optional[int] = None,
+    bold: bool = False,
+    replace: bool = False,
+    force_color: bool = False,
+) -> None:
     """Print text on terminal styled with ANSI escape sequences.
 
     If stdout is not a TTY, no escape sequences will be printed. Supports 8-bit colors.
@@ -169,7 +176,7 @@ def printt(*text, foreground: Optional[int] = None, background: Optional[int] = 
 def get_terminal_width() -> int:
     try:
         # Don't trust $COLUMNS if run as FZF preview command
-        return int(os.environ['FZF_PREVIEW_COLUMNS'])
+        return int(os.environ["FZF_PREVIEW_COLUMNS"])
     except (KeyError, ValueError):
         width, _ = shutil.get_terminal_size()
         return width

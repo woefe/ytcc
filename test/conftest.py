@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
-def pytest_configure(config):
-    config.addinivalue_line(
-        "markers", "flaky: marks test as flaky"
-    )
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "flaky: marks test as flaky")

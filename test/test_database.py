@@ -23,8 +23,55 @@ from typing import Iterator, Callable, Optional, List, Iterable
 
 import pytest
 
-from ytcc import Database, MappedPlaylist, PlaylistDoesNotExistException, Playlist, Video, \
-    MappedVideo
+from ytcc import (
+    Database,
+    MappedPlaylist,
+    PlaylistDoesNotExistException,
+    Playlist,
+    Video,
+    MappedVideo,
+)
+
+
+SETUP_SQL_SCRIPT = """
+    INSERT INTO playlist (id, name, url, reverse)
+    VALUES
+        (1, 'pl1', 'a', false),
+        (2, 'pl2', 'b', false),
+        (3, 'pl3', 'c', true),
+        (4, 'pl4', 'd', false);
+
+    INSERT INTO tag (playlist, name)
+    VALUES
+        (1, 'tag1'),
+        (1, 'tag2'),
+        (4, 'tag1');
+
+    INSERT INTO video (
+        id,
+        title,
+        url,
+        description,
+        duration,
+        publish_date,
+        watch_date,
+        extractor_hash,
+        thumbnail_URL
+    )
+    VALUES
+        (1, 'title1', 'url1', 'description', 1.1, 131231.0, NULL, 'ext hash1', NULL),
+        (2, 'title2', 'url2', 'description', 1.2, 131231.0, NULL, 'ext hash2', NULL),
+        (3, 'title', 'url3', 'description', 1.2, 131231.0, 123441.0, 'ext hash3', NULL),
+        (4, 'title', 'url4', 'description', 5.2, 131231.0, 123442.0, 'ext hash4', 'thumbnail_URL');
+
+    INSERT INTO content (playlist_id, video_id)
+    VALUES
+        (1, 1),
+        (1, 2),
+        (2, 2),
+        (2, 3),
+        (3, 4);
+"""
 
 
 @pytest.fixture
@@ -47,31 +94,7 @@ def filled_database() -> Callable[..., Database]:
             db_file.close()
             with Database(db_file.name) as db:
                 with db.connection as con:
-                    con.executescript("""
-                        INSERT INTO playlist (id, name, url, reverse)
-                        VALUES (1, 'pl1', 'a', false),
-                               (2, 'pl2', 'b', false),
-                               (3, 'pl3', 'c', true),
-                               (4, 'pl4', 'd', false);
-
-                        INSERT INTO tag (playlist, name)
-                        VALUES (1, 'tag1'),
-                               (1, 'tag2'),
-                               (4, 'tag1');
-
-                        INSERT INTO video (id, title, url, description, duration, publish_date, watch_date, extractor_hash, thumbnail_URL)
-                        VALUES (1, 'title1', 'url1', 'description', 1.1, 131231.0, NULL, 'ext hash1', NULL),
-                               (2, 'title2', 'url2', 'description', 1.2, 131231.0, NULL, 'ext hash2', NULL),
-                               (3, 'title', 'url3', 'description', 1.2, 131231.0, 123441.0, 'ext hash3', NULL),
-                               (4, 'title', 'url4', 'description', 5.2, 131231.0, 123442.0, 'ext hash4', 'thumbnail_URL');
-
-                        INSERT INTO content (playlist_id, video_id)
-                        VALUES (1, 1),
-                               (1, 2),
-                               (2, 2),
-                               (2, 3),
-                               (3, 4);
-                        """)
+                    con.executescript(SETUP_SQL_SCRIPT)
                 yield db
 
     return context
@@ -81,31 +104,65 @@ MAPPED_PLAYLISTS = {
     "pl1": MappedPlaylist("pl1", "a", False, ["tag1", "tag2"]),
     "pl2": MappedPlaylist("pl2", "b", False, []),
     "pl3": MappedPlaylist("pl3", "c", True, []),
-    "pl4": MappedPlaylist("pl4", "d", False, ["tag1"])
+    "pl4": MappedPlaylist("pl4", "d", False, ["tag1"]),
 }
 
 PLAYLISTS = {
     "pl1": Playlist("pl1", "a", False),
     "pl2": Playlist("pl2", "b", False),
     "pl3": Playlist("pl3", "c", True),
-    "pl4": Playlist("pl4", "d", False)
+    "pl4": Playlist("pl4", "d", False),
 }
 
 VIDEOS = {
-    1: MappedVideo(id=1, title='title1', url='url1', description='description',
-                   duration=1.1, publish_date=131231.0, watch_date=None,
-                   extractor_hash='ext hash1', thumbnail_url=None, playlists=[PLAYLISTS["pl1"]]),
-    2: MappedVideo(id=2, title='title2', url='url2', description='description',
-                   duration=1.2, publish_date=131231.0, watch_date=None,
-                   extractor_hash='ext hash2', thumbnail_url=None,
-                   playlists=[PLAYLISTS["pl1"], PLAYLISTS["pl2"]]),
-    3: MappedVideo(id=3, title='title', url='url3', description='description',
-                   duration=1.2, publish_date=131231.0, watch_date=123441.0,
-                   extractor_hash='ext hash3', thumbnail_url=None, playlists=[PLAYLISTS["pl2"]]),
-    4: MappedVideo(id=4, title='title', url='url4', description='description',
-                   duration=5.2, publish_date=131231.0, watch_date=123442.0,
-                   extractor_hash='ext hash4', thumbnail_url='thumbnail_URL',
-                   playlists=[PLAYLISTS["pl3"]])
+    1: MappedVideo(
+        id=1,
+        title="title1",
+        url="url1",
+        description="description",
+        duration=1.1,
+        publish_date=131231.0,
+        watch_date=None,
+        extractor_hash="ext hash1",
+        thumbnail_url=None,
+        playlists=[PLAYLISTS["pl1"]],
+    ),
+    2: MappedVideo(
+        id=2,
+        title="title2",
+        url="url2",
+        description="description",
+        duration=1.2,
+        publish_date=131231.0,
+        watch_date=None,
+        extractor_hash="ext hash2",
+        thumbnail_url=None,
+        playlists=[PLAYLISTS["pl1"], PLAYLISTS["pl2"]],
+    ),
+    3: MappedVideo(
+        id=3,
+        title="title",
+        url="url3",
+        description="description",
+        duration=1.2,
+        publish_date=131231.0,
+        watch_date=123441.0,
+        extractor_hash="ext hash3",
+        thumbnail_url=None,
+        playlists=[PLAYLISTS["pl2"]],
+    ),
+    4: MappedVideo(
+        id=4,
+        title="title",
+        url="url4",
+        description="description",
+        duration=5.2,
+        publish_date=131231.0,
+        watch_date=123442.0,
+        extractor_hash="ext hash4",
+        thumbnail_url="thumbnail_URL",
+        playlists=[PLAYLISTS["pl3"]],
+    ),
 }
 
 
@@ -263,7 +320,7 @@ def test_add_videos(filled_database):
                 watch_date=None,
                 duration=5.0,
                 thumbnail_url=None,
-                extractor_hash="e_hash 5"
+                extractor_hash="e_hash 5",
             ),
             Video(
                 title="title",
@@ -273,8 +330,8 @@ def test_add_videos(filled_database):
                 watch_date=None,
                 duration=5.0,
                 thumbnail_url=None,
-                extractor_hash="e_hash 6"
-            )
+                extractor_hash="e_hash 6",
+            ),
         ]
         db.add_videos(videos, pl)
         pl1_videos = list(db.list_videos(playlists=["pl1"]))

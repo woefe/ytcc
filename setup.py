@@ -18,17 +18,13 @@ setup(
     license=ytcc.__license__,
     packages=find_packages(exclude=["test"]),
     install_requires=["yt_dlp", "click>=8.0", "wcwidth"],
-    extras_require={
-      "youtube_dl": ["youtube_dl"]
-    },
+    extras_require={"youtube_dl": ["youtube_dl"]},
     python_requires=">=3.7, <4",
     scripts=["scripts/ytccf.sh"],
-    entry_points={
-        "console_scripts": ["ytcc=ytcc.cli:main"]
-    },
+    entry_points={"console_scripts": ["ytcc=ytcc.cli:main"]},
     project_urls={
-        "Bug Reports": 'https://github.com/woefe/ytcc/issues',
-        "Source": 'https://github.com/woefe/ytcc/',
+        "Bug Reports": "https://github.com/woefe/ytcc/issues",
+        "Source": "https://github.com/woefe/ytcc/",
     },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
@@ -42,6 +38,6 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Topic :: Multimedia :: Sound/Audio",
-        "Topic :: Multimedia :: Video"
-    ]
+        "Topic :: Multimedia :: Video",
+    ],
 )

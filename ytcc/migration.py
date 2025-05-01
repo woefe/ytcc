@@ -33,33 +33,34 @@ CREATE TABLE new_video
 );
 
 INSERT INTO new_video
-SELECT id,
-       title,
-       url,
-       description,
-       duration,
-       publish_date,
-       NULL,
-       extractor_hash
+SELECT
+    id,
+    title,
+    url,
+    description,
+    duration,
+    publish_date,
+    NULL,
+    extractor_hash
 FROM video
 WHERE watched = 0;
 
 INSERT INTO new_video
-SELECT id,
-       title,
-       url,
-       description,
-       duration,
-       publish_date,
-       {datetime.now().timestamp()},
-       extractor_hash
+SELECT
+    id,
+    title,
+    url,
+    description,
+    duration,
+    publish_date,
+    {datetime.now().timestamp()},
+    extractor_hash
 FROM video
 WHERE watched = 1;
 
 DROP TABLE video;
 
-ALTER TABLE new_video
-    RENAME TO video;
+ALTER TABLE new_video RENAME TO video;
 
 PRAGMA foreign_key_check;
 """
@@ -74,7 +75,13 @@ V5_VIDEO_THUMBNAIL_URL = """
 ALTER TABLE video ADD COLUMN thumbnail_URL VARCHAR;
 """
 
-UPDATES = ["-- noop", "-- noop", V3_WATCH_DATE, V4_PLAYLIST_REVERSE, V5_VIDEO_THUMBNAIL_URL]
+UPDATES = [
+    "-- noop",
+    "-- noop",
+    V3_WATCH_DATE,
+    V4_PLAYLIST_REVERSE,
+    V5_VIDEO_THUMBNAIL_URL,
+]
 
 
 def migrate(old_version: int, new_version: int, db_conn: sqlite3.Connection) -> None:

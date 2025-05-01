@@ -46,10 +46,7 @@ class Table(NamedTuple):
             raise ValueError("Invalid filter") from index_err
         else:
             filtered_header = [self.header[i] for i in indices]
-            filtered_data = [
-                [row[i] for i in indices]
-                for row in self.data
-            ]
+            filtered_data = [[row[i] for i in indices] for row in self.data]
             return Table(filtered_header, filtered_data)
 
 
@@ -70,7 +67,6 @@ class Printable(DictData, TableData, metaclass=ABCMeta):
 
 
 class VideoPrintable(Printable):
-
     def __init__(self, videos: Iterable[MappedVideo]):
         self.videos = videos
 
@@ -92,29 +88,40 @@ class VideoPrintable(Printable):
             yield video_dict
 
     def table(self) -> Table:
-        header = ["id", "url", "title", "description", "publish_date", "watched", "duration",
-                  "thumbnail_url", "extractor_hash", "playlists"]
+        header = [
+            "id",
+            "url",
+            "title",
+            "description",
+            "publish_date",
+            "watched",
+            "duration",
+            "thumbnail_url",
+            "extractor_hash",
+            "playlists",
+        ]
 
         data = []
         for video in self.videos:
-            data.append([
-                str(video.id),
-                video.url,
-                video.title,
-                video.description,
-                self._format_date(video.publish_date),
-                self._format_date(video.watch_date) if video.watch_date else "No",
-                self._format_duration(video.duration),
-                video.thumbnail_url or "",
-                video.extractor_hash,
-                ", ".join(map(lambda v: v.name, video.playlists))
-            ])
+            data.append(
+                [
+                    str(video.id),
+                    video.url,
+                    video.title,
+                    video.description,
+                    self._format_date(video.publish_date),
+                    self._format_date(video.watch_date) if video.watch_date else "No",
+                    self._format_duration(video.duration),
+                    video.thumbnail_url or "",
+                    video.extractor_hash,
+                    ", ".join(map(lambda v: v.name, video.playlists)),
+                ]
+            )
 
         return Table(header, data)
 
 
 class PlaylistPrintable(Printable):
-
     def __init__(self, playlists: Iterable[MappedPlaylist]):
         self.playlists = playlists
 
@@ -133,8 +140,7 @@ class PlaylistPrintable(Printable):
 
 
 class Printer(ABC):
-
-    def __init__(self):
+    def __init__(self) -> None:
         self._filter: Optional[List[Any]] = None
 
     @property
@@ -151,12 +157,12 @@ class Printer(ABC):
 
 
 class TablePrinter(Printer):
-
     def __init__(self, truncate: Union[None, str, int] = "max"):
         """Initialize a new TablePrinter.
 
-        :param truncate: Truncates row width. None to disable truncating, "max" to truncate to
-                         terminal width, an integer n to truncate to length n.
+        :param truncate:
+            Truncates row width. None to disable truncating, "max" to truncate to terminal width,
+            an integer n to truncate to length n.
         """
         super().__init__()
         self.truncate = truncate
@@ -182,17 +188,21 @@ class TablePrinter(Printer):
 
         i = 0
         while wcswidth(text) > max_len > i:
-            text = text[:max_len - i - 1] + "…"
+            text = text[: max_len - i - 1] + "…"
             i = i + 1
         return text
 
     @staticmethod
-    def print_row(columns: List[str], widths: List[int],
-                  bold: bool = False, background: Optional[int] = None) -> None:
-
+    def print_row(
+        columns: List[str],
+        widths: List[int],
+        bold: bool = False,
+        background: Optional[int] = None,
+    ) -> None:
         if len(widths) != len(columns) and not columns:
-            raise ValueError("For every column, a width must be specified, "
-                             "and columns must not be empty")
+            raise ValueError(
+                "For every column, a width must be specified, and columns must not be empty"
+            )
 
         for column, width in zip(columns[:-1], widths[:-1]):
             TablePrinter.print_col(column, width, background, bold)
@@ -211,7 +221,7 @@ class TablePrinter(Printer):
                 ("duration", 7),
                 ("publish_date", 10),
                 ("playlists", 9),
-                ("title", 21)
+                ("title", 21),
             )
             for column, min_col_width in min_col_widths:
                 printed_table_width = sum(col_widths) + 3 * (len(col_widths) - 1) + 2
@@ -230,7 +240,6 @@ class TablePrinter(Printer):
 
 
 class XSVPrinter(Printer):
-
     def __init__(self, separator: str = ","):
         super().__init__()
         if len(separator) != 1:
@@ -252,7 +261,6 @@ class XSVPrinter(Printer):
 
 
 class PlainPrinter(Printer):
-
     def print(self, obj: Printable) -> None:
         def unsnake(string: str) -> str:
             string = string.replace("_", " ")
@@ -273,7 +281,11 @@ class PlainPrinter(Printer):
                 formatted_label = f"{unsnake(label)}: "
                 content_lines = content.splitlines()
 
-                printt(formatted_label, foreground=config.theme.plain_label_text, force_color=True)
+                printt(
+                    formatted_label,
+                    foreground=config.theme.plain_label_text,
+                    force_color=True,
+                )
 
                 if (
                     len(content_lines) == 1
@@ -289,7 +301,6 @@ class PlainPrinter(Printer):
 
 
 class JSONPrinter(Printer):
-
     def print(self, obj: DictData) -> None:
         json.dump(list(obj.data()), sys.stdout, indent=2)
 
