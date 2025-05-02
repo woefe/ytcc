@@ -1,5 +1,5 @@
 # ytcc - The YouTube channel checker
-# Copyright (C) 2021  Wolfgang Popp
+# Copyright (C) 2025  Wolfgang Popp
 #
 # This file is part of ytcc.
 #

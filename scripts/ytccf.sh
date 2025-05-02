@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# ytcc - The YouTube channel checker
+# ytcc 5 The YouTube channel checker
 # Copyright (C) 2021  Wolfgang Popp
 #
 # This file is part of ytcc.

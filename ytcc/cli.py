@@ -1,5 +1,5 @@
 # ytcc - The YouTube channel checker
-# Copyright (C) 2021  Wolfgang Popp
+# Copyright (C) 2025  Wolfgang Popp
 #
 # This file is part of ytcc.
 #
@@ -101,7 +101,7 @@ class TruncateVals(click.ParamType):
 
 version_text = f"""%(prog)s, version %(version)s
 
-Copyright (C) 2015-2021  {__author__}
+Copyright (C) 2015-2025  {__author__}
 This program comes with ABSOLUTELY NO WARRANTY; This is free software, and you
 are welcome to redistribute it under certain conditions.  See the GNU General
 Public Licence for details.
