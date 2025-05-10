@@ -27,7 +27,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, List, Optional, Sequence, TextIO, Tuple, Type
 
-from ytcc.exceptions import BadConfigException
+from ytcc.exceptions import BadConfigError
 
 # typing.get_args and typing.get_origin were introduced in 3.8
 if hasattr(typing, "get_args"):
@@ -294,7 +294,7 @@ def load(override_cfg_file: Optional[str] = None):
                 setattr(clazz, prop, val)
             except ValueError as err:
                 message = f"Value '{str_val}' for {clazz.__name__}.{prop} is invalid"
-                raise BadConfigException(message) from err
+                raise BadConfigError(message) from err
 
 
 def dumps() -> str:

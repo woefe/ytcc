@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, overload
 
 from ytcc.config import Direction, VideoAttr
-from ytcc.exceptions import IncompatibleDatabaseVersion, PlaylistDoesNotExistException
+from ytcc.exceptions import IncompatibleDatabaseVersionError, PlaylistDoesNotExistError
 from ytcc.migration import migrate
 
 logger = logging.getLogger(__name__)
@@ -104,7 +104,7 @@ class Database:
             self._populate()
         db_version = int(self.connection.execute("PRAGMA user_version;").fetchone()[0])
         if db_version < 2:
-            raise IncompatibleDatabaseVersion("Database Schema 2 or higher is required")
+            raise IncompatibleDatabaseVersionError("Database Schema 2 or higher is required")
         migrate(db_version, Database.VERSION, self.connection)
 
     def __enter__(self) -> "Database":
@@ -294,7 +294,7 @@ class Database:
         with self.connection as con:
             db_id = con.execute(query_pid, (playlist,)).fetchone()
             if db_id is None:
-                raise PlaylistDoesNotExistException(
+                raise PlaylistDoesNotExistError(
                     f'Playlist "{playlist}" is not in the database.'
                 )
             pid = int(db_id["id"])
@@ -372,7 +372,7 @@ class Database:
             cursor = con.execute("SELECT id FROM playlist WHERE name = ?", (playlist.name,))
             fetch = cursor.fetchone()
             if fetch is None:
-                raise PlaylistDoesNotExistException(
+                raise PlaylistDoesNotExistError(
                     f'Playlist "{playlist.name}" is not in the database.'
                 )
             playlist_id = fetch["id"]

@@ -19,29 +19,29 @@
 """Exceptions in their own module to avoid circular imports."""
 
 
-class YtccException(Exception):
+class YtccError(Exception):
     """A general parent class of all Exceptions that are used in Ytcc."""
 
 
-class BadURLException(YtccException):
+class BadURLError(YtccError):
     """Raised when a given URL cannot be handled by youtube-dl."""
 
 
-class NameConflictError(YtccException):
+class NameConflictError(YtccError):
     """Raised when trying to subscribe to a playlist the second (or more) time."""
 
 
-class PlaylistDoesNotExistException(YtccException):
+class PlaylistDoesNotExistError(YtccError):
     """Raised when the url of a given playlist does not exist."""
 
 
-class InvalidSubscriptionFileError(YtccException):
+class InvalidSubscriptionFileError(YtccError):
     """Raised when the given file is not a valid XML file."""
 
 
-class BadConfigException(YtccException):
+class BadConfigError(YtccError):
     """Raised when error in config file is encountered."""
 
 
-class IncompatibleDatabaseVersion(YtccException):
+class IncompatibleDatabaseVersionError(YtccError):
     """Raised when the database has an incompatible version."""

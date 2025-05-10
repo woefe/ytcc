@@ -38,7 +38,7 @@ select = [
     "FLY",
     "I",
     # "C90",
-    # "N",
+    "N",
     "PERF",
     "E",
     "W",
@@ -63,6 +63,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "test/*" = ["S101"]
+"ytcc/config.py" = ["N801"]
 
 [tool.mypy]
 ignore_missing_imports = true

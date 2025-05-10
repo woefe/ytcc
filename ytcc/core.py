@@ -32,11 +32,11 @@ from ytcc import config
 from ytcc.config import Direction, VideoAttr
 from ytcc.database import Database, MappedPlaylist, MappedVideo, Playlist, Video
 from ytcc.exceptions import (
-    BadURLException,
+    BadURLError,
     InvalidSubscriptionFileError,
     NameConflictError,
-    PlaylistDoesNotExistException,
-    YtccException,
+    PlaylistDoesNotExistError,
+    YtccError,
 )
 from ytcc.updater import YTDL_COMMON_OPTS, Fetcher, Updater, make_archive_id
 from ytcc.utils import lazy_import
@@ -180,7 +180,7 @@ class Ytcc:
                 command = ["mpv", *no_video_flag, *mpv_flags, video.url]
                 subprocess.run(command, check=True)
             except FileNotFoundError as fnfe:
-                raise YtccException("Could not locate the mpv video player!") from fnfe
+                raise YtccError("Could not locate the mpv video player!") from fnfe
             except subprocess.CalledProcessError as cpe:
                 logger.debug(
                     "MPV failed! Command: %s; Stdout: %s; Stderr %s; Returncode: %s",
@@ -342,7 +342,7 @@ class Ytcc:
                     url,
                     download_error,
                 )
-                raise BadURLException("URL is not supported or does not exist") from download_error
+                raise BadURLError("URL is not supported or does not exist") from download_error
 
             if info.get("_type") != "playlist":
                 logger.debug(
@@ -350,19 +350,19 @@ class Ytcc:
                     url,
                     info,
                 )
-                raise BadURLException("Not a playlist or not supported")
+                raise BadURLError("Not a playlist or not supported")
 
             peek = list(info.get("entries"))
             for entry in peek:
                 if make_archive_id(ydl, entry) is None:
-                    raise BadURLException(
+                    raise BadURLError(
                         "The given URL is not supported by ytcc, because it "
                         "doesn't point to a playlist"
                     )
 
             real_url = info.get("webpage_url")
             if not real_url:
-                raise BadURLException("The playlist URL cannot be found")
+                raise BadURLError("The playlist URL cannot be found")
 
             if not skip_update_check:
                 logger.info("Performing update check on 10 playlist items")
@@ -417,7 +417,7 @@ class Ytcc:
 
     def delete_playlist(self, name: str) -> None:
         if not self.database.delete_playlist(name):
-            raise PlaylistDoesNotExistException(
+            raise PlaylistDoesNotExistError(
                 f"Could not remove playlist {name}, because it does not exist"
             )
 
@@ -430,7 +430,7 @@ class Ytcc:
 
     def reverse_playlist(self, playlist: str) -> None:
         if not self.database.reverse_playlist(playlist):
-            raise PlaylistDoesNotExistException(
+            raise PlaylistDoesNotExistError(
                 "Could not modify the playlist, because it does not exist"
             )
 
@@ -510,7 +510,7 @@ class Ytcc:
                 self.add_playlist(name, url, skip_update_check=True)
             except NameConflictError:
                 logger.warning("Ignoring playlist '%s', because it already subscribed", name)
-            except BadURLException:
+            except BadURLError:
                 logger.warning("Ignoring playlist '%s', because it is not supported", name)
             else:
                 logger.info("Added playlist '%s'", name)

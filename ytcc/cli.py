@@ -31,12 +31,12 @@ from ytcc import __author__, __version__, config, core
 from ytcc.config import Direction, PlaylistAttr, VideoAttr
 from ytcc.database import MappedVideo
 from ytcc.exceptions import (
-    BadConfigException,
-    BadURLException,
-    IncompatibleDatabaseVersion,
+    BadConfigError,
+    BadURLError,
+    IncompatibleDatabaseVersionError,
     NameConflictError,
-    PlaylistDoesNotExistException,
-    YtccException,
+    PlaylistDoesNotExistError,
+    YtccError,
 )
 from ytcc.printer import (
     JSONPrinter,
@@ -133,7 +133,7 @@ def ids_completion(watched: bool = False):
     ) -> List[CompletionItem]:
         try:
             _load_completion_conf(ctx)
-        except BadConfigException:
+        except BadConfigError:
             return []
 
         with core.Ytcc() as ytcc:
@@ -155,7 +155,7 @@ def playlist_completion(
 ) -> List[str]:
     try:
         _load_completion_conf(ctx)
-    except BadConfigException:
+    except BadConfigError:
         return []
 
     with core.Ytcc() as ytcc:
@@ -179,7 +179,7 @@ def tags_completion(
 ) -> List[str]:
     try:
         _load_completion_conf(ctx)
-    except BadConfigException:
+    except BadConfigError:
         return []
 
     with core.Ytcc() as ytcc:
@@ -266,7 +266,7 @@ def cli(
             config.load()
         else:
             config.load(str(conf))
-    except BadConfigException as conf_exc:
+    except BadConfigError as conf_exc:
         logger.error(str(conf_exc))
         ctx.exit(1)
 
@@ -307,7 +307,7 @@ def subscribe(ytcc: core.Ytcc, name: str, url: str, reverse: bool):
     """
     try:
         ytcc.add_playlist(name, url, reverse)
-    except BadURLException as bad_url:
+    except BadURLError as bad_url:
         logger.error("The given URL does not point to a playlist or is not supported")
         raise Exit(1) from bad_url
     except NameConflictError as name_conflict:
@@ -335,7 +335,7 @@ def unsubscribe(ytcc: core.Ytcc, names: Iterable[str]):
     for name in set(names):
         try:
             ytcc.delete_playlist(name)
-        except PlaylistDoesNotExistException as err:
+        except PlaylistDoesNotExistError as err:
             logger.error("Playlist '%s' does not exist", name)
             raise Exit(1) from err
         else:
@@ -369,7 +369,7 @@ def reverse_playlist(ytcc: core.Ytcc, playlists: Tuple[str, ...]):
     for playlist in playlists:
         try:
             ytcc.reverse_playlist(playlist)
-        except PlaylistDoesNotExistException as err:
+        except PlaylistDoesNotExistError as err:
             logger.error("Could not reverse playlist '%s', because it doesn't exist", playlist)
             raise Exit(1) from err
         else:
@@ -906,14 +906,14 @@ def main():
         logger.error("Cannot connect to the database or query failed unexpectedly")
         logger.debug("Unknown database error", exc_info=db_err)
         sys.exit(1)
-    except IncompatibleDatabaseVersion:
+    except IncompatibleDatabaseVersionError:
         logger.error(
             "This version of ytcc is not compatible with the older database versions. "
             "See https://github.com/woefe/ytcc/blob/master/doc/migrate.md for more "
             "details."
         )
         sys.exit(1)
-    except YtccException as exc:
+    except YtccError as exc:
         logger.error("%s", str(exc))
         logger.debug("Unknown ytcc exception", exc_info=exc)
         sys.exit(1)

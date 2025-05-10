@@ -28,7 +28,7 @@ from ytcc import (
     MappedPlaylist,
     MappedVideo,
     Playlist,
-    PlaylistDoesNotExistException,
+    PlaylistDoesNotExistError,
     Video,
 )
 
@@ -292,7 +292,7 @@ def test_tag_playlist(filled_database):
         _check_playlist(db, "pl4", MappedPlaylist("pl4", "d", False, ["tag1", "tag4"]))
 
         # Try tagging non-existing list
-        with pytest.raises(PlaylistDoesNotExistException):
+        with pytest.raises(PlaylistDoesNotExistError):
             db.tag_playlist("non-existing", ["tag1", "tag4"])
 
 
@@ -336,7 +336,7 @@ def test_add_videos(filled_database):
         pl1_videos = list(db.list_videos(playlists=["pl1"]))
         assert len(pl1_videos) == 4
 
-        with pytest.raises(PlaylistDoesNotExistException):
+        with pytest.raises(PlaylistDoesNotExistError):
             db.add_videos(videos, Playlist("non-existent", "", False))
 
         # Call without videos is silently ignored

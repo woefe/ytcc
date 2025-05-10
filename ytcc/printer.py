@@ -31,7 +31,7 @@ from wcwidth import wcswidth
 
 from ytcc import config
 from ytcc.database import MappedPlaylist, MappedVideo
-from ytcc.exceptions import YtccException
+from ytcc.exceptions import YtccError
 from ytcc.terminal import get_terminal_width, printt
 
 
@@ -242,7 +242,7 @@ class XSVPrinter(Printer):
     def __init__(self, separator: str = ","):
         super().__init__()
         if len(separator) != 1:
-            raise YtccException("Separator must be a single character")
+            raise YtccError("Separator must be a single character")
         self.separator = separator
 
     def escape(self, string: str) -> str:
@@ -307,7 +307,7 @@ class JSONPrinter(Printer):
 class RSSPrinter(Printer):
     def print(self, obj: Printable) -> None:
         if not isinstance(obj, VideoPrintable):
-            raise YtccException("RSS can only be generated for videos")
+            raise YtccError("RSS can only be generated for videos")
 
         rss = ET.Element("rss", version="2.0")
         channel = ET.SubElement(rss, "channel")

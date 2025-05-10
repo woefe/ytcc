@@ -24,13 +24,13 @@ signing up for a Google account.
 
 from ytcc.database import Database, MappedPlaylist, MappedVideo, Playlist, Video
 from ytcc.exceptions import (
-    BadConfigException,
-    BadURLException,
-    IncompatibleDatabaseVersion,
+    BadConfigError,
+    BadURLError,
+    IncompatibleDatabaseVersionError,
     InvalidSubscriptionFileError,
     NameConflictError,
-    PlaylistDoesNotExistException,
-    YtccException,
+    PlaylistDoesNotExistError,
+    YtccError,
 )
 
 __license__ = "GPLv3"
@@ -39,16 +39,16 @@ __author__ = __maintainer__ = "Wolfgang Popp"
 __email__ = "mail@wolfgang-popp.de"
 
 __all__ = [
-    "BadConfigException",
-    "BadURLException",
+    "BadConfigError",
+    "BadURLError",
     "Database",
-    "IncompatibleDatabaseVersion",
+    "IncompatibleDatabaseVersionError",
     "InvalidSubscriptionFileError",
     "MappedPlaylist",
     "MappedVideo",
     "NameConflictError",
     "Playlist",
-    "PlaylistDoesNotExistException",
+    "PlaylistDoesNotExistError",
     "Video",
-    "YtccException",
+    "YtccError",
 ]
