@@ -39,7 +39,7 @@ select = [
     "I",
     # "C90",
     # "N",
-    # "PERF",
+    "PERF",
     "E",
     "W",
     # "DOC",
@@ -53,6 +53,7 @@ select = [
     "TRY"
 ]
 ignore = [
+    "PERF203",
     "RUF012",
     "S603",
     "S607",

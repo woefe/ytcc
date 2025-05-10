@@ -101,22 +101,21 @@ class VideoPrintable(Printable):
             "playlists",
         ]
 
-        data = []
-        for video in self.videos:
-            data.append(
-                [
-                    str(video.id),
-                    video.url,
-                    video.title,
-                    video.description,
-                    self._format_date(video.publish_date),
-                    self._format_date(video.watch_date) if video.watch_date else "No",
-                    self._format_duration(video.duration),
-                    video.thumbnail_url or "",
-                    video.extractor_hash,
-                    ", ".join(p.name for p in video.playlists),
-                ]
-            )
+        data = [
+            [
+                str(video.id),
+                video.url,
+                video.title,
+                video.description,
+                self._format_date(video.publish_date),
+                self._format_date(video.watch_date) if video.watch_date else "No",
+                self._format_duration(video.duration),
+                video.thumbnail_url or "",
+                video.extractor_hash,
+                ", ".join(p.name for p in video.playlists),
+            ]
+            for video in self.videos
+        ]
 
         return Table(header, data)
 
