@@ -482,6 +482,7 @@ class Ytcc:
         self._bulk_subscribe(subscriptions)
 
     def import_yt_csv(self, file: Path):
+        csv_column_count = 3
         with file.open(newline="", encoding="utf-8") as csvfile:
             sample = csvfile.read(4096)
             sniffer = csv.Sniffer()
@@ -499,7 +500,7 @@ class Ytcc:
                 if not row:
                     continue
 
-                if len(row) != 3:
+                if len(row) != csv_column_count:
                     raise InvalidSubscriptionFileError(
                         f"{file!s} has an invalid number of columns. Expecting: ID, URL, Name"
                     )

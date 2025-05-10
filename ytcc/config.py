@@ -29,6 +29,7 @@ from pathlib import Path
 from typing import Any, Callable, Optional, TextIO
 
 from ytcc.exceptions import BadConfigError
+from ytcc.terminal import COLOR_MAX, COLOR_MIN
 
 # typing.get_args and typing.get_origin were introduced in 3.8
 if hasattr(typing, "get_args"):
@@ -64,7 +65,7 @@ _BOOLEAN_STATES = {
 class Color(int):
     def __new__(cls, val):
         i = super().__new__(cls, val)
-        if 0 >= i >= 255:
+        if COLOR_MIN >= i >= COLOR_MAX:
             raise ValueError(
                 f"{val} is not a valid color. Must be in greater than 0 and less than 255"
             )

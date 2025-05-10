@@ -46,7 +46,7 @@ select = [
     # "D",
     "F",
     "PGH",
-    # "PL",
+    "PL",
     "UP",
     "FURB",
     "RUF",
@@ -54,6 +54,7 @@ select = [
 ]
 ignore = [
     "PERF203",
+    "PLW0603",
     "RUF012",
     "S603",
     "S607",
@@ -62,8 +63,13 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"test/*" = ["S101"]
+"test/*" = ["S101", "PLR2004"]
 "ytcc/config.py" = ["N801"]
+
+[tool.ruff.lint.pylint]
+max-args = 10
+max-locals = 18
+max-public-methods = 30
 
 [tool.mypy]
 ignore_missing_imports = true

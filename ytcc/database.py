@@ -75,6 +75,7 @@ class MappedPlaylist(Playlist):
 
 class Database:
     VERSION = 5
+    MINIMUM_SUPPORTED_VERSION = 2
 
     def __init__(self, path: str = ":memory:"):
         """Initialize a new database.
@@ -104,7 +105,7 @@ class Database:
         if is_new_db:
             self._populate()
         db_version = int(self.connection.execute("PRAGMA user_version;").fetchone()[0])
-        if db_version < 2:
+        if db_version < Database.MINIMUM_SUPPORTED_VERSION:
             raise IncompatibleDatabaseVersionError("Database Schema 2 or higher is required")
         migrate(db_version, Database.VERSION, self.connection)
 
@@ -295,9 +296,7 @@ class Database:
         with self.connection as con:
             db_id = con.execute(query_pid, (playlist,)).fetchone()
             if db_id is None:
-                raise PlaylistDoesNotExistError(
-                    f'Playlist "{playlist}" is not in the database.'
-                )
+                raise PlaylistDoesNotExistError(f'Playlist "{playlist}" is not in the database.')
             pid = int(db_id["id"])
             con.execute(query_clear, (pid,))
             con.executemany(query_insert, ((tag, pid) for tag in tags))

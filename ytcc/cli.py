@@ -517,7 +517,7 @@ def set_order(ytcc: core.Ytcc, order_by: ClickOrderBy):
     # - a tuple of tuples of two values
     if (
         isinstance(order_by, tuple)
-        and len(order_by) == 2
+        and len(order_by) == 2  # noqa: PLR2004
         and isinstance(order_by[0], VideoAttr)
         and isinstance(order_by[1], Direction)
     ):
@@ -639,11 +639,11 @@ tui.params.extend(common_list_options)
 def _get_ids(ids: list[int]) -> Iterable[int]:
     if not ids and not sys.stdin.isatty():
         for line in sys.stdin:
-            line = line.strip()
+            stripped = line.strip()
             try:
-                yield int(line)
+                yield int(stripped)
             except ValueError:
-                logger.error("ID '%s' is not an integer", line)
+                logger.error("ID '%s' is not an integer", stripped)
                 sys.exit(1)
 
     elif ids is not None:

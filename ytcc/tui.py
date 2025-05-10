@@ -79,7 +79,7 @@ class VideoSelection(TableData, dict):
     def _prefix_codes(alphabet: frozenset[str], count: int) -> list[str]:
         codes = list(alphabet)
 
-        if len(codes) < 2:
+        if len(codes) < 2:  # noqa: PLR2004
             raise ValueError("alphabet must have at least two characters")
 
         if count < 0:
