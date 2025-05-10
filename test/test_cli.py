@@ -18,7 +18,6 @@
 
 import contextlib
 import json
-import os
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import Callable
@@ -77,8 +76,8 @@ def cli_runner() -> Callable[..., Result]:
             try:
                 yield YtccRunner(conf_file.name, db_file.name, download_dir)
             finally:
-                os.remove(conf_file.name)
-                os.remove(db_file.name)
+                Path(conf_file.name).unlink()
+                Path(db_file.name).unlink()
 
     return context
 

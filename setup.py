@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+from pathlib import Path
+
 from setuptools import find_packages, setup
 
 import ytcc
 
-with open("README.md", "r", encoding="utf-8") as readme:
+with Path("README.md").open("r", encoding="utf-8") as readme:
     long_description = readme.read()
 
 setup(

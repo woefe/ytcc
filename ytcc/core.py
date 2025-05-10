@@ -19,7 +19,6 @@ import asyncio
 import csv
 import datetime
 import logging
-import os
 import sqlite3
 import subprocess
 import xml.etree.ElementTree as ET
@@ -278,7 +277,7 @@ class Ytcc:
 
         ydl_opts: Dict[str, Any] = {
             **YTDL_COMMON_OPTS,
-            "outtmpl": os.path.join(download_dir, subdir, conf.output_template),
+            "outtmpl": str(Path(download_dir, subdir, conf.output_template)),
             "ratelimit": conf.ratelimit if conf.ratelimit > 0 else None,
             "retries": conf.retries,
             "merge_output_format": conf.merge_output_format,
@@ -478,7 +477,7 @@ class Ytcc:
         self._bulk_subscribe(subscriptions)
 
     def import_yt_csv(self, file: Path):
-        with open(file, newline="", encoding="utf-8") as csvfile:
+        with file.open(newline="", encoding="utf-8") as csvfile:
             sample = csvfile.read(4096)
             sniffer = csv.Sniffer()
             dialect = sniffer.sniff(sample)
