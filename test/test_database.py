@@ -17,21 +17,21 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
+from collections.abc import Iterable, Iterator
 from sqlite3 import IntegrityError
 from tempfile import NamedTemporaryFile
-from typing import Iterator, Callable, Optional, List, Iterable
+from typing import Callable, Optional
 
 import pytest
 
 from ytcc import (
     Database,
     MappedPlaylist,
-    PlaylistDoesNotExistException,
-    Playlist,
-    Video,
     MappedVideo,
+    Playlist,
+    PlaylistDoesNotExistError,
+    Video,
 )
-
 
 SETUP_SQL_SCRIPT = """
     INSERT INTO playlist (id, name, url, reverse)
@@ -293,7 +293,7 @@ def test_tag_playlist(filled_database):
         _check_playlist(db, "pl4", MappedPlaylist("pl4", "d", False, ["tag1", "tag4"]))
 
         # Try tagging non-existing list
-        with pytest.raises(PlaylistDoesNotExistException):
+        with pytest.raises(PlaylistDoesNotExistError):
             db.tag_playlist("non-existing", ["tag1", "tag4"])
 
 
@@ -337,7 +337,7 @@ def test_add_videos(filled_database):
         pl1_videos = list(db.list_videos(playlists=["pl1"]))
         assert len(pl1_videos) == 4
 
-        with pytest.raises(PlaylistDoesNotExistException):
+        with pytest.raises(PlaylistDoesNotExistError):
             db.add_videos(videos, Playlist("non-existent", "", False))
 
         # Call without videos is silently ignored
@@ -376,7 +376,7 @@ def test_marked_unwatched(filled_database):
 
 
 def test_list_videos(filled_database):
-    def check_result(result: Iterable[MappedVideo], expected_ids: List[int]):
+    def check_result(result: Iterable[MappedVideo], expected_ids: list[int]):
         assert len(list(result)) == len(expected_ids)
         for video in result:
             assert video.id in expected_ids

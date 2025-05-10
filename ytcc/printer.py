@@ -21,25 +21,26 @@ import json
 import sys
 import textwrap
 import xml.etree.ElementTree as ET
-from abc import ABC, abstractmethod, ABCMeta
+from abc import ABC, ABCMeta, abstractmethod
+from collections.abc import Iterable
 from dataclasses import asdict
 from datetime import datetime, timezone
 from email.utils import format_datetime as rss2_date
-from typing import List, Iterable, Dict, Any, NamedTuple, Optional, Union
+from typing import Any, NamedTuple, Optional, Union
 
 from wcwidth import wcswidth
 
 from ytcc import config
-from ytcc.database import MappedVideo, MappedPlaylist
-from ytcc.exceptions import YtccException
-from ytcc.terminal import printt, get_terminal_width
+from ytcc.database import MappedPlaylist, MappedVideo
+from ytcc.exceptions import YtccError
+from ytcc.terminal import get_terminal_width, printt
 
 
 class Table(NamedTuple):
-    header: List[str]
-    data: List[List[str]]
+    header: list[str]
+    data: list[list[str]]
 
-    def apply_filter(self, column_names: List[str]) -> "Table":
+    def apply_filter(self, column_names: list[str]) -> "Table":
         try:
             indices = [self.header.index(col) for col in column_names]
         except ValueError as index_err:
@@ -58,7 +59,7 @@ class TableData(ABC):
 
 class DictData(ABC):
     @abstractmethod
-    def data(self) -> Iterable[Dict[str, Any]]:
+    def data(self) -> Iterable[dict[str, Any]]:
         pass
 
 
@@ -80,7 +81,7 @@ class VideoPrintable(Printable):
     def _format_date(timestamp: float) -> str:
         return datetime.fromtimestamp(timestamp).strftime(config.ytcc.date_format)
 
-    def data(self) -> Iterable[Dict[str, Any]]:
+    def data(self) -> Iterable[dict[str, Any]]:
         for video in self.videos:
             video_dict = asdict(video)
             video_dict["duration"] = self._format_duration(video.duration)
@@ -101,22 +102,21 @@ class VideoPrintable(Printable):
             "playlists",
         ]
 
-        data = []
-        for video in self.videos:
-            data.append(
-                [
-                    str(video.id),
-                    video.url,
-                    video.title,
-                    video.description,
-                    self._format_date(video.publish_date),
-                    self._format_date(video.watch_date) if video.watch_date else "No",
-                    self._format_duration(video.duration),
-                    video.thumbnail_url or "",
-                    video.extractor_hash,
-                    ", ".join(map(lambda v: v.name, video.playlists)),
-                ]
-            )
+        data = [
+            [
+                str(video.id),
+                video.url,
+                video.title,
+                video.description,
+                self._format_date(video.publish_date),
+                self._format_date(video.watch_date) if video.watch_date else "No",
+                self._format_duration(video.duration),
+                video.thumbnail_url or "",
+                video.extractor_hash,
+                ", ".join(p.name for p in video.playlists),
+            ]
+            for video in self.videos
+        ]
 
         return Table(header, data)
 
@@ -125,7 +125,7 @@ class PlaylistPrintable(Printable):
     def __init__(self, playlists: Iterable[MappedPlaylist]):
         self.playlists = playlists
 
-    def data(self) -> Iterable[Dict[str, Any]]:
+    def data(self) -> Iterable[dict[str, Any]]:
         for playlist in self.playlists:
             yield asdict(playlist)
 
@@ -141,14 +141,14 @@ class PlaylistPrintable(Printable):
 
 class Printer(ABC):
     def __init__(self) -> None:
-        self._filter: Optional[List[Any]] = None
+        self._filter: Optional[list[Any]] = None
 
     @property
-    def filter(self) -> Optional[List[Any]]:
+    def filter(self) -> Optional[list[Any]]:
         return self._filter
 
     @filter.setter
-    def filter(self, fields: List[Any]):
+    def filter(self, fields: list[Any]):
         self._filter = fields
 
     @abstractmethod
@@ -194,8 +194,8 @@ class TablePrinter(Printer):
 
     @staticmethod
     def print_row(
-        columns: List[str],
-        widths: List[int],
+        columns: list[str],
+        widths: list[int],
         bold: bool = False,
         background: Optional[int] = None,
     ) -> None:
@@ -243,7 +243,7 @@ class XSVPrinter(Printer):
     def __init__(self, separator: str = ","):
         super().__init__()
         if len(separator) != 1:
-            raise YtccException("Separator must be a single character")
+            raise YtccError("Separator must be a single character")
         self.separator = separator
 
     def escape(self, string: str) -> str:
@@ -308,7 +308,7 @@ class JSONPrinter(Printer):
 class RSSPrinter(Printer):
     def print(self, obj: Printable) -> None:
         if not isinstance(obj, VideoPrintable):
-            raise YtccException("RSS can only be generated for videos")
+            raise YtccError("RSS can only be generated for videos")
 
         rss = ET.Element("rss", version="2.0")
         channel = ET.SubElement(rss, "channel")
@@ -328,7 +328,7 @@ class RSSPrinter(Printer):
             link = ET.SubElement(item, "link")
             link.text = video.url
             author = ET.SubElement(item, "author")
-            author.text = ", ".join(map(lambda v: v.name, video.playlists))
+            author.text = ", ".join(v.name for v in video.playlists)
             description = ET.SubElement(item, "description")
             description.text = f"<pre>{html.escape(video.description)}</pre>"
             pub_date = ET.SubElement(item, "pubDate")

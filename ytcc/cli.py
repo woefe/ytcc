@@ -18,38 +18,38 @@
 
 import logging
 import sys
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
 from sqlite3 import DatabaseError
-from typing import List, Callable, TypeVar, Generic, Optional, Iterable, Tuple, Union
+from typing import Callable, Generic, Optional, TypeVar, Union
 
 import click
 from click.exceptions import Exit
 from click.shell_completion import CompletionItem
 
-from ytcc import __version__, __author__
-from ytcc import core, config
-from ytcc.config import PlaylistAttr, VideoAttr, Direction
+from ytcc import __author__, __version__, config, core
+from ytcc.config import Direction, PlaylistAttr, VideoAttr
 from ytcc.database import MappedVideo
 from ytcc.exceptions import (
-    BadConfigException,
-    IncompatibleDatabaseVersion,
-    BadURLException,
+    BadConfigError,
+    BadURLError,
+    IncompatibleDatabaseVersionError,
     NameConflictError,
-    PlaylistDoesNotExistException,
-    YtccException,
+    PlaylistDoesNotExistError,
+    YtccError,
 )
 from ytcc.printer import (
     JSONPrinter,
-    XSVPrinter,
-    VideoPrintable,
-    TablePrinter,
+    PlainPrinter,
     PlaylistPrintable,
     Printer,
     RSSPrinter,
-    PlainPrinter,
+    TablePrinter,
+    VideoPrintable,
+    XSVPrinter,
 )
-from ytcc.tui import print_meta, Interactive
+from ytcc.tui import Interactive, print_meta
 
 T = TypeVar("T")
 printer: Printer
@@ -63,7 +63,7 @@ class CommaList(click.ParamType, Generic[T]):
     def __init__(self, validator: Callable[[str], T]):
         self.validator = validator
 
-    def convert(self, value, param, ctx) -> List[T]:
+    def convert(self, value, _param, _ctx) -> list[T]:
         try:
             return [self.validator(elem.strip()) for elem in value.split(",")]
         except ValueError:
@@ -73,7 +73,7 @@ class CommaList(click.ParamType, Generic[T]):
 class TruncateVals(click.ParamType):
     name = "truncate"
 
-    def convert(self, value, param, ctx) -> Union[None, str, int]:
+    def convert(self, value, _param, _ctx) -> Union[None, str, int]:
         if value == "max":
             return "max"
         if value == "no":
@@ -84,8 +84,8 @@ class TruncateVals(click.ParamType):
             self.fail(f"Unexpected value {value}. Must be 'no', 'max', or an integer")
 
     def shell_complete(
-        self, ctx: click.Context, param: click.Parameter, incomplete: str
-    ) -> List[CompletionItem]:
+        self, _ctx: click.Context, _param: click.Parameter, incomplete: str
+    ) -> list[CompletionItem]:
         completions = [
             ("max", "truncates to terminal width"),
             ("no", "disables truncating"),
@@ -129,12 +129,12 @@ def _load_completion_conf(ctx: click.Context) -> None:
 def ids_completion(watched: bool = False):
     def complete(
         ctx: click.Context,
-        param: click.Parameter,  # pylint: disable=unused-argument
+        _param: click.Parameter,
         incomplete: str,
-    ) -> List[CompletionItem]:
+    ) -> list[CompletionItem]:
         try:
             _load_completion_conf(ctx)
-        except BadConfigException:
+        except BadConfigError:
             return []
 
         with core.Ytcc() as ytcc:
@@ -142,7 +142,7 @@ def ids_completion(watched: bool = False):
             used_ids = list(map(str, ctx.params.get("ids") or []))
             return [
                 CompletionItem(value=v_id, help=title)
-                for v_id, title in map(lambda v: (str(v.id), v.title), ytcc.list_videos())
+                for v_id, title in ((str(v.id), v.title) for v in ytcc.list_videos())
                 if v_id.startswith(incomplete) and v_id not in used_ids
             ]
 
@@ -151,12 +151,12 @@ def ids_completion(watched: bool = False):
 
 def playlist_completion(
     ctx: click.Context,
-    param: click.Parameter,  # pylint: disable=unused-argument
+    _param: click.Parameter,
     incomplete: str,
-) -> List[str]:
+) -> list[str]:
     try:
         _load_completion_conf(ctx)
-    except BadConfigException:
+    except BadConfigError:
         return []
 
     with core.Ytcc() as ytcc:
@@ -167,7 +167,7 @@ def playlist_completion(
         ]
 
 
-def playlists_completion(ctx: click.Context, param: click.Parameter, incomplete: str) -> List[str]:
+def playlists_completion(ctx: click.Context, param: click.Parameter, incomplete: str) -> list[str]:
     candidates = playlist_completion(ctx, param, incomplete)
     used_playlists = ctx.params.get("names") or []
     return list(filter(lambda candidate: candidate not in used_playlists, candidates))
@@ -175,12 +175,12 @@ def playlists_completion(ctx: click.Context, param: click.Parameter, incomplete:
 
 def tags_completion(
     ctx: click.Context,
-    param: click.Parameter,  # pylint: disable=unused-argument
+    _param: click.Parameter,
     incomplete: str,
-) -> List[str]:
+) -> list[str]:
     try:
         _load_completion_conf(ctx)
-    except BadConfigException:
+    except BadConfigError:
         return []
 
     with core.Ytcc() as ytcc:
@@ -267,11 +267,11 @@ def cli(
             config.load()
         else:
             config.load(str(conf))
-    except BadConfigException as conf_exc:
+    except BadConfigError as conf_exc:
         logger.error(str(conf_exc))
         ctx.exit(1)
 
-    global printer  # pylint: disable=global-statement,invalid-name
+    global printer
 
     ytcc = ctx.ensure_object(core.Ytcc)
     ctx.call_on_close(ytcc.close)
@@ -308,7 +308,7 @@ def subscribe(ytcc: core.Ytcc, name: str, url: str, reverse: bool):
     """
     try:
         ytcc.add_playlist(name, url, reverse)
-    except BadURLException as bad_url:
+    except BadURLError as bad_url:
         logger.error("The given URL does not point to a playlist or is not supported")
         raise Exit(1) from bad_url
     except NameConflictError as name_conflict:
@@ -336,7 +336,7 @@ def unsubscribe(ytcc: core.Ytcc, names: Iterable[str]):
     for name in set(names):
         try:
             ytcc.delete_playlist(name)
-        except PlaylistDoesNotExistException as err:
+        except PlaylistDoesNotExistError as err:
             logger.error("Playlist '%s' does not exist", name)
             raise Exit(1) from err
         else:
@@ -362,7 +362,7 @@ def rename(ytcc: core.Ytcc, old: str, new: str):
 @cli.command("reverse")
 @click.argument("playlists", nargs=-1, shell_complete=playlist_completion)
 @pass_ytcc
-def reverse_playlist(ytcc: core.Ytcc, playlists: Tuple[str, ...]):
+def reverse_playlist(ytcc: core.Ytcc, playlists: tuple[str, ...]):
     """Toggle the update behavior of playlists.
 
     Playlists updated in reverse might lead to slow updates with the `update` command.
@@ -370,7 +370,7 @@ def reverse_playlist(ytcc: core.Ytcc, playlists: Tuple[str, ...]):
     for playlist in playlists:
         try:
             ytcc.reverse_playlist(playlist)
-        except PlaylistDoesNotExistException as err:
+        except PlaylistDoesNotExistError as err:
             logger.error("Could not reverse playlist '%s', because it doesn't exist", playlist)
             raise Exit(1) from err
         else:
@@ -383,10 +383,10 @@ def reverse_playlist(ytcc: core.Ytcc, playlists: Tuple[str, ...]):
     "-a",
     type=CommaList(PlaylistAttr.from_str),
     help="Attributes of the playlist to be included in the output. "
-    f"Some of [{', '.join(map(lambda x: x.value, list(PlaylistAttr)))}].",
+    f"Some of [{', '.join(a.value for a in PlaylistAttr)}].",
 )
 @pass_ytcc
-def subscriptions(ytcc: core.Ytcc, attributes: List[PlaylistAttr]):
+def subscriptions(ytcc: core.Ytcc, attributes: list[PlaylistAttr]):
     """List all subscriptions."""
     if not attributes:
         printer.filter = config.ytcc.playlist_attrs
@@ -399,7 +399,7 @@ def subscriptions(ytcc: core.Ytcc, attributes: List[PlaylistAttr]):
 @click.argument("name", shell_complete=playlist_completion)
 @click.argument("tags", nargs=-1, shell_complete=tags_completion)
 @pass_ytcc
-def tag(ytcc: core.Ytcc, name: str, tags: Tuple[str, ...]):
+def tag(ytcc: core.Ytcc, name: str, tags: tuple[str, ...]):
     """Set tags of a playlist.
 
     Sets the TAGS associated with the playlist called NAME. If no tags are given, all tags are
@@ -430,11 +430,11 @@ def update(ytcc: core.Ytcc, max_fail: Optional[int], max_backlog: Optional[int])
     ytcc.update(max_fail, max_backlog)
 
 
-_video_attrs = click.Choice(list(map(lambda v: v.value, VideoAttr)))
+_video_attrs = click.Choice([v.value for v in VideoAttr])
 _video_attrs.name = "attribute"
-_dir = click.Choice(list(map(lambda v: v.value, Direction)))
+_dir = click.Choice([v.value for v in Direction])
 _dir.name = "direction"
-ClickOrderBy = Union[Tuple[Tuple[VideoAttr, Direction], ...], Tuple[VideoAttr, Direction]]
+ClickOrderBy = Iterable[tuple[VideoAttr, Direction]]
 common_list_options = [
     click.Option(
         ["--tags", "-c"],
@@ -487,11 +487,11 @@ common_list_options = [
 
 def apply_filters(
     ytcc: core.Ytcc,
-    tags: Optional[List[str]],
+    tags: Optional[list[str]],
     since: Optional[datetime],
     till: Optional[datetime],
-    playlists: Optional[List[str]],
-    ids: Optional[List[int]],
+    playlists: Optional[list[str]],
+    ids: Optional[list[int]],
     watched: bool,
     unwatched: bool,
 ):
@@ -517,26 +517,25 @@ def set_order(ytcc: core.Ytcc, order_by: ClickOrderBy):
     # - a tuple of tuples of two values
     if (
         isinstance(order_by, tuple)
-        and len(order_by) == 2
+        and len(order_by) == 2  # noqa: PLR2004
         and isinstance(order_by[0], VideoAttr)
         and isinstance(order_by[1], Direction)
     ):
-        ytcc.set_listing_order([order_by])  # type: ignore
+        ytcc.set_listing_order([order_by])
     elif order_by != () and isinstance(order_by, tuple) and isinstance(order_by[0], tuple):
-        ytcc.set_listing_order(list(order_by))  # type: ignore
+        ytcc.set_listing_order(list(order_by))
     else:
         ytcc.set_listing_order(config.ytcc.order_by)
 
 
-# pylint: disable=too-many-arguments
 def list_videos_impl(
     ytcc: core.Ytcc,
-    tags: Optional[List[str]],
+    tags: Optional[list[str]],
     since: Optional[datetime],
     till: Optional[datetime],
-    playlists: Optional[List[str]],
-    ids: Optional[List[int]],
-    attributes: Optional[List[str]],
+    playlists: Optional[list[str]],
+    ids: Optional[list[int]],
+    attributes: Optional[list[str]],
     watched: bool,
     unwatched: bool,
     order_by: ClickOrderBy,
@@ -562,12 +561,12 @@ def list_videos_impl(
 @pass_ytcc
 def list_videos(
     ytcc: core.Ytcc,
-    tags: Optional[List[str]],
+    tags: Optional[list[str]],
     since: Optional[datetime],
     till: Optional[datetime],
-    playlists: Optional[List[str]],
-    ids: Optional[List[int]],
-    attributes: Optional[List[str]],
+    playlists: Optional[list[str]],
+    ids: Optional[list[int]],
+    attributes: Optional[list[str]],
     watched: bool,
     unwatched: bool,
     order_by: ClickOrderBy,
@@ -594,11 +593,11 @@ def list_videos(
 @pass_ytcc
 def list_ids(
     ytcc: core.Ytcc,
-    tags: Optional[List[str]],
+    tags: Optional[list[str]],
     since: Optional[datetime],
     till: Optional[datetime],
-    playlists: Optional[List[str]],
-    ids: Optional[List[int]],
+    playlists: Optional[list[str]],
+    ids: Optional[list[int]],
     watched: bool,
     unwatched: bool,
     order_by: ClickOrderBy,
@@ -608,7 +607,7 @@ def list_ids(
     Basically an alias for `ytcc --output xsv list --attributes id`. This alias can be useful for
     piping into the download, play, and mark commands. E.g: `ytcc ls | ytcc watch`
     """
-    global printer  # pylint: disable=global-statement,invalid-name
+    global printer
     printer = XSVPrinter()
     list_videos_impl(ytcc, tags, since, till, playlists, ids, ["id"], watched, unwatched, order_by)
 
@@ -617,11 +616,11 @@ def list_ids(
 @pass_ytcc
 def tui(
     ytcc: core.Ytcc,
-    tags: Optional[List[str]],
+    tags: Optional[list[str]],
     since: Optional[datetime],
     till: Optional[datetime],
-    playlists: Optional[List[str]],
-    ids: Optional[List[int]],
+    playlists: Optional[list[str]],
+    ids: Optional[list[int]],
     watched: bool,
     unwatched: bool,
     order_by: ClickOrderBy,
@@ -637,21 +636,21 @@ list_videos.params.extend(common_list_options)
 tui.params.extend(common_list_options)
 
 
-def _get_ids(ids: List[int]) -> Iterable[int]:
+def _get_ids(ids: list[int]) -> Iterable[int]:
     if not ids and not sys.stdin.isatty():
         for line in sys.stdin:
-            line = line.strip()
+            stripped = line.strip()
             try:
-                yield int(line)
+                yield int(stripped)
             except ValueError:
-                logging.error("ID '%s' is not an integer", line)
+                logger.error("ID '%s' is not an integer", stripped)
                 sys.exit(1)
 
     elif ids is not None:
         yield from ids
 
 
-def _get_videos(ytcc: core.Ytcc, ids: List[int]) -> Iterable[MappedVideo]:
+def _get_videos(ytcc: core.Ytcc, ids: list[int]) -> Iterable[MappedVideo]:
     ids = list(_get_ids(ids))
     if ids:
         ytcc.set_video_id_filter(ids)
@@ -682,7 +681,7 @@ def _get_videos(ytcc: core.Ytcc, ids: List[int]) -> Iterable[MappedVideo]:
 @pass_ytcc
 def play(
     ytcc: core.Ytcc,
-    ids: Tuple[int, ...],
+    ids: tuple[int, ...],
     audio_only: bool,
     no_meta: bool,
     no_mark: bool,
@@ -715,7 +714,7 @@ def play(
 @cli.command()
 @click.argument("ids", nargs=-1, type=click.INT, shell_complete=ids_completion())
 @pass_ytcc
-def mark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
+def mark(ytcc: core.Ytcc, ids: tuple[int, ...]):
     """Mark videos as watched.
 
     Marks videos as watched without playing or downloading them. If no IDs are given, ytcc tries to
@@ -730,7 +729,7 @@ def mark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
 @cli.command()
 @click.argument("ids", nargs=-1, type=click.INT, shell_complete=ids_completion(True))
 @pass_ytcc
-def unmark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
+def unmark(ytcc: core.Ytcc, ids: tuple[int, ...]):
     """Mark videos as unwatched.
 
     Marks videos as unwatched. If no IDs are given, ytcc tries to read IDs from stdin. If no IDs
@@ -774,7 +773,7 @@ def unmark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
 @pass_ytcc
 def download(
     ytcc: core.Ytcc,
-    ids: Tuple[int, ...],
+    ids: tuple[int, ...],
     path: Path,
     audio_only: bool,
     no_mark: bool,
@@ -823,6 +822,7 @@ def cleanup(ytcc: core.Ytcc, keep: Optional[int]):
 @click.option(
     "--format",
     "-f",
+    "file_format",
     type=click.Choice(["opml", "csv"]),
     default="csv",
     show_default=True,
@@ -830,7 +830,7 @@ def cleanup(ytcc: core.Ytcc, keep: Optional[int]):
 )
 @click.argument("file", nargs=1, type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @pass_ytcc
-def import_(ytcc: core.Ytcc, format: str, file: Path):  # pylint: disable=redefined-builtin
+def import_(ytcc: core.Ytcc, file_format: str, file: Path):
     """Import YouTube subscriptions from an OPML or CSV file.
 
     The CSV file must have three columns in following order: Channel ID, Channel URL, Channel name.
@@ -842,9 +842,9 @@ def import_(ytcc: core.Ytcc, format: str, file: Path):  # pylint: disable=redefi
     The OPML export was available on YouTube some time ago and old versions of ytcc were also able
     to export subscriptions in the OPML format.
     """
-    if format == "opml":
+    if file_format == "opml":
         ytcc.import_yt_opml(file)
-    elif format == "csv":
+    elif file_format == "csv":
         ytcc.import_yt_csv(file)
 
 
@@ -855,9 +855,8 @@ def bug_report():
     Shows versions of dependencies and configuration relevant for any bug report. Please include
     the output of this command when filing a new bug report!
     """
-    # pylint: disable=import-outside-toplevel
-    import subprocess
     import sqlite3
+    import subprocess
 
     print("---ytcc version---")
     print(__version__)
@@ -908,14 +907,14 @@ def main():
         logger.error("Cannot connect to the database or query failed unexpectedly")
         logger.debug("Unknown database error", exc_info=db_err)
         sys.exit(1)
-    except IncompatibleDatabaseVersion:
+    except IncompatibleDatabaseVersionError:
         logger.error(
             "This version of ytcc is not compatible with the older database versions. "
             "See https://github.com/woefe/ytcc/blob/master/doc/migrate.md for more "
             "details."
         )
         sys.exit(1)
-    except YtccException as exc:
+    except YtccError as exc:
         logger.error("%s", str(exc))
         logger.debug("Unknown ytcc exception", exc_info=exc)
         sys.exit(1)

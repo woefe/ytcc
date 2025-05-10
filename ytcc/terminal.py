@@ -79,6 +79,10 @@ _KNOWN_KEYS = {
 }
 
 
+COLOR_MIN = 0
+COLOR_MAX = 255
+
+
 def getkey() -> str:
     """Read a single character from stdin without the need to press enter.
 
@@ -157,10 +161,10 @@ def printt(
     esc_clear_attrs = "\033[0m"
     esc_bold = "\033[1m"
 
-    if foreground is not None and 0 <= foreground <= 255:
+    if foreground is not None and COLOR_MIN <= foreground <= COLOR_MAX:
         print(esc_color_foreground.format(foreground), end="")
 
-    if background is not None and 0 <= background <= 255:
+    if background is not None and COLOR_MIN <= background <= COLOR_MAX:
         print(esc_color_background.format(background), end="")
 
     if bold:

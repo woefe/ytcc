@@ -22,15 +22,15 @@ Command Line tool to keep track of your favourite YouTube channels without
 signing up for a Google account.
 """
 
-from ytcc.database import Database, MappedVideo, Video, MappedPlaylist, Playlist
+from ytcc.database import Database, MappedPlaylist, MappedVideo, Playlist, Video
 from ytcc.exceptions import (
-    YtccException,
-    BadURLException,
-    NameConflictError,
-    PlaylistDoesNotExistException,
+    BadConfigError,
+    BadURLError,
+    IncompatibleDatabaseVersionError,
     InvalidSubscriptionFileError,
-    BadConfigException,
-    IncompatibleDatabaseVersion,
+    NameConflictError,
+    PlaylistDoesNotExistError,
+    YtccError,
 )
 
 __license__ = "GPLv3"
@@ -39,16 +39,16 @@ __author__ = __maintainer__ = "Wolfgang Popp"
 __email__ = "mail@wolfgang-popp.de"
 
 __all__ = [
+    "BadConfigError",
+    "BadURLError",
     "Database",
-    "MappedVideo",
-    "Video",
-    "MappedPlaylist",
-    "Playlist",
-    "YtccException",
-    "BadURLException",
-    "NameConflictError",
-    "PlaylistDoesNotExistException",
+    "IncompatibleDatabaseVersionError",
     "InvalidSubscriptionFileError",
-    "BadConfigException",
-    "IncompatibleDatabaseVersion",
+    "MappedPlaylist",
+    "MappedVideo",
+    "NameConflictError",
+    "Playlist",
+    "PlaylistDoesNotExistError",
+    "Video",
+    "YtccError",
 ]

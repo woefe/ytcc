@@ -17,9 +17,8 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import sqlite3
-from datetime import datetime
 
-V3_WATCH_DATE = f"""
+V3_WATCH_DATE = """
 CREATE TABLE new_video
 (
     id             INTEGER        NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -53,7 +52,7 @@ SELECT
     description,
     duration,
     publish_date,
-    {datetime.now().timestamp()},
+    unixepoch(),
     extractor_hash
 FROM video
 WHERE watched = 1;

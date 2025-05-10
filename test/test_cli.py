@@ -18,7 +18,6 @@
 
 import contextlib
 import json
-import os
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import Callable
@@ -26,7 +25,7 @@ from typing import Callable
 import pytest
 from click.testing import CliRunner, Result
 
-from test import WEBDRIVER_VIDEOS, WEBDRIVER_PLAYLIST
+from test import WEBDRIVER_PLAYLIST, WEBDRIVER_VIDEOS
 from ytcc import InvalidSubscriptionFileError
 
 
@@ -77,8 +76,8 @@ def cli_runner() -> Callable[..., Result]:
             try:
                 yield YtccRunner(conf_file.name, db_file.name, download_dir)
             finally:
-                os.remove(conf_file.name)
-                os.remove(db_file.name)
+                Path(conf_file.name).unlink()
+                Path(db_file.name).unlink()
 
     return context
 
@@ -125,7 +124,7 @@ def test_subscribe_bad_url(cli_runner, caplog):
         result = runner("subscribe", "Test", "test.kom")
         assert result.exit_code != 0
         msg = "The given URL does not point to a playlist or is not supported"
-        assert any(map(lambda r: r.msg == msg, caplog.records))
+        assert any(r.msg == msg for r in caplog.records)
 
 
 def test_unsubscribe(cli_runner):

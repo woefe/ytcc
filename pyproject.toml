@@ -1,5 +1,75 @@
 [tool.ruff]
 line-length = 99
 
+[tool.ruff.lint]
+select = [
+    "YTT",
+    # "ANN",
+    "ASYNC",
+    "S",
+    "BLE",
+    "B",
+    "A",
+    "C4",
+    # "DTZ",
+    "T10",
+    "EXE",
+    "FIX",
+    # "FA", # Enable after dropping 3.9 support
+    "INT",
+    "ISC",
+    "ICN",
+    "LOG",
+    "G",
+    "INP",
+    "PIE",
+    "PT",
+    "Q",
+    "RSE",
+    "RET",
+    # "SLF",
+    "SIM",
+    "SLOT",
+    "TID",
+    "TD",
+    "TC",
+    "ARG",
+    "PTH",
+    "FLY",
+    "I",
+    "C90",
+    "N",
+    "PERF",
+    "E",
+    "W",
+    # "DOC",
+    # "D",
+    "F",
+    "PGH",
+    "PL",
+    "UP",
+    "FURB",
+    "RUF",
+    "TRY"
+]
+ignore = [
+    "PERF203",
+    "PLW0603",
+    "RUF012",
+    "S603",
+    "S607",
+    "TRY003",
+    "TRY400",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"test/*" = ["S101", "PLR2004"]
+"ytcc/config.py" = ["N801"]
+
+[tool.ruff.lint.pylint]
+max-args = 10
+max-locals = 10
+max-public-methods = 20
+
 [tool.mypy]
 ignore_missing_imports = true

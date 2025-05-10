@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-from setuptools import setup, find_packages
+from pathlib import Path
+
+from setuptools import find_packages, setup
 
 import ytcc
 
-with open("README.md", "r", encoding="utf-8") as readme:
+with Path("README.md").open("r", encoding="utf-8") as readme:
     long_description = readme.read()
 
 setup(
@@ -17,7 +19,7 @@ setup(
     author_email=ytcc.__email__,
     license=ytcc.__license__,
     packages=find_packages(exclude=["test"]),
-    install_requires=["yt_dlp", "click>=8.0", "wcwidth"],
+    install_requires=["yt_dlp", "click>=8.0", "wcwidth", "defusedxml"],
     extras_require={"youtube_dl": ["youtube_dl"]},
     python_requires=">=3.7, <4",
     scripts=["scripts/ytccf.sh"],

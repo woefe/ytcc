@@ -19,6 +19,7 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import date
+from pathlib import Path
 
 import click
 
@@ -33,7 +34,7 @@ class BlankUsageFormatter(click.HelpFormatter):
 
 def main():
     ctx = cli.make_context("ytcc", [""])
-    with open("doc/ytcc.1", "w", encoding="utf-8") as manpage:
+    with Path("doc/ytcc.1").open("w", encoding="utf-8") as manpage:
         today = date.today().strftime("%b %Y")
         manpage.write(f'.TH ytcc 1 "{today}" "{__version__}" ')
         manpage.write('"ytcc manual"\n')

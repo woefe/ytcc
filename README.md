@@ -76,7 +76,7 @@ ytccf.sh --help
 ```
 
 ## Configuration
-Ytcc searches for a configuration file at following locations:
+Ytcc searches for a configuration file at the following locations:
 
 1. The file given with `-c` or `--config` options
 2. `~/.ytcc.conf`
@@ -207,8 +207,8 @@ Specifics are documented [here](https://github.com/woefe/ytcc/tree/master/doc/mp
 
 ## Reporting issues
 Create a new issue on the [GitHub issue tracker](https://github.com/woefe/ytcc/issues/new).
-Describe the issue as detailed as possible and please use the issue templates, if possible!
-**Important**: do not forget to include the output of `ytcc bug-report` in bug reports.
+Describe the issue as detailed as possible, and please use the issue templates, if possible!
+**Important**: Remember to include the output of `ytcc bug-report` in bug reports.
 It also might help a lot to run ytcc with the `--loglevel debug` option and include the output in your report.
 
 ## Development
@@ -221,6 +221,7 @@ Run the following commands before every pull request and fix the warnings or err
 ```shell script
 mypy ytcc
 pytest
-pylint ytcc
-pydocstyle ytcc
+ruff format
+ruff check
+ec
 ```

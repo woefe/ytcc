@@ -2,11 +2,11 @@
 mypy
 pytest
 ruff
-pydocstyle[toml]
 editorconfig-checker
 setuptools
 
 # Application dependencies
 click
+defusedxml
 wcwidth
 yt_dlp

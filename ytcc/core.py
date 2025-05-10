@@ -19,30 +19,49 @@ import asyncio
 import csv
 import datetime
 import logging
-import os
 import sqlite3
 import subprocess
+import typing
 import xml.etree.ElementTree as ET
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, List, Optional, Any, Dict, Tuple, Union
+from typing import Any, Optional, Union
 from urllib.parse import parse_qs, urlparse
+
+from defusedxml.ElementTree import parse as defusedxml_parse
 
 from ytcc import config
 from ytcc.config import Direction, VideoAttr
-from ytcc.database import Database, Video, MappedVideo, MappedPlaylist, Playlist
+from ytcc.database import Database, MappedPlaylist, MappedVideo, Playlist, Video
 from ytcc.exceptions import (
-    YtccException,
-    BadURLException,
-    NameConflictError,
-    PlaylistDoesNotExistException,
+    BadURLError,
     InvalidSubscriptionFileError,
+    NameConflictError,
+    PlaylistDoesNotExistError,
+    YtccError,
 )
-from ytcc.updater import Updater, Fetcher, YTDL_COMMON_OPTS, make_archive_id
+from ytcc.updater import YTDL_COMMON_OPTS, Fetcher, Updater, make_archive_id
 from ytcc.utils import lazy_import
 
-youtube_dl = lazy_import("yt_dlp", "youtube_dl")
+if typing.TYPE_CHECKING:
+    import yt_dlp as youtube_dl
+else:
+    youtube_dl = lazy_import("yt_dlp", "youtube_dl")
 
 logger = logging.getLogger(__name__)
+
+
+class GetFilenameProcessor(youtube_dl.postprocessor.common.PostProcessor):
+    def __init__(self):
+        super().__init__()
+        self.actual_file = None
+
+    def run(self, information):
+        self.actual_file = information.get("filepath")
+        return [], information
+
+    def report_progress(self, *args, **kwargs):
+        pass
 
 
 class Ytcc:
@@ -59,13 +78,13 @@ class Ytcc:
 
     def __init__(self) -> None:
         self._database: Optional[Database] = None
-        self.video_id_filter: Optional[List[int]] = None
-        self.playlist_filter: Optional[List[str]] = None
-        self.tags_filter: Optional[List[str]] = None
+        self.video_id_filter: Optional[list[int]] = None
+        self.playlist_filter: Optional[list[str]] = None
+        self.tags_filter: Optional[list[str]] = None
         self.date_begin_filter: Optional[float] = None
         self.date_end_filter: Optional[float] = None
         self.include_watched_filter: Optional[bool] = False
-        self.order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None
+        self.order_by: Optional[list[tuple[VideoAttr, Direction]]] = None
 
     def __enter__(self) -> "Ytcc":
         return self
@@ -85,7 +104,7 @@ class Ytcc:
         if self._database is not None:
             self._database.close()
 
-    def set_playlist_filter(self, playlists: Optional[List[str]]) -> None:
+    def set_playlist_filter(self, playlists: Optional[list[str]]) -> None:
         """Set the channel filter.
 
         The results when listing videos will only include videos by channels specified in the
@@ -125,7 +144,7 @@ class Ytcc:
         """
         self.include_watched_filter = enabled
 
-    def set_video_id_filter(self, ids: Optional[List[int]] = None) -> None:
+    def set_video_id_filter(self, ids: Optional[list[int]] = None) -> None:
         """Set the id filter.
 
         The results will have the given ids. This filter should in most cases be combined with the
@@ -134,7 +153,7 @@ class Ytcc:
         """
         self.video_id_filter = ids
 
-    def set_tags_filter(self, tags: Optional[List[str]] = None) -> None:
+    def set_tags_filter(self, tags: Optional[list[str]] = None) -> None:
         """Set the tag filter.
 
         The results of ``list_videos()`` will include only playlists tagged with at least one of
@@ -144,7 +163,7 @@ class Ytcc:
         """
         self.tags_filter = tags
 
-    def set_listing_order(self, order_by: List[Tuple[VideoAttr, Direction]]):
+    def set_listing_order(self, order_by: list[tuple[VideoAttr, Direction]]):
         self.order_by = order_by
 
     @staticmethod
@@ -179,7 +198,7 @@ class Ytcc:
                 command = ["mpv", *no_video_flag, *mpv_flags, video.url]
                 subprocess.run(command, check=True)
             except FileNotFoundError as fnfe:
-                raise YtccException("Could not locate the mpv video player!") from fnfe
+                raise YtccError("Could not locate the mpv video player!") from fnfe
             except subprocess.CalledProcessError as cpe:
                 logger.debug(
                     "MPV failed! Command: %s; Stdout: %s; Stderr %s; Returncode: %s",
@@ -211,19 +230,6 @@ class Ytcc:
         :param subdirs: Overrides config.ytcc.download_subdirs if not None.
         :return: True, if the video was downloaded successfully. False otherwise.
         """
-
-        class GetFilenameProcessor(youtube_dl.postprocessor.common.PostProcessor):  # type: ignore
-            def __init__(self):
-                super().__init__()
-                self.actual_file = None
-
-            def run(self, information):
-                self.actual_file = information.get("filepath")
-                return [], information
-
-            def report_progress(self, *args, **kwargs):
-                pass
-
         filename_processor = GetFilenameProcessor()
 
         if 0 < config.youtube_dl.max_duration < video.duration:
@@ -242,7 +248,6 @@ class Ytcc:
 
         with youtube_dl.YoutubeDL(Ytcc._ydl_opts(str(download_dir), subdir, audio_only)) as ydl:
             try:
-                # pylint: disable=protected-access
                 if isinstance(ydl._pps, list):
                     ydl._pps.append(filename_processor)
                 elif isinstance(ydl._pps, dict):
@@ -272,12 +277,12 @@ class Ytcc:
             return True
 
     @staticmethod
-    def _ydl_opts(download_dir: str, subdir: str, audio_only: bool) -> Dict[str, Any]:
+    def _ydl_opts(download_dir: str, subdir: str, audio_only: bool) -> dict[str, Any]:
         conf = config.youtube_dl
 
-        ydl_opts: Dict[str, Any] = {
+        ydl_opts: dict[str, Any] = {
             **YTDL_COMMON_OPTS,
-            "outtmpl": os.path.join(download_dir, subdir, conf.output_template),
+            "outtmpl": str(Path(download_dir, subdir, conf.output_template)),
             "ratelimit": conf.ratelimit if conf.ratelimit > 0 else None,
             "retries": conf.retries,
             "merge_output_format": conf.merge_output_format,
@@ -307,7 +312,7 @@ class Ytcc:
         return ydl_opts
 
     @staticmethod
-    def _is_playlist_reverse(items: List[Video]) -> bool:
+    def _is_playlist_reverse(items: list[Video]) -> bool:
         if not items or items[0].publish_date >= items[-1].publish_date:
             return False
 
@@ -342,7 +347,7 @@ class Ytcc:
                     url,
                     download_error,
                 )
-                raise BadURLException("URL is not supported or does not exist") from download_error
+                raise BadURLError("URL is not supported or does not exist") from download_error
 
             if info.get("_type") != "playlist":
                 logger.debug(
@@ -350,19 +355,19 @@ class Ytcc:
                     url,
                     info,
                 )
-                raise BadURLException("Not a playlist or not supported")
+                raise BadURLError("Not a playlist or not supported")
 
             peek = list(info.get("entries"))
             for entry in peek:
                 if make_archive_id(ydl, entry) is None:
-                    raise BadURLException(
+                    raise BadURLError(
                         "The given URL is not supported by ytcc, because it "
                         "doesn't point to a playlist"
                     )
 
             real_url = info.get("webpage_url")
             if not real_url:
-                raise BadURLException("The playlist URL cannot be found")
+                raise BadURLError("The playlist URL cannot be found")
 
             if not skip_update_check:
                 logger.info("Performing update check on 10 playlist items")
@@ -402,10 +407,10 @@ class Ytcc:
             order_by=self.order_by,
         )
 
-    def mark_watched(self, video: Union[List[int], int, MappedVideo]) -> None:
+    def mark_watched(self, video: Union[list[int], int, MappedVideo]) -> None:
         self.database.mark_watched(video)
 
-    def mark_unwatched(self, video: Union[List[int], int, MappedVideo]) -> None:
+    def mark_unwatched(self, video: Union[list[int], int, MappedVideo]) -> None:
         self.database.mark_unwatched(video)
 
     def unmark_recent(self):
@@ -417,7 +422,7 @@ class Ytcc:
 
     def delete_playlist(self, name: str) -> None:
         if not self.database.delete_playlist(name):
-            raise PlaylistDoesNotExistException(
+            raise PlaylistDoesNotExistError(
                 f"Could not remove playlist {name}, because it does not exist"
             )
 
@@ -430,14 +435,14 @@ class Ytcc:
 
     def reverse_playlist(self, playlist: str) -> None:
         if not self.database.reverse_playlist(playlist):
-            raise PlaylistDoesNotExistException(
+            raise PlaylistDoesNotExistError(
                 "Could not modify the playlist, because it does not exist"
             )
 
     def list_playlists(self) -> Iterable[MappedPlaylist]:
         return self.database.list_playlists()
 
-    def tag_playlist(self, name: str, tags: List[str]) -> None:
+    def tag_playlist(self, name: str, tags: list[str]) -> None:
         self.database.tag_playlist(name, tags)
 
     def list_tags(self) -> Iterable[str]:
@@ -452,24 +457,23 @@ class Ytcc:
         self.database.cleanup(keep)
 
     def import_yt_opml(self, file: Path):
-        def _from_xml_element(elem: ET.Element) -> Tuple[str, str]:
+        message = f"'{file!s}' is not a valid YouTube export file"
+
+        def _from_xml_element(elem: ET.Element) -> tuple[str, str]:
             rss_url = urlparse(elem.attrib["xmlUrl"])
             query_dict = parse_qs(rss_url.query, keep_blank_values=False)
             channel_id = query_dict.get("channel_id", [])
             if len(channel_id) != 1:
-                message = f"'{str(file)}' is not a valid YouTube export file"
                 raise InvalidSubscriptionFileError(message)
             yt_url = f"https://www.youtube.com/channel/{channel_id[0]}/videos"
             return elem.attrib["title"], yt_url
 
         try:
-            tree = ET.parse(file)
+            tree = defusedxml_parse(file)
         except ET.ParseError as err:
-            raise InvalidSubscriptionFileError(
-                f"'{str(file)}' is not a valid YouTube export file"
-            ) from err
+            raise InvalidSubscriptionFileError(message) from err
         except OSError as err:
-            raise InvalidSubscriptionFileError(f"{str(file)} cannot be accessed") from err
+            raise InvalidSubscriptionFileError(f"{file!s} cannot be accessed") from err
 
         root = tree.getroot()
         subscriptions = (
@@ -478,7 +482,8 @@ class Ytcc:
         self._bulk_subscribe(subscriptions)
 
     def import_yt_csv(self, file: Path):
-        with open(file, newline="", encoding="utf-8") as csvfile:
+        csv_column_count = 3
+        with file.open(newline="", encoding="utf-8") as csvfile:
             sample = csvfile.read(4096)
             sniffer = csv.Sniffer()
             dialect = sniffer.sniff(sample)
@@ -495,9 +500,9 @@ class Ytcc:
                 if not row:
                     continue
 
-                if len(row) != 3:
+                if len(row) != csv_column_count:
                     raise InvalidSubscriptionFileError(
-                        f"{str(file)} has an invalid number of columns. Expecting: ID, URL, Name"
+                        f"{file!s} has an invalid number of columns. Expecting: ID, URL, Name"
                     )
 
                 yt_url = f"https://www.youtube.com/channel/{row[0]}/videos"
@@ -505,13 +510,13 @@ class Ytcc:
 
             self._bulk_subscribe(subscriptions)
 
-    def _bulk_subscribe(self, subscriptions: Iterable[Tuple[str, str]]) -> None:
+    def _bulk_subscribe(self, subscriptions: Iterable[tuple[str, str]]) -> None:
         for name, url in subscriptions:
             try:
                 self.add_playlist(name, url, skip_update_check=True)
             except NameConflictError:
                 logger.warning("Ignoring playlist '%s', because it already subscribed", name)
-            except BadURLException:
+            except BadURLError:
                 logger.warning("Ignoring playlist '%s', because it is not supported", name)
             else:
                 logger.info("Added playlist '%s'", name)

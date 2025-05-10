@@ -23,15 +23,15 @@ import locale
 import logging
 import os
 import typing
-from abc import ABC
+from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Optional, TextIO, Type, Any, List, Callable, Tuple, Sequence
+from typing import Any, Callable, Optional, TextIO
 
-from ytcc.exceptions import BadConfigException
+from ytcc.exceptions import BadConfigError
+from ytcc.terminal import COLOR_MAX, COLOR_MIN
 
 # typing.get_args and typing.get_origin were introduced in 3.8
-# pylint: disable=no-member
 if hasattr(typing, "get_args"):
     get_type_args = typing.get_args  # type: ignore[attr-defined]
 else:
@@ -46,7 +46,7 @@ else:
 
     def get_type_origin(typ):
         return typ.__origin__ if hasattr(typ, "__origin__") else None
-# pylint: enable=no-member
+
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ _BOOLEAN_STATES = {
 class Color(int):
     def __new__(cls, val):
         i = super().__new__(cls, val)
-        if 0 >= i >= 255:
+        if COLOR_MIN >= i >= COLOR_MAX:
             raise ValueError(
                 f"{val} is not a valid color. Must be in greater than 0 and less than 255"
             )
@@ -94,7 +94,7 @@ class VideoAttr(str, Enum):
 
     @staticmethod
     def from_str(string: str) -> "VideoAttr":
-        v_attr = VideoAttr.__members__.get(string.upper())  # pylint: disable=no-member
+        v_attr = VideoAttr.__members__.get(string.upper())
         if v_attr is not None:
             return v_attr
         raise ValueError(f"{string} cannot be converted to VideoAttr")
@@ -108,7 +108,7 @@ class PlaylistAttr(str, Enum):
 
     @staticmethod
     def from_str(string: str) -> "PlaylistAttr":
-        p_attr = PlaylistAttr.__members__.get(string.upper())  # pylint: disable=no-member
+        p_attr = PlaylistAttr.__members__.get(string.upper())
         if p_attr is not None:
             return p_attr
         raise ValueError(f"{string} cannot be converted to PlaylistAttr")
@@ -120,6 +120,8 @@ class Direction(str, Enum):
 
 
 class DateFormatStr(str):
+    __slots__ = ()
+
     def __new__(cls, *arg):
         datechars = "aAwdbBmyYjUWx%"
         iterator = iter(arg[0])
@@ -135,27 +137,27 @@ class DateFormatStr(str):
         return super().__new__(cls, *arg)
 
 
-class BaseConfig(ABC):
+class BaseConfig:
     def __setattr__(self, key, value):
         raise AttributeError("Attribute is immutable")
 
 
-class ytcc(BaseConfig):  # pylint: disable=invalid-name
+class ytcc(BaseConfig):
     download_dir: str = "~/Downloads"
     download_subdirs: bool = False
     mpv_flags: str = "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best"
-    order_by: List[Tuple[VideoAttr, Direction]] = [
+    order_by: list[tuple[VideoAttr, Direction]] = [
         (VideoAttr.PLAYLISTS, Direction.ASC),
         (VideoAttr.PUBLISH_DATE, Direction.DESC),
     ]
-    video_attrs: List[VideoAttr] = [
+    video_attrs: list[VideoAttr] = [
         VideoAttr.ID,
         VideoAttr.TITLE,
         VideoAttr.PUBLISH_DATE,
         VideoAttr.DURATION,
         VideoAttr.PLAYLISTS,
     ]
-    playlist_attrs: List[PlaylistAttr] = list(PlaylistAttr)
+    playlist_attrs: list[PlaylistAttr] = list(PlaylistAttr)
     db_path: str = "~/.local/share/ytcc/ytcc.db"
     date_format: DateFormatStr = DateFormatStr("%Y-%m-%d")
     max_update_fail: int = 5
@@ -163,12 +165,12 @@ class ytcc(BaseConfig):  # pylint: disable=invalid-name
     age_limit: int = 0
 
 
-class tui(BaseConfig):  # pylint: disable=invalid-name
+class tui(BaseConfig):
     alphabet: str = "sdfervghnuiojkl"
     default_action: Action = Action.PLAY_VIDEO
 
 
-class theme(BaseConfig):  # pylint: disable=invalid-name
+class theme(BaseConfig):
     prompt_download_audio: Color = Color(2)
     prompt_download_video: Color = Color(4)
     prompt_play_audio: Color = Color(2)
@@ -178,12 +180,12 @@ class theme(BaseConfig):  # pylint: disable=invalid-name
     plain_label_text: Color = Color(244)
 
 
-class youtube_dl(BaseConfig):  # pylint: disable=invalid-name
+class youtube_dl(BaseConfig):
     format: str = "bestvideo[height<=?1080]+bestaudio/best"
     output_template: str = "%(title)s.%(ext)s"
     ratelimit: int = 0
     retries: int = 0
-    subtitles: List[str] = ["off"]
+    subtitles: list[str] = ["off"]
     thumbnail: bool = True
     skip_live_stream: bool = True
     merge_output_format: str = "mkv"
@@ -236,51 +238,56 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
     return config
 
 
+def _enum_from_str(e_class: type[Enum], str_val: str) -> Enum:
+    field: Any
+    for field in e_class:
+        # Might also raise a ValueError
+        converted_val = _convert(field.value.__class__, str_val)
+        if field.value == converted_val:
+            return field
+
+    raise ValueError(f"{str_val} is not a valid {e_class}")
+
+
+def _bool_from_str(string: str) -> bool:
+    bool_state = _BOOLEAN_STATES.get(string.lower())
+    if bool_state is None:
+        raise ValueError(f"{string} cannot be converted to bool")
+    return bool_state
+
+
+def _list_from_str(elem_type: type, list_str: str) -> list[Any]:
+    return [_convert(elem_type, elem.strip()) for elem in list_str.split(",")]
+
+
+def _tuple_from_str(types: Sequence[type], tuple_str) -> tuple:
+    elems = tuple_str.split(":")
+    if len(elems) != len(types):
+        raise ValueError(f"{tuple_str} cannot be converted to tuple of type {types}")
+
+    return tuple(_convert(typ, elem) for elem, typ in zip(elems, types))
+
+
+def _convert(typ: type[Any], string: str) -> Any:
+    if get_type_origin(typ) is list:
+        elem_conv = get_type_args(typ)[0]
+        from_str: Callable[[str], Any] = functools.partial(_list_from_str, elem_conv)
+    elif get_type_origin(typ) is tuple:
+        from_str = functools.partial(_tuple_from_str, get_type_args(typ))
+    elif issubclass(typ, Enum):
+        from_str = functools.partial(_enum_from_str, typ)
+    elif issubclass(typ, bool):
+        from_str = _bool_from_str
+    elif next((c for c in (int, float, str) if issubclass(typ, c)), None):
+        from_str = typ
+    else:
+        raise TypeError(f"Unsupported config parameter type in {typ}")
+
+    return from_str(string)
+
+
 def load(override_cfg_file: Optional[str] = None):
     conf_parser = _get_config(override_cfg_file)
-
-    def enum_from_str(e_class: Type[Enum], str_val: str) -> Enum:
-        field: Any
-        for field in e_class:
-            # Might also raise a ValueError
-            converted_val = _convert(field.value.__class__, str_val)
-            if field.value == converted_val:
-                return field
-
-        raise ValueError(f"{str_val} is not a valid {e_class}")
-
-    def bool_from_str(string: str) -> bool:
-        bool_state = _BOOLEAN_STATES.get(string.lower())
-        if bool_state is None:
-            raise ValueError(f"{string} cannot be converted to bool")
-        return bool_state
-
-    def list_from_str(elem_type: Type, list_str: str) -> List[Any]:
-        return [_convert(elem_type, elem.strip()) for elem in list_str.split(",")]
-
-    def tuple_from_str(types: Sequence[Type], tuple_str) -> Tuple:
-        elems = tuple_str.split(":")
-        if len(elems) != len(types):
-            raise ValueError(f"{tuple_str} cannot be converted to tuple of type {types}")
-
-        return tuple(_convert(typ, elem) for elem, typ in zip(elems, types))
-
-    def _convert(typ: Type[Any], string: str) -> Any:
-        if get_type_origin(typ) is list:
-            elem_conv = get_type_args(typ)[0]
-            from_str: Callable[[str], Any] = functools.partial(list_from_str, elem_conv)
-        elif get_type_origin(typ) is tuple:
-            from_str = functools.partial(tuple_from_str, get_type_args(typ))
-        elif issubclass(typ, Enum):
-            from_str = functools.partial(enum_from_str, typ)
-        elif issubclass(typ, bool):
-            from_str = bool_from_str
-        elif next((c for c in (int, float, str) if issubclass(typ, c)), None):
-            from_str = typ
-        else:
-            raise TypeError(f"Unsupported config parameter type in {typ}")
-
-        return from_str(string)
 
     for clazz in BaseConfig.__subclasses__():
         for prop, conv in typing.get_type_hints(clazz).items():
@@ -294,7 +301,7 @@ def load(override_cfg_file: Optional[str] = None):
                 setattr(clazz, prop, val)
             except ValueError as err:
                 message = f"Value '{str_val}' for {clazz.__name__}.{prop} is invalid"
-                raise BadConfigException(message) from err
+                raise BadConfigError(message) from err
 
 
 def dumps() -> str:

@@ -20,13 +20,13 @@ import shutil
 import sys
 import textwrap as wrap
 from enum import Enum
-from typing import List, Optional, Tuple, Callable, NamedTuple, FrozenSet, TextIO, Dict
+from typing import Callable, NamedTuple, Optional, TextIO
 
-from ytcc import terminal, config
+from ytcc import config, terminal
 from ytcc.core import Ytcc
 from ytcc.database import MappedVideo
-from ytcc.printer import Table, TableData, VideoPrintable, TablePrinter
-from ytcc.terminal import printt, printtln, FKeys
+from ytcc.printer import Table, TableData, TablePrinter, VideoPrintable
+from ytcc.terminal import FKeys, printt, printtln
 
 
 class Option(NamedTuple):
@@ -69,17 +69,17 @@ class Action(Enum):
 
 
 class VideoSelection(TableData, dict):
-    def __init__(self, alphabet: str, videos: List[MappedVideo]):
+    def __init__(self, alphabet: str, videos: list[MappedVideo]):
         super().__init__()
         codes = self._prefix_codes(frozenset(alphabet), len(videos))
         for code, video in zip(codes, videos):
             self[code] = video
 
     @staticmethod
-    def _prefix_codes(alphabet: FrozenSet[str], count: int) -> List[str]:
+    def _prefix_codes(alphabet: frozenset[str], count: int) -> list[str]:
         codes = list(alphabet)
 
-        if len(codes) < 2:
+        if len(codes) < 2:  # noqa: PLR2004
             raise ValueError("alphabet must have at least two characters")
 
         if count < 0:
@@ -102,8 +102,8 @@ class VideoSelection(TableData, dict):
 
     def table(self) -> Table:
         table = VideoPrintable(self.values()).table()
-        data = [[code] + row for code, row in zip(self.keys(), table.data)]
-        return Table(["TAG"] + table.header, data)
+        data = [[code, *row] for code, row in zip(self.keys(), table.data)]
+        return Table(["TAG", *table.header], data)
 
 
 class Interactive:
@@ -129,7 +129,7 @@ class Interactive:
     def get_prompt_color(self) -> Optional[int]:
         return self.action.color()
 
-    def command_line(self, tags: List[str]) -> Tuple[str, bool]:
+    def command_line(self, tags: list[str]) -> tuple[str, bool]:
         def print_prompt():
             prompt_format = "{prompt_text} > "
             prompt = prompt_format.format(prompt_text=self.get_prompt_text())
@@ -188,7 +188,7 @@ class Interactive:
             if video is None and not hook_triggered:
                 break
 
-            actions: Dict[Action, Callable[[MappedVideo], Optional[bool]]] = {
+            actions: dict[Action, Callable[[MappedVideo], Optional[bool]]] = {
                 Action.MARK_WATCHED: self.core.mark_watched,
                 Action.DOWNLOAD_AUDIO: lambda v: self.download_video(v, True),
                 Action.DOWNLOAD_VIDEO: lambda v: self.download_video(v, False),
