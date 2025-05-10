@@ -238,51 +238,56 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
     return config
 
 
+def _enum_from_str(e_class: type[Enum], str_val: str) -> Enum:
+    field: Any
+    for field in e_class:
+        # Might also raise a ValueError
+        converted_val = _convert(field.value.__class__, str_val)
+        if field.value == converted_val:
+            return field
+
+    raise ValueError(f"{str_val} is not a valid {e_class}")
+
+
+def _bool_from_str(string: str) -> bool:
+    bool_state = _BOOLEAN_STATES.get(string.lower())
+    if bool_state is None:
+        raise ValueError(f"{string} cannot be converted to bool")
+    return bool_state
+
+
+def _list_from_str(elem_type: type, list_str: str) -> list[Any]:
+    return [_convert(elem_type, elem.strip()) for elem in list_str.split(",")]
+
+
+def _tuple_from_str(types: Sequence[type], tuple_str) -> tuple:
+    elems = tuple_str.split(":")
+    if len(elems) != len(types):
+        raise ValueError(f"{tuple_str} cannot be converted to tuple of type {types}")
+
+    return tuple(_convert(typ, elem) for elem, typ in zip(elems, types))
+
+
+def _convert(typ: type[Any], string: str) -> Any:
+    if get_type_origin(typ) is list:
+        elem_conv = get_type_args(typ)[0]
+        from_str: Callable[[str], Any] = functools.partial(_list_from_str, elem_conv)
+    elif get_type_origin(typ) is tuple:
+        from_str = functools.partial(_tuple_from_str, get_type_args(typ))
+    elif issubclass(typ, Enum):
+        from_str = functools.partial(_enum_from_str, typ)
+    elif issubclass(typ, bool):
+        from_str = _bool_from_str
+    elif next((c for c in (int, float, str) if issubclass(typ, c)), None):
+        from_str = typ
+    else:
+        raise TypeError(f"Unsupported config parameter type in {typ}")
+
+    return from_str(string)
+
+
 def load(override_cfg_file: Optional[str] = None):
     conf_parser = _get_config(override_cfg_file)
-
-    def enum_from_str(e_class: type[Enum], str_val: str) -> Enum:
-        field: Any
-        for field in e_class:
-            # Might also raise a ValueError
-            converted_val = _convert(field.value.__class__, str_val)
-            if field.value == converted_val:
-                return field
-
-        raise ValueError(f"{str_val} is not a valid {e_class}")
-
-    def bool_from_str(string: str) -> bool:
-        bool_state = _BOOLEAN_STATES.get(string.lower())
-        if bool_state is None:
-            raise ValueError(f"{string} cannot be converted to bool")
-        return bool_state
-
-    def list_from_str(elem_type: type, list_str: str) -> list[Any]:
-        return [_convert(elem_type, elem.strip()) for elem in list_str.split(",")]
-
-    def tuple_from_str(types: Sequence[type], tuple_str) -> tuple:
-        elems = tuple_str.split(":")
-        if len(elems) != len(types):
-            raise ValueError(f"{tuple_str} cannot be converted to tuple of type {types}")
-
-        return tuple(_convert(typ, elem) for elem, typ in zip(elems, types))
-
-    def _convert(typ: type[Any], string: str) -> Any:
-        if get_type_origin(typ) is list:
-            elem_conv = get_type_args(typ)[0]
-            from_str: Callable[[str], Any] = functools.partial(list_from_str, elem_conv)
-        elif get_type_origin(typ) is tuple:
-            from_str = functools.partial(tuple_from_str, get_type_args(typ))
-        elif issubclass(typ, Enum):
-            from_str = functools.partial(enum_from_str, typ)
-        elif issubclass(typ, bool):
-            from_str = bool_from_str
-        elif next((c for c in (int, float, str) if issubclass(typ, c)), None):
-            from_str = typ
-        else:
-            raise TypeError(f"Unsupported config parameter type in {typ}")
-
-        return from_str(string)
 
     for clazz in BaseConfig.__subclasses__():
         for prop, conv in typing.get_type_hints(clazz).items():

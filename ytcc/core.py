@@ -51,6 +51,19 @@ else:
 logger = logging.getLogger(__name__)
 
 
+class GetFilenameProcessor(youtube_dl.postprocessor.common.PostProcessor):
+    def __init__(self):
+        super().__init__()
+        self.actual_file = None
+
+    def run(self, information):
+        self.actual_file = information.get("filepath")
+        return [], information
+
+    def report_progress(self, *args, **kwargs):
+        pass
+
+
 class Ytcc:
     """The Ytcc class handles updating the RSS feeds and playing and listing/filtering videos.
 
@@ -217,19 +230,6 @@ class Ytcc:
         :param subdirs: Overrides config.ytcc.download_subdirs if not None.
         :return: True, if the video was downloaded successfully. False otherwise.
         """
-
-        class GetFilenameProcessor(youtube_dl.postprocessor.common.PostProcessor):
-            def __init__(self):
-                super().__init__()
-                self.actual_file = None
-
-            def run(self, information):
-                self.actual_file = information.get("filepath")
-                return [], information
-
-            def report_progress(self, *args, **kwargs):
-                pass
-
         filename_processor = GetFilenameProcessor()
 
         if 0 < config.youtube_dl.max_duration < video.duration:

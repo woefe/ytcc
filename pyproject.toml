@@ -15,7 +15,7 @@ select = [
     "T10",
     "EXE",
     "FIX",
-    # "FA" # Enable after dropping 3.9 support
+    # "FA", # Enable after dropping 3.9 support
     "INT",
     "ISC",
     "ICN",
@@ -37,7 +37,7 @@ select = [
     "PTH",
     "FLY",
     "I",
-    # "C90",
+    "C90",
     "N",
     "PERF",
     "E",
@@ -68,8 +68,8 @@ ignore = [
 
 [tool.ruff.lint.pylint]
 max-args = 10
-max-locals = 18
-max-public-methods = 30
+max-locals = 10
+max-public-methods = 20
 
 [tool.mypy]
 ignore_missing_imports = true
