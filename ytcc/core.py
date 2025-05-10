@@ -21,6 +21,7 @@ import datetime
 import logging
 import sqlite3
 import subprocess
+import typing
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
@@ -41,7 +42,10 @@ from ytcc.exceptions import (
 from ytcc.updater import YTDL_COMMON_OPTS, Fetcher, Updater, make_archive_id
 from ytcc.utils import lazy_import
 
-youtube_dl = lazy_import("yt_dlp", "youtube_dl")
+if typing.TYPE_CHECKING:
+    import yt_dlp as youtube_dl
+else:
+    youtube_dl = lazy_import("yt_dlp", "youtube_dl")
 
 logger = logging.getLogger(__name__)
 
@@ -213,7 +217,7 @@ class Ytcc:
         :return: True, if the video was downloaded successfully. False otherwise.
         """
 
-        class GetFilenameProcessor(youtube_dl.postprocessor.common.PostProcessor):  # type: ignore
+        class GetFilenameProcessor(youtube_dl.postprocessor.common.PostProcessor):
             def __init__(self):
                 super().__init__()
                 self.actual_file = None

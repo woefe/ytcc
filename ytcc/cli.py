@@ -433,7 +433,7 @@ _video_attrs = click.Choice([v.value for v in VideoAttr])
 _video_attrs.name = "attribute"
 _dir = click.Choice([v.value for v in Direction])
 _dir.name = "direction"
-ClickOrderBy = Union[Tuple[Tuple[VideoAttr, Direction], ...], Tuple[VideoAttr, Direction]]
+ClickOrderBy = Iterable[Tuple[VideoAttr, Direction]]
 common_list_options = [
     click.Option(
         ["--tags", "-c"],
@@ -520,9 +520,9 @@ def set_order(ytcc: core.Ytcc, order_by: ClickOrderBy):
         and isinstance(order_by[0], VideoAttr)
         and isinstance(order_by[1], Direction)
     ):
-        ytcc.set_listing_order([order_by])  # type: ignore
+        ytcc.set_listing_order([order_by])
     elif order_by != () and isinstance(order_by, tuple) and isinstance(order_by[0], tuple):
-        ytcc.set_listing_order(list(order_by))  # type: ignore
+        ytcc.set_listing_order(list(order_by))
     else:
         ytcc.set_listing_order(config.ytcc.order_by)
 
