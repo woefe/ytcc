@@ -20,7 +20,7 @@ import shutil
 import sys
 import textwrap as wrap
 from enum import Enum
-from typing import Callable, Dict, FrozenSet, List, NamedTuple, Optional, TextIO, Tuple
+from typing import Callable, NamedTuple, Optional, TextIO
 
 from ytcc import config, terminal
 from ytcc.core import Ytcc
@@ -69,14 +69,14 @@ class Action(Enum):
 
 
 class VideoSelection(TableData, dict):
-    def __init__(self, alphabet: str, videos: List[MappedVideo]):
+    def __init__(self, alphabet: str, videos: list[MappedVideo]):
         super().__init__()
         codes = self._prefix_codes(frozenset(alphabet), len(videos))
         for code, video in zip(codes, videos):
             self[code] = video
 
     @staticmethod
-    def _prefix_codes(alphabet: FrozenSet[str], count: int) -> List[str]:
+    def _prefix_codes(alphabet: frozenset[str], count: int) -> list[str]:
         codes = list(alphabet)
 
         if len(codes) < 2:
@@ -129,7 +129,7 @@ class Interactive:
     def get_prompt_color(self) -> Optional[int]:
         return self.action.color()
 
-    def command_line(self, tags: List[str]) -> Tuple[str, bool]:
+    def command_line(self, tags: list[str]) -> tuple[str, bool]:
         def print_prompt():
             prompt_format = "{prompt_text} > "
             prompt = prompt_format.format(prompt_text=self.get_prompt_text())
@@ -188,7 +188,7 @@ class Interactive:
             if video is None and not hook_triggered:
                 break
 
-            actions: Dict[Action, Callable[[MappedVideo], Optional[bool]]] = {
+            actions: dict[Action, Callable[[MappedVideo], Optional[bool]]] = {
                 Action.MARK_WATCHED: self.core.mark_watched,
                 Action.DOWNLOAD_AUDIO: lambda v: self.download_video(v, True),
                 Action.DOWNLOAD_VIDEO: lambda v: self.download_video(v, False),

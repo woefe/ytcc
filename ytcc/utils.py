@@ -17,7 +17,8 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import importlib
-from typing import Any, Iterable, Optional, TypeVar
+from collections.abc import Iterable
+from typing import Any, Optional, TypeVar
 
 T = TypeVar("T")
 

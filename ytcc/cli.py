@@ -18,10 +18,11 @@
 
 import logging
 import sys
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
 from sqlite3 import DatabaseError
-from typing import Callable, Generic, Iterable, List, Optional, Tuple, TypeVar, Union
+from typing import Callable, Generic, Optional, TypeVar, Union
 
 import click
 from click.exceptions import Exit
@@ -62,7 +63,7 @@ class CommaList(click.ParamType, Generic[T]):
     def __init__(self, validator: Callable[[str], T]):
         self.validator = validator
 
-    def convert(self, value, _param, _ctx) -> List[T]:
+    def convert(self, value, _param, _ctx) -> list[T]:
         try:
             return [self.validator(elem.strip()) for elem in value.split(",")]
         except ValueError:
@@ -84,7 +85,7 @@ class TruncateVals(click.ParamType):
 
     def shell_complete(
         self, _ctx: click.Context, _param: click.Parameter, incomplete: str
-    ) -> List[CompletionItem]:
+    ) -> list[CompletionItem]:
         completions = [
             ("max", "truncates to terminal width"),
             ("no", "disables truncating"),
@@ -130,7 +131,7 @@ def ids_completion(watched: bool = False):
         ctx: click.Context,
         _param: click.Parameter,
         incomplete: str,
-    ) -> List[CompletionItem]:
+    ) -> list[CompletionItem]:
         try:
             _load_completion_conf(ctx)
         except BadConfigError:
@@ -152,7 +153,7 @@ def playlist_completion(
     ctx: click.Context,
     _param: click.Parameter,
     incomplete: str,
-) -> List[str]:
+) -> list[str]:
     try:
         _load_completion_conf(ctx)
     except BadConfigError:
@@ -166,7 +167,7 @@ def playlist_completion(
         ]
 
 
-def playlists_completion(ctx: click.Context, param: click.Parameter, incomplete: str) -> List[str]:
+def playlists_completion(ctx: click.Context, param: click.Parameter, incomplete: str) -> list[str]:
     candidates = playlist_completion(ctx, param, incomplete)
     used_playlists = ctx.params.get("names") or []
     return list(filter(lambda candidate: candidate not in used_playlists, candidates))
@@ -176,7 +177,7 @@ def tags_completion(
     ctx: click.Context,
     _param: click.Parameter,
     incomplete: str,
-) -> List[str]:
+) -> list[str]:
     try:
         _load_completion_conf(ctx)
     except BadConfigError:
@@ -361,7 +362,7 @@ def rename(ytcc: core.Ytcc, old: str, new: str):
 @cli.command("reverse")
 @click.argument("playlists", nargs=-1, shell_complete=playlist_completion)
 @pass_ytcc
-def reverse_playlist(ytcc: core.Ytcc, playlists: Tuple[str, ...]):
+def reverse_playlist(ytcc: core.Ytcc, playlists: tuple[str, ...]):
     """Toggle the update behavior of playlists.
 
     Playlists updated in reverse might lead to slow updates with the `update` command.
@@ -385,7 +386,7 @@ def reverse_playlist(ytcc: core.Ytcc, playlists: Tuple[str, ...]):
     f"Some of [{', '.join(a.value for a in PlaylistAttr)}].",
 )
 @pass_ytcc
-def subscriptions(ytcc: core.Ytcc, attributes: List[PlaylistAttr]):
+def subscriptions(ytcc: core.Ytcc, attributes: list[PlaylistAttr]):
     """List all subscriptions."""
     if not attributes:
         printer.filter = config.ytcc.playlist_attrs
@@ -398,7 +399,7 @@ def subscriptions(ytcc: core.Ytcc, attributes: List[PlaylistAttr]):
 @click.argument("name", shell_complete=playlist_completion)
 @click.argument("tags", nargs=-1, shell_complete=tags_completion)
 @pass_ytcc
-def tag(ytcc: core.Ytcc, name: str, tags: Tuple[str, ...]):
+def tag(ytcc: core.Ytcc, name: str, tags: tuple[str, ...]):
     """Set tags of a playlist.
 
     Sets the TAGS associated with the playlist called NAME. If no tags are given, all tags are
@@ -433,7 +434,7 @@ _video_attrs = click.Choice([v.value for v in VideoAttr])
 _video_attrs.name = "attribute"
 _dir = click.Choice([v.value for v in Direction])
 _dir.name = "direction"
-ClickOrderBy = Iterable[Tuple[VideoAttr, Direction]]
+ClickOrderBy = Iterable[tuple[VideoAttr, Direction]]
 common_list_options = [
     click.Option(
         ["--tags", "-c"],
@@ -486,11 +487,11 @@ common_list_options = [
 
 def apply_filters(
     ytcc: core.Ytcc,
-    tags: Optional[List[str]],
+    tags: Optional[list[str]],
     since: Optional[datetime],
     till: Optional[datetime],
-    playlists: Optional[List[str]],
-    ids: Optional[List[int]],
+    playlists: Optional[list[str]],
+    ids: Optional[list[int]],
     watched: bool,
     unwatched: bool,
 ):
@@ -529,12 +530,12 @@ def set_order(ytcc: core.Ytcc, order_by: ClickOrderBy):
 
 def list_videos_impl(
     ytcc: core.Ytcc,
-    tags: Optional[List[str]],
+    tags: Optional[list[str]],
     since: Optional[datetime],
     till: Optional[datetime],
-    playlists: Optional[List[str]],
-    ids: Optional[List[int]],
-    attributes: Optional[List[str]],
+    playlists: Optional[list[str]],
+    ids: Optional[list[int]],
+    attributes: Optional[list[str]],
     watched: bool,
     unwatched: bool,
     order_by: ClickOrderBy,
@@ -560,12 +561,12 @@ def list_videos_impl(
 @pass_ytcc
 def list_videos(
     ytcc: core.Ytcc,
-    tags: Optional[List[str]],
+    tags: Optional[list[str]],
     since: Optional[datetime],
     till: Optional[datetime],
-    playlists: Optional[List[str]],
-    ids: Optional[List[int]],
-    attributes: Optional[List[str]],
+    playlists: Optional[list[str]],
+    ids: Optional[list[int]],
+    attributes: Optional[list[str]],
     watched: bool,
     unwatched: bool,
     order_by: ClickOrderBy,
@@ -592,11 +593,11 @@ def list_videos(
 @pass_ytcc
 def list_ids(
     ytcc: core.Ytcc,
-    tags: Optional[List[str]],
+    tags: Optional[list[str]],
     since: Optional[datetime],
     till: Optional[datetime],
-    playlists: Optional[List[str]],
-    ids: Optional[List[int]],
+    playlists: Optional[list[str]],
+    ids: Optional[list[int]],
     watched: bool,
     unwatched: bool,
     order_by: ClickOrderBy,
@@ -615,11 +616,11 @@ def list_ids(
 @pass_ytcc
 def tui(
     ytcc: core.Ytcc,
-    tags: Optional[List[str]],
+    tags: Optional[list[str]],
     since: Optional[datetime],
     till: Optional[datetime],
-    playlists: Optional[List[str]],
-    ids: Optional[List[int]],
+    playlists: Optional[list[str]],
+    ids: Optional[list[int]],
     watched: bool,
     unwatched: bool,
     order_by: ClickOrderBy,
@@ -635,7 +636,7 @@ list_videos.params.extend(common_list_options)
 tui.params.extend(common_list_options)
 
 
-def _get_ids(ids: List[int]) -> Iterable[int]:
+def _get_ids(ids: list[int]) -> Iterable[int]:
     if not ids and not sys.stdin.isatty():
         for line in sys.stdin:
             line = line.strip()
@@ -649,7 +650,7 @@ def _get_ids(ids: List[int]) -> Iterable[int]:
         yield from ids
 
 
-def _get_videos(ytcc: core.Ytcc, ids: List[int]) -> Iterable[MappedVideo]:
+def _get_videos(ytcc: core.Ytcc, ids: list[int]) -> Iterable[MappedVideo]:
     ids = list(_get_ids(ids))
     if ids:
         ytcc.set_video_id_filter(ids)
@@ -680,7 +681,7 @@ def _get_videos(ytcc: core.Ytcc, ids: List[int]) -> Iterable[MappedVideo]:
 @pass_ytcc
 def play(
     ytcc: core.Ytcc,
-    ids: Tuple[int, ...],
+    ids: tuple[int, ...],
     audio_only: bool,
     no_meta: bool,
     no_mark: bool,
@@ -713,7 +714,7 @@ def play(
 @cli.command()
 @click.argument("ids", nargs=-1, type=click.INT, shell_complete=ids_completion())
 @pass_ytcc
-def mark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
+def mark(ytcc: core.Ytcc, ids: tuple[int, ...]):
     """Mark videos as watched.
 
     Marks videos as watched without playing or downloading them. If no IDs are given, ytcc tries to
@@ -728,7 +729,7 @@ def mark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
 @cli.command()
 @click.argument("ids", nargs=-1, type=click.INT, shell_complete=ids_completion(True))
 @pass_ytcc
-def unmark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
+def unmark(ytcc: core.Ytcc, ids: tuple[int, ...]):
     """Mark videos as unwatched.
 
     Marks videos as unwatched. If no IDs are given, ytcc tries to read IDs from stdin. If no IDs
@@ -772,7 +773,7 @@ def unmark(ytcc: core.Ytcc, ids: Tuple[int, ...]):
 @pass_ytcc
 def download(
     ytcc: core.Ytcc,
-    ids: Tuple[int, ...],
+    ids: tuple[int, ...],
     path: Path,
     audio_only: bool,
     no_mark: bool,

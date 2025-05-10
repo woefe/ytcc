@@ -20,8 +20,9 @@ import datetime
 import hashlib
 import itertools
 import logging
+from collections.abc import Iterable
 from functools import partial
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 from ytcc import Database, Playlist, Video, config
 from ytcc.utils import lazy_import, take
@@ -42,7 +43,7 @@ _ytdl_logger.addHandler(logging.NullHandler())
 YTDL_COMMON_OPTS = {"logger": _ytdl_logger}
 
 
-def make_archive_id(ydl: "YoutubeDL", entry: Dict[str, Any]) -> Optional[str]:
+def make_archive_id(ydl: "YoutubeDL", entry: dict[str, Any]) -> Optional[str]:
     archive_id = ydl._make_archive_id(entry)
     entry_type = entry.get("_type", "").lower()
     if archive_id is None and entry.get("url") and entry_type in ("url", "url_transparent"):
@@ -66,7 +67,7 @@ class Fetcher:
 
     async def get_unprocessed_entries(
         self, playlist: Playlist
-    ) -> Iterable[Tuple[Playlist, str, Any]]:
+    ) -> Iterable[tuple[Playlist, str, Any]]:
         ydl_opts = self.ydl_opts.copy()
         ydl_opts["playlistend"] = None if playlist.reverse else self.max_items
 
@@ -108,7 +109,7 @@ class Fetcher:
 
     async def process_entry(
         self, playlist: Playlist, e_hash: str, entry: Any
-    ) -> Tuple[str, Optional[Video]]:
+    ) -> tuple[str, Optional[Video]]:
         try:
             loop = asyncio.get_event_loop()
             processed = await loop.run_in_executor(None, self._process_ie, entry)
@@ -183,8 +184,8 @@ class Fetcher:
             )
 
     @staticmethod
-    def _get_highest_res_thumbnail(thumbnails: List[Dict[str, Any]]) -> Dict[str, Any]:
-        def _max_res(thumb: Dict[str, Any]) -> int:
+    def _get_highest_res_thumbnail(thumbnails: list[dict[str, Any]]) -> dict[str, Any]:
+        def _max_res(thumb: dict[str, Any]) -> int:
             try:
                 return int(thumb.get("width", 0)) * int(thumb.get("height", 0))
             except ValueError:
@@ -192,7 +193,7 @@ class Fetcher:
 
         return max(thumbnails, key=_max_res, default={})
 
-    async def fetch(self, playlist: Playlist) -> List[Video]:
+    async def fetch(self, playlist: Playlist) -> list[Video]:
         unprocessed = await self.get_unprocessed_entries(playlist)
         processed = await asyncio.gather(*itertools.starmap(self.process_entry, unprocessed))
         return [v for _, v in processed if v]
@@ -212,7 +213,7 @@ class Updater:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.database.__exit__(exc_type, exc_val, exc_tb)
 
-    async def get_new_entries(self, playlist: Playlist) -> Iterable[Tuple[Playlist, str, Any]]:
+    async def get_new_entries(self, playlist: Playlist) -> Iterable[tuple[Playlist, str, Any]]:
         hashes = frozenset(
             x.extractor_hash for x in self.database.list_videos(playlists=[playlist.name])
         )

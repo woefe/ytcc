@@ -18,10 +18,11 @@
 
 import logging
 import sqlite3
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple, overload
+from typing import Any, Optional, overload
 
 from ytcc.config import Direction, VideoAttr
 from ytcc.exceptions import IncompatibleDatabaseVersionError, PlaylistDoesNotExistError
@@ -34,7 +35,7 @@ def logging_cb(querystr: str) -> None:
     logger.debug("%s", " ".join(querystr.split()))
 
 
-def _placeholder(elements: List[Any]) -> str:
+def _placeholder(elements: list[Any]) -> str:
     return ",".join("?" * len(elements))
 
 
@@ -64,12 +65,12 @@ class Video:
 @dataclass(frozen=True)
 class MappedVideo(Video):
     id: int
-    playlists: List[Playlist]
+    playlists: list[Playlist]
 
 
 @dataclass(frozen=True)
 class MappedPlaylist(Playlist):
-    tags: List[str]
+    tags: list[str]
 
 
 class Database:
@@ -268,7 +269,7 @@ class Database:
             FROM playlist AS p
                 LEFT OUTER JOIN tag AS t ON p.id = t.playlist;
             """
-        playlists: Dict[int, MappedPlaylist] = {}
+        playlists: dict[int, MappedPlaylist] = {}
         for row in self.connection.execute(query):
             playlist = playlists.get(row["id"])
             if playlist is None:
@@ -281,7 +282,7 @@ class Database:
 
         return playlists.values()
 
-    def tag_playlist(self, playlist: str, tags: List[str]) -> None:
+    def tag_playlist(self, playlist: str, tags: list[str]) -> None:
         """Set the given tags for the given playlist.
 
         :param playlist: The playlist to tag.
@@ -381,7 +382,7 @@ class Database:
                 cursor.execute(insert_playlist, (playlist_id, video.url))
 
     @overload
-    def mark_watched(self, video: List[int]) -> None: ...
+    def mark_watched(self, video: list[int]) -> None: ...
 
     @overload
     def mark_watched(self, video: int) -> None: ...
@@ -393,7 +394,7 @@ class Database:
         self._mark(video, datetime.now().timestamp())
 
     @overload
-    def mark_unwatched(self, video: List[int]) -> None: ...
+    def mark_unwatched(self, video: list[int]) -> None: ...
 
     @overload
     def mark_unwatched(self, video: int) -> None: ...
@@ -420,9 +421,9 @@ class Database:
 
     @staticmethod
     def _make_order_by_clause(
-        order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None,
+        order_by: Optional[list[tuple[VideoAttr, Direction]]] = None,
     ) -> str:
-        def directions() -> Iterable[Tuple[str, str]]:
+        def directions() -> Iterable[tuple[str, str]]:
             column_names = {
                 VideoAttr.ID: "id",
                 VideoAttr.URL: "url",
@@ -451,10 +452,10 @@ class Database:
         since: Optional[float] = None,
         till: Optional[float] = None,
         watched: Optional[bool] = None,
-        tags: Optional[List[str]] = None,
-        playlists: Optional[List[str]] = None,
-        ids: Optional[List[int]] = None,
-        order_by: Optional[List[Tuple[VideoAttr, Direction]]] = None,
+        tags: Optional[list[str]] = None,
+        playlists: Optional[list[str]] = None,
+        ids: Optional[list[int]] = None,
+        order_by: Optional[list[tuple[VideoAttr, Direction]]] = None,
     ) -> Iterable[MappedVideo]:
         tag_condition = f"AND t.name IN ({_placeholder(tags)})" if tags is not None else ""
         id_condition = f"AND v.id IN ({_placeholder(ids)})" if ids is not None else ""
@@ -511,7 +512,7 @@ class Database:
         tags = tags or []
         ids = ids or []
 
-        videos: Dict[int, MappedVideo] = {}
+        videos: dict[int, MappedVideo] = {}
         with self.connection as con:
             for row in con.execute(query, [since, till, *ids, *tags, *playlists]):
                 video = videos.get(row["id"])

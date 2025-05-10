@@ -22,10 +22,11 @@ import sys
 import textwrap
 import xml.etree.ElementTree as ET
 from abc import ABC, ABCMeta, abstractmethod
+from collections.abc import Iterable
 from dataclasses import asdict
 from datetime import datetime, timezone
 from email.utils import format_datetime as rss2_date
-from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Union
+from typing import Any, NamedTuple, Optional, Union
 
 from wcwidth import wcswidth
 
@@ -36,10 +37,10 @@ from ytcc.terminal import get_terminal_width, printt
 
 
 class Table(NamedTuple):
-    header: List[str]
-    data: List[List[str]]
+    header: list[str]
+    data: list[list[str]]
 
-    def apply_filter(self, column_names: List[str]) -> "Table":
+    def apply_filter(self, column_names: list[str]) -> "Table":
         try:
             indices = [self.header.index(col) for col in column_names]
         except ValueError as index_err:
@@ -58,7 +59,7 @@ class TableData(ABC):
 
 class DictData(ABC):
     @abstractmethod
-    def data(self) -> Iterable[Dict[str, Any]]:
+    def data(self) -> Iterable[dict[str, Any]]:
         pass
 
 
@@ -80,7 +81,7 @@ class VideoPrintable(Printable):
     def _format_date(timestamp: float) -> str:
         return datetime.fromtimestamp(timestamp).strftime(config.ytcc.date_format)
 
-    def data(self) -> Iterable[Dict[str, Any]]:
+    def data(self) -> Iterable[dict[str, Any]]:
         for video in self.videos:
             video_dict = asdict(video)
             video_dict["duration"] = self._format_duration(video.duration)
@@ -124,7 +125,7 @@ class PlaylistPrintable(Printable):
     def __init__(self, playlists: Iterable[MappedPlaylist]):
         self.playlists = playlists
 
-    def data(self) -> Iterable[Dict[str, Any]]:
+    def data(self) -> Iterable[dict[str, Any]]:
         for playlist in self.playlists:
             yield asdict(playlist)
 
@@ -140,14 +141,14 @@ class PlaylistPrintable(Printable):
 
 class Printer(ABC):
     def __init__(self) -> None:
-        self._filter: Optional[List[Any]] = None
+        self._filter: Optional[list[Any]] = None
 
     @property
-    def filter(self) -> Optional[List[Any]]:
+    def filter(self) -> Optional[list[Any]]:
         return self._filter
 
     @filter.setter
-    def filter(self, fields: List[Any]):
+    def filter(self, fields: list[Any]):
         self._filter = fields
 
     @abstractmethod
@@ -193,8 +194,8 @@ class TablePrinter(Printer):
 
     @staticmethod
     def print_row(
-        columns: List[str],
-        widths: List[int],
+        columns: list[str],
+        widths: list[int],
         bold: bool = False,
         background: Optional[int] = None,
     ) -> None:

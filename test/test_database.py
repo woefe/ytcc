@@ -17,9 +17,10 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
+from collections.abc import Iterable, Iterator
 from sqlite3 import IntegrityError
 from tempfile import NamedTemporaryFile
-from typing import Callable, Iterable, Iterator, List, Optional
+from typing import Callable, Optional
 
 import pytest
 
@@ -375,7 +376,7 @@ def test_marked_unwatched(filled_database):
 
 
 def test_list_videos(filled_database):
-    def check_result(result: Iterable[MappedVideo], expected_ids: List[int]):
+    def check_result(result: Iterable[MappedVideo], expected_ids: list[int]):
         assert len(list(result)) == len(expected_ids)
         for video in result:
             assert video.id in expected_ids

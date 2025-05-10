@@ -47,7 +47,7 @@ select = [
     "F",
     "PGH",
     # "PL",
-    # "UP",
+    "UP",
     "FURB",
     "RUF",
     "TRY"

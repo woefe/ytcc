@@ -23,9 +23,10 @@ import locale
 import logging
 import os
 import typing
+from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, List, Optional, Sequence, TextIO, Tuple, Type
+from typing import Any, Callable, Optional, TextIO
 
 from ytcc.exceptions import BadConfigError
 
@@ -144,18 +145,18 @@ class ytcc(BaseConfig):
     download_dir: str = "~/Downloads"
     download_subdirs: bool = False
     mpv_flags: str = "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best"
-    order_by: List[Tuple[VideoAttr, Direction]] = [
+    order_by: list[tuple[VideoAttr, Direction]] = [
         (VideoAttr.PLAYLISTS, Direction.ASC),
         (VideoAttr.PUBLISH_DATE, Direction.DESC),
     ]
-    video_attrs: List[VideoAttr] = [
+    video_attrs: list[VideoAttr] = [
         VideoAttr.ID,
         VideoAttr.TITLE,
         VideoAttr.PUBLISH_DATE,
         VideoAttr.DURATION,
         VideoAttr.PLAYLISTS,
     ]
-    playlist_attrs: List[PlaylistAttr] = list(PlaylistAttr)
+    playlist_attrs: list[PlaylistAttr] = list(PlaylistAttr)
     db_path: str = "~/.local/share/ytcc/ytcc.db"
     date_format: DateFormatStr = DateFormatStr("%Y-%m-%d")
     max_update_fail: int = 5
@@ -183,7 +184,7 @@ class youtube_dl(BaseConfig):
     output_template: str = "%(title)s.%(ext)s"
     ratelimit: int = 0
     retries: int = 0
-    subtitles: List[str] = ["off"]
+    subtitles: list[str] = ["off"]
     thumbnail: bool = True
     skip_live_stream: bool = True
     merge_output_format: str = "mkv"
@@ -239,7 +240,7 @@ def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigP
 def load(override_cfg_file: Optional[str] = None):
     conf_parser = _get_config(override_cfg_file)
 
-    def enum_from_str(e_class: Type[Enum], str_val: str) -> Enum:
+    def enum_from_str(e_class: type[Enum], str_val: str) -> Enum:
         field: Any
         for field in e_class:
             # Might also raise a ValueError
@@ -255,17 +256,17 @@ def load(override_cfg_file: Optional[str] = None):
             raise ValueError(f"{string} cannot be converted to bool")
         return bool_state
 
-    def list_from_str(elem_type: Type, list_str: str) -> List[Any]:
+    def list_from_str(elem_type: type, list_str: str) -> list[Any]:
         return [_convert(elem_type, elem.strip()) for elem in list_str.split(",")]
 
-    def tuple_from_str(types: Sequence[Type], tuple_str) -> Tuple:
+    def tuple_from_str(types: Sequence[type], tuple_str) -> tuple:
         elems = tuple_str.split(":")
         if len(elems) != len(types):
             raise ValueError(f"{tuple_str} cannot be converted to tuple of type {types}")
 
         return tuple(_convert(typ, elem) for elem, typ in zip(elems, types))
 
-    def _convert(typ: Type[Any], string: str) -> Any:
+    def _convert(typ: type[Any], string: str) -> Any:
         if get_type_origin(typ) is list:
             elem_conv = get_type_args(typ)[0]
             from_str: Callable[[str], Any] = functools.partial(list_from_str, elem_conv)
