@@ -21,14 +21,14 @@ import hashlib
 import itertools
 import logging
 from functools import partial
-from typing import List, Tuple, Any, Optional, Iterable, Dict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Tuple
 
-from ytcc import config, Playlist, Database, Video
-from ytcc.utils import take, lazy_import
+from ytcc import Database, Playlist, Video, config
+from ytcc.utils import lazy_import, take
 
 if TYPE_CHECKING:
     try:
-        from yt_dlp import YoutubeDL  # pylint: disable=unused-import
+        from yt_dlp import YoutubeDL
     except ImportError:
         from youtube_dl import YoutubeDL
 
@@ -43,7 +43,6 @@ YTDL_COMMON_OPTS = {"logger": _ytdl_logger}
 
 
 def make_archive_id(ydl: "YoutubeDL", entry: Dict[str, Any]) -> Optional[str]:
-    # pylint: disable=protected-access
     archive_id = ydl._make_archive_id(entry)
     entry_type = entry.get("_type", "").lower()
     if archive_id is None and entry.get("url") and entry_type in ("url", "url_transparent"):

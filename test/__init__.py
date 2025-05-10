@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
-from ytcc import Video, Playlist
+from ytcc import Playlist, Video
 
 WEBDRIVER_PLAYLIST = Playlist(
     "WebDriver", "https://www.youtube.com/playlist?list=UUsLiV4WJfkTEHH0b9PmRklw", False

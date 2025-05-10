@@ -23,15 +23,13 @@ import locale
 import logging
 import os
 import typing
-from abc import ABC
 from enum import Enum
 from pathlib import Path
-from typing import Optional, TextIO, Type, Any, List, Callable, Tuple, Sequence
+from typing import Any, Callable, List, Optional, Sequence, TextIO, Tuple, Type
 
 from ytcc.exceptions import BadConfigException
 
 # typing.get_args and typing.get_origin were introduced in 3.8
-# pylint: disable=no-member
 if hasattr(typing, "get_args"):
     get_type_args = typing.get_args  # type: ignore[attr-defined]
 else:
@@ -46,7 +44,7 @@ else:
 
     def get_type_origin(typ):
         return typ.__origin__ if hasattr(typ, "__origin__") else None
-# pylint: enable=no-member
+
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +92,7 @@ class VideoAttr(str, Enum):
 
     @staticmethod
     def from_str(string: str) -> "VideoAttr":
-        v_attr = VideoAttr.__members__.get(string.upper())  # pylint: disable=no-member
+        v_attr = VideoAttr.__members__.get(string.upper())
         if v_attr is not None:
             return v_attr
         raise ValueError(f"{string} cannot be converted to VideoAttr")
@@ -108,7 +106,7 @@ class PlaylistAttr(str, Enum):
 
     @staticmethod
     def from_str(string: str) -> "PlaylistAttr":
-        p_attr = PlaylistAttr.__members__.get(string.upper())  # pylint: disable=no-member
+        p_attr = PlaylistAttr.__members__.get(string.upper())
         if p_attr is not None:
             return p_attr
         raise ValueError(f"{string} cannot be converted to PlaylistAttr")
@@ -120,6 +118,8 @@ class Direction(str, Enum):
 
 
 class DateFormatStr(str):
+    __slots__ = ()
+
     def __new__(cls, *arg):
         datechars = "aAwdbBmyYjUWx%"
         iterator = iter(arg[0])
@@ -135,12 +135,12 @@ class DateFormatStr(str):
         return super().__new__(cls, *arg)
 
 
-class BaseConfig(ABC):
+class BaseConfig:
     def __setattr__(self, key, value):
         raise AttributeError("Attribute is immutable")
 
 
-class ytcc(BaseConfig):  # pylint: disable=invalid-name
+class ytcc(BaseConfig):
     download_dir: str = "~/Downloads"
     download_subdirs: bool = False
     mpv_flags: str = "--really-quiet --ytdl --ytdl-format=bestvideo[height<=?1080]+bestaudio/best"
@@ -163,12 +163,12 @@ class ytcc(BaseConfig):  # pylint: disable=invalid-name
     age_limit: int = 0
 
 
-class tui(BaseConfig):  # pylint: disable=invalid-name
+class tui(BaseConfig):
     alphabet: str = "sdfervghnuiojkl"
     default_action: Action = Action.PLAY_VIDEO
 
 
-class theme(BaseConfig):  # pylint: disable=invalid-name
+class theme(BaseConfig):
     prompt_download_audio: Color = Color(2)
     prompt_download_video: Color = Color(4)
     prompt_play_audio: Color = Color(2)
@@ -178,7 +178,7 @@ class theme(BaseConfig):  # pylint: disable=invalid-name
     plain_label_text: Color = Color(244)
 
 
-class youtube_dl(BaseConfig):  # pylint: disable=invalid-name
+class youtube_dl(BaseConfig):
     format: str = "bestvideo[height<=?1080]+bestaudio/best"
     output_template: str = "%(title)s.%(ext)s"
     ratelimit: int = 0

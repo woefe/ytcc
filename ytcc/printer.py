@@ -21,18 +21,18 @@ import json
 import sys
 import textwrap
 import xml.etree.ElementTree as ET
-from abc import ABC, abstractmethod, ABCMeta
+from abc import ABC, ABCMeta, abstractmethod
 from dataclasses import asdict
 from datetime import datetime, timezone
 from email.utils import format_datetime as rss2_date
-from typing import List, Iterable, Dict, Any, NamedTuple, Optional, Union
+from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Union
 
 from wcwidth import wcswidth
 
 from ytcc import config
-from ytcc.database import MappedVideo, MappedPlaylist
+from ytcc.database import MappedPlaylist, MappedVideo
 from ytcc.exceptions import YtccException
-from ytcc.terminal import printt, get_terminal_width
+from ytcc.terminal import get_terminal_width, printt
 
 
 class Table(NamedTuple):
@@ -114,7 +114,7 @@ class VideoPrintable(Printable):
                     self._format_duration(video.duration),
                     video.thumbnail_url or "",
                     video.extractor_hash,
-                    ", ".join(map(lambda v: v.name, video.playlists)),
+                    ", ".join(p.name for p in video.playlists),
                 ]
             )
 
@@ -328,7 +328,7 @@ class RSSPrinter(Printer):
             link = ET.SubElement(item, "link")
             link.text = video.url
             author = ET.SubElement(item, "author")
-            author.text = ", ".join(map(lambda v: v.name, video.playlists))
+            author.text = ", ".join(v.name for v in video.playlists)
             description = ET.SubElement(item, "description")
             description.text = f"<pre>{html.escape(video.description)}</pre>"
             pub_date = ET.SubElement(item, "pubDate")

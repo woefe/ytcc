@@ -20,13 +20,13 @@ import shutil
 import sys
 import textwrap as wrap
 from enum import Enum
-from typing import List, Optional, Tuple, Callable, NamedTuple, FrozenSet, TextIO, Dict
+from typing import Callable, Dict, FrozenSet, List, NamedTuple, Optional, TextIO, Tuple
 
-from ytcc import terminal, config
+from ytcc import config, terminal
 from ytcc.core import Ytcc
 from ytcc.database import MappedVideo
-from ytcc.printer import Table, TableData, VideoPrintable, TablePrinter
-from ytcc.terminal import printt, printtln, FKeys
+from ytcc.printer import Table, TableData, TablePrinter, VideoPrintable
+from ytcc.terminal import FKeys, printt, printtln
 
 
 class Option(NamedTuple):
@@ -102,8 +102,8 @@ class VideoSelection(TableData, dict):
 
     def table(self) -> Table:
         table = VideoPrintable(self.values()).table()
-        data = [[code] + row for code, row in zip(self.keys(), table.data)]
-        return Table(["TAG"] + table.header, data)
+        data = [[code, *row] for code, row in zip(self.keys(), table.data)]
+        return Table(["TAG", *table.header], data)
 
 
 class Interactive:

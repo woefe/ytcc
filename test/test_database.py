@@ -19,19 +19,18 @@
 import contextlib
 from sqlite3 import IntegrityError
 from tempfile import NamedTemporaryFile
-from typing import Iterator, Callable, Optional, List, Iterable
+from typing import Callable, Iterable, Iterator, List, Optional
 
 import pytest
 
 from ytcc import (
     Database,
     MappedPlaylist,
-    PlaylistDoesNotExistException,
-    Playlist,
-    Video,
     MappedVideo,
+    Playlist,
+    PlaylistDoesNotExistException,
+    Video,
 )
-
 
 SETUP_SQL_SCRIPT = """
     INSERT INTO playlist (id, name, url, reverse)

@@ -18,10 +18,10 @@
 
 import logging
 import sqlite3
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Iterable, Any, Optional, Dict, overload, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, overload
 
 from ytcc.config import Direction, VideoAttr
 from ytcc.exceptions import IncompatibleDatabaseVersion, PlaylistDoesNotExistException
@@ -63,7 +63,7 @@ class Video:
 
 @dataclass(frozen=True)
 class MappedVideo(Video):
-    id: int  # pylint: disable=invalid-name
+    id: int
     playlists: List[Playlist]
 
 
@@ -504,7 +504,7 @@ class Database:
                 JOIN playlist p ON p.id = c.playlist_id
             WHERE v.id in ids
             {order_by_clause}
-            """
+            """  # noqa: S608
         since = since or 0
         till = till or float("inf")
         playlists = playlists or []

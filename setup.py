@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 import ytcc
 
@@ -17,7 +17,7 @@ setup(
     author_email=ytcc.__email__,
     license=ytcc.__license__,
     packages=find_packages(exclude=["test"]),
-    install_requires=["yt_dlp", "click>=8.0", "wcwidth"],
+    install_requires=["yt_dlp", "click>=8.0", "wcwidth", "defusedxml"],
     extras_require={"youtube_dl": ["youtube_dl"]},
     python_requires=">=3.7, <4",
     scripts=["scripts/ytccf.sh"],

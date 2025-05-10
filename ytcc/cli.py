@@ -21,35 +21,34 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from sqlite3 import DatabaseError
-from typing import List, Callable, TypeVar, Generic, Optional, Iterable, Tuple, Union
+from typing import Callable, Generic, Iterable, List, Optional, Tuple, TypeVar, Union
 
 import click
 from click.exceptions import Exit
 from click.shell_completion import CompletionItem
 
-from ytcc import __version__, __author__
-from ytcc import core, config
-from ytcc.config import PlaylistAttr, VideoAttr, Direction
+from ytcc import __author__, __version__, config, core
+from ytcc.config import Direction, PlaylistAttr, VideoAttr
 from ytcc.database import MappedVideo
 from ytcc.exceptions import (
     BadConfigException,
-    IncompatibleDatabaseVersion,
     BadURLException,
+    IncompatibleDatabaseVersion,
     NameConflictError,
     PlaylistDoesNotExistException,
     YtccException,
 )
 from ytcc.printer import (
     JSONPrinter,
-    XSVPrinter,
-    VideoPrintable,
-    TablePrinter,
+    PlainPrinter,
     PlaylistPrintable,
     Printer,
     RSSPrinter,
-    PlainPrinter,
+    TablePrinter,
+    VideoPrintable,
+    XSVPrinter,
 )
-from ytcc.tui import print_meta, Interactive
+from ytcc.tui import Interactive, print_meta
 
 T = TypeVar("T")
 printer: Printer
@@ -63,7 +62,7 @@ class CommaList(click.ParamType, Generic[T]):
     def __init__(self, validator: Callable[[str], T]):
         self.validator = validator
 
-    def convert(self, value, param, ctx) -> List[T]:
+    def convert(self, value, _param, _ctx) -> List[T]:
         try:
             return [self.validator(elem.strip()) for elem in value.split(",")]
         except ValueError:
@@ -73,7 +72,7 @@ class CommaList(click.ParamType, Generic[T]):
 class TruncateVals(click.ParamType):
     name = "truncate"
 
-    def convert(self, value, param, ctx) -> Union[None, str, int]:
+    def convert(self, value, _param, _ctx) -> Union[None, str, int]:
         if value == "max":
             return "max"
         if value == "no":
@@ -84,7 +83,7 @@ class TruncateVals(click.ParamType):
             self.fail(f"Unexpected value {value}. Must be 'no', 'max', or an integer")
 
     def shell_complete(
-        self, ctx: click.Context, param: click.Parameter, incomplete: str
+        self, _ctx: click.Context, _param: click.Parameter, incomplete: str
     ) -> List[CompletionItem]:
         completions = [
             ("max", "truncates to terminal width"),
@@ -129,7 +128,7 @@ def _load_completion_conf(ctx: click.Context) -> None:
 def ids_completion(watched: bool = False):
     def complete(
         ctx: click.Context,
-        param: click.Parameter,  # pylint: disable=unused-argument
+        _param: click.Parameter,
         incomplete: str,
     ) -> List[CompletionItem]:
         try:
@@ -142,7 +141,7 @@ def ids_completion(watched: bool = False):
             used_ids = list(map(str, ctx.params.get("ids") or []))
             return [
                 CompletionItem(value=v_id, help=title)
-                for v_id, title in map(lambda v: (str(v.id), v.title), ytcc.list_videos())
+                for v_id, title in ((str(v.id), v.title) for v in ytcc.list_videos())
                 if v_id.startswith(incomplete) and v_id not in used_ids
             ]
 
@@ -151,7 +150,7 @@ def ids_completion(watched: bool = False):
 
 def playlist_completion(
     ctx: click.Context,
-    param: click.Parameter,  # pylint: disable=unused-argument
+    _param: click.Parameter,
     incomplete: str,
 ) -> List[str]:
     try:
@@ -175,7 +174,7 @@ def playlists_completion(ctx: click.Context, param: click.Parameter, incomplete:
 
 def tags_completion(
     ctx: click.Context,
-    param: click.Parameter,  # pylint: disable=unused-argument
+    _param: click.Parameter,
     incomplete: str,
 ) -> List[str]:
     try:
@@ -271,7 +270,7 @@ def cli(
         logger.error(str(conf_exc))
         ctx.exit(1)
 
-    global printer  # pylint: disable=global-statement,invalid-name
+    global printer
 
     ytcc = ctx.ensure_object(core.Ytcc)
     ctx.call_on_close(ytcc.close)
@@ -383,7 +382,7 @@ def reverse_playlist(ytcc: core.Ytcc, playlists: Tuple[str, ...]):
     "-a",
     type=CommaList(PlaylistAttr.from_str),
     help="Attributes of the playlist to be included in the output. "
-    f"Some of [{', '.join(map(lambda x: x.value, list(PlaylistAttr)))}].",
+    f"Some of [{', '.join(a.value for a in PlaylistAttr)}].",
 )
 @pass_ytcc
 def subscriptions(ytcc: core.Ytcc, attributes: List[PlaylistAttr]):
@@ -430,9 +429,9 @@ def update(ytcc: core.Ytcc, max_fail: Optional[int], max_backlog: Optional[int])
     ytcc.update(max_fail, max_backlog)
 
 
-_video_attrs = click.Choice(list(map(lambda v: v.value, VideoAttr)))
+_video_attrs = click.Choice([v.value for v in VideoAttr])
 _video_attrs.name = "attribute"
-_dir = click.Choice(list(map(lambda v: v.value, Direction)))
+_dir = click.Choice([v.value for v in Direction])
 _dir.name = "direction"
 ClickOrderBy = Union[Tuple[Tuple[VideoAttr, Direction], ...], Tuple[VideoAttr, Direction]]
 common_list_options = [
@@ -528,7 +527,6 @@ def set_order(ytcc: core.Ytcc, order_by: ClickOrderBy):
         ytcc.set_listing_order(config.ytcc.order_by)
 
 
-# pylint: disable=too-many-arguments
 def list_videos_impl(
     ytcc: core.Ytcc,
     tags: Optional[List[str]],
@@ -608,7 +606,7 @@ def list_ids(
     Basically an alias for `ytcc --output xsv list --attributes id`. This alias can be useful for
     piping into the download, play, and mark commands. E.g: `ytcc ls | ytcc watch`
     """
-    global printer  # pylint: disable=global-statement,invalid-name
+    global printer
     printer = XSVPrinter()
     list_videos_impl(ytcc, tags, since, till, playlists, ids, ["id"], watched, unwatched, order_by)
 
@@ -644,7 +642,7 @@ def _get_ids(ids: List[int]) -> Iterable[int]:
             try:
                 yield int(line)
             except ValueError:
-                logging.error("ID '%s' is not an integer", line)
+                logger.error("ID '%s' is not an integer", line)
                 sys.exit(1)
 
     elif ids is not None:
@@ -823,6 +821,7 @@ def cleanup(ytcc: core.Ytcc, keep: Optional[int]):
 @click.option(
     "--format",
     "-f",
+    "file_format",
     type=click.Choice(["opml", "csv"]),
     default="csv",
     show_default=True,
@@ -830,7 +829,7 @@ def cleanup(ytcc: core.Ytcc, keep: Optional[int]):
 )
 @click.argument("file", nargs=1, type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @pass_ytcc
-def import_(ytcc: core.Ytcc, format: str, file: Path):  # pylint: disable=redefined-builtin
+def import_(ytcc: core.Ytcc, file_format: str, file: Path):
     """Import YouTube subscriptions from an OPML or CSV file.
 
     The CSV file must have three columns in following order: Channel ID, Channel URL, Channel name.
@@ -842,9 +841,9 @@ def import_(ytcc: core.Ytcc, format: str, file: Path):  # pylint: disable=redefi
     The OPML export was available on YouTube some time ago and old versions of ytcc were also able
     to export subscriptions in the OPML format.
     """
-    if format == "opml":
+    if file_format == "opml":
         ytcc.import_yt_opml(file)
-    elif format == "csv":
+    elif file_format == "csv":
         ytcc.import_yt_csv(file)
 
 
@@ -855,9 +854,8 @@ def bug_report():
     Shows versions of dependencies and configuration relevant for any bug report. Please include
     the output of this command when filing a new bug report!
     """
-    # pylint: disable=import-outside-toplevel
-    import subprocess
     import sqlite3
+    import subprocess
 
     print("---ytcc version---")
     print(__version__)

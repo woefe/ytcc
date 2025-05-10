@@ -24,20 +24,22 @@ import sqlite3
 import subprocess
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Iterable, List, Optional, Any, Dict, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from urllib.parse import parse_qs, urlparse
+
+from defusedxml.ElementTree import parse as defusedxml_parse
 
 from ytcc import config
 from ytcc.config import Direction, VideoAttr
-from ytcc.database import Database, Video, MappedVideo, MappedPlaylist, Playlist
+from ytcc.database import Database, MappedPlaylist, MappedVideo, Playlist, Video
 from ytcc.exceptions import (
-    YtccException,
     BadURLException,
+    InvalidSubscriptionFileError,
     NameConflictError,
     PlaylistDoesNotExistException,
-    InvalidSubscriptionFileError,
+    YtccException,
 )
-from ytcc.updater import Updater, Fetcher, YTDL_COMMON_OPTS, make_archive_id
+from ytcc.updater import YTDL_COMMON_OPTS, Fetcher, Updater, make_archive_id
 from ytcc.utils import lazy_import
 
 youtube_dl = lazy_import("yt_dlp", "youtube_dl")
@@ -242,7 +244,6 @@ class Ytcc:
 
         with youtube_dl.YoutubeDL(Ytcc._ydl_opts(str(download_dir), subdir, audio_only)) as ydl:
             try:
-                # pylint: disable=protected-access
                 if isinstance(ydl._pps, list):
                     ydl._pps.append(filename_processor)
                 elif isinstance(ydl._pps, dict):
@@ -452,24 +453,23 @@ class Ytcc:
         self.database.cleanup(keep)
 
     def import_yt_opml(self, file: Path):
+        message = f"'{file!s}' is not a valid YouTube export file"
+
         def _from_xml_element(elem: ET.Element) -> Tuple[str, str]:
             rss_url = urlparse(elem.attrib["xmlUrl"])
             query_dict = parse_qs(rss_url.query, keep_blank_values=False)
             channel_id = query_dict.get("channel_id", [])
             if len(channel_id) != 1:
-                message = f"'{str(file)}' is not a valid YouTube export file"
                 raise InvalidSubscriptionFileError(message)
             yt_url = f"https://www.youtube.com/channel/{channel_id[0]}/videos"
             return elem.attrib["title"], yt_url
 
         try:
-            tree = ET.parse(file)
+            tree = defusedxml_parse(file)
         except ET.ParseError as err:
-            raise InvalidSubscriptionFileError(
-                f"'{str(file)}' is not a valid YouTube export file"
-            ) from err
+            raise InvalidSubscriptionFileError(message) from err
         except OSError as err:
-            raise InvalidSubscriptionFileError(f"{str(file)} cannot be accessed") from err
+            raise InvalidSubscriptionFileError(f"{file!s} cannot be accessed") from err
 
         root = tree.getroot()
         subscriptions = (
@@ -497,7 +497,7 @@ class Ytcc:
 
                 if len(row) != 3:
                     raise InvalidSubscriptionFileError(
-                        f"{str(file)} has an invalid number of columns. Expecting: ID, URL, Name"
+                        f"{file!s} has an invalid number of columns. Expecting: ID, URL, Name"
                     )
 
                 yt_url = f"https://www.youtube.com/channel/{row[0]}/videos"

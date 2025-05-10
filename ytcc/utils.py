@@ -17,9 +17,8 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import importlib
-from typing import TypeVar, Optional, Iterable, Any
+from typing import Any, Iterable, Optional, TypeVar
 
-# pylint: disable=invalid-name
 T = TypeVar("T")
 
 

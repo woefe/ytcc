@@ -26,7 +26,7 @@ from typing import Callable
 import pytest
 from click.testing import CliRunner, Result
 
-from test import WEBDRIVER_VIDEOS, WEBDRIVER_PLAYLIST
+from test import WEBDRIVER_PLAYLIST, WEBDRIVER_VIDEOS
 from ytcc import InvalidSubscriptionFileError
 
 
@@ -125,7 +125,7 @@ def test_subscribe_bad_url(cli_runner, caplog):
         result = runner("subscribe", "Test", "test.kom")
         assert result.exit_code != 0
         msg = "The given URL does not point to a playlist or is not supported"
-        assert any(map(lambda r: r.msg == msg, caplog.records))
+        assert any(r.msg == msg for r in caplog.records)
 
 
 def test_unsubscribe(cli_runner):
