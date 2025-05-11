@@ -305,6 +305,9 @@ def subscribe(ytcc: core.Ytcc, name: str, url: str, reverse: bool):
 
     The NAME argument is the name used to refer to the playlist. The URL argument is the URL to a
     playlist that is supported by yt-dlp or youtube-dl.
+
+    Note that after adding new subscriptions, you need to run `ytcc update` to make videos
+    available in ytcc.
     """
     try:
         ytcc.add_playlist(name, url, reverse)
@@ -833,14 +836,17 @@ def cleanup(ytcc: core.Ytcc, keep: Optional[int]):
 def import_(ytcc: core.Ytcc, file_format: str, file: Path):
     """Import YouTube subscriptions from an OPML or CSV file.
 
-    The CSV file must have three columns in following order: Channel ID, Channel URL, Channel name.
+    The CSV file must have three columns in the following order: Channel ID, Channel URL, Channel
+    name.
 
-    You can export your YouTube subscriptions at https://takeout.google.com. In the takeout you
+    You can export your YouTube subscriptions at https://takeout.google.com. In the takeout, you
     find a CSV file with your subscriptions. To speed up the takeout export only your
     subscriptions, not your videos, comments, etc.
 
-    The OPML export was available on YouTube some time ago and old versions of ytcc were also able
+    The OPML export was available on YouTube some time ago, and old versions of ytcc were also able
     to export subscriptions in the OPML format.
+
+    Note that after importing subscriptions, you need to run `ytcc update` to fetch new videos.
     """
     if file_format == "opml":
         ytcc.import_yt_opml(file)

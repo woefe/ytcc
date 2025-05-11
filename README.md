@@ -12,6 +12,8 @@ Alternative installation methods are described in the [documentation](https://gi
 ## Usage
 
 Add "subscriptions".
+Note that `subscribe` does not save discovered videos to the database.
+Run `ytcc update` to check and fetch video metadata after subscribing.
 ```shell script
 # Any playlist supported by yt-dlp (or youtube-dl)
 ytcc subscribe "Jupiter Broadcasting" "https://www.youtube.com/c/JupiterBroadcasting/videos"
