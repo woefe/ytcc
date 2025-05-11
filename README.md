@@ -1,5 +1,5 @@
 # ytcc
-![Build and test](https://github.com/woefe/ytcc/workflows/Build%20and%20test/badge.svg)
+[![lint and test](https://github.com/woefe/ytcc/actions/workflows/lint_and_test.yml/badge.svg)](https://github.com/woefe/ytcc/actions/workflows/lint_and_test.yml)
 
 Command line tool to keep track of your favorite playlists on YouTube and many other places.
 
