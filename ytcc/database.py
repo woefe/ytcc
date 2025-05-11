@@ -310,7 +310,7 @@ class Database:
             for row in con.execute("SELECT DISTINCT name FROM tag"):
                 yield row["name"]
 
-    def add_videos(self, videos: Iterable[Video], playlist: Playlist) -> None:
+    def add_videos(self, videos: Iterable[Video], playlist: Playlist) -> list[int]:
         insert_video = """
             INSERT INTO video (
                 title,
@@ -376,9 +376,14 @@ class Database:
                     f'Playlist "{playlist.name}" is not in the database.'
                 )
             playlist_id = fetch["id"]
+            video_ids = []
             for video in videos:
                 cursor.execute(insert_video, asdict(video))
+                if cursor.lastrowid is not None:
+                    video_ids.append(cursor.lastrowid)
                 cursor.execute(insert_playlist, (playlist_id, video.url))
+
+            return video_ids
 
     @overload
     def mark_watched(self, video: list[int]) -> None: ...
