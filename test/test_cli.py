@@ -205,7 +205,7 @@ def test_comma_list_error(cli_runner):
     with cli_runner() as runner:
         result = runner("list", "--ids", "a,b")
         assert result.exit_code != 0
-        assert "Unexpected value" in result.stdout
+        assert "Unexpected value" in result.stderr
 
 
 def test_bad_id(cli_runner, caplog):
