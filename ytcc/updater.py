@@ -63,6 +63,15 @@ class Fetcher:
             "playlistend": max_backlog,
             "noplaylist": False,
             "age_limit": config.ytcc.age_limit,
+            "ignore_no_formats_error": True,
+            "check_formats": False,
+            "extractor_args": {
+                "youtube": {
+                    "skip": ["hls", "dash", "translated_subs"],
+                    "max_comments": 0,
+                    "player_skip": ["js", "configs", "initial_data"],
+                }
+            },
         }
 
     async def get_unprocessed_entries(
