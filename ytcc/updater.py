@@ -250,4 +250,4 @@ class Updater:
         await asyncio.gather(*map(self.update_playlist, playlists))
 
     def update(self):
-        asyncio.run(self.do_update(), loop_factory=asyncio.EventLoop)
+        asyncio.run(self.do_update())
