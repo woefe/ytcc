@@ -31,5 +31,11 @@ _ytcc_completion() {
     fi
 }
 
-compdef _ytcc_completion ytcc;
+if [[ $zsh_eval_context[-1] == loadautofunc ]]; then
+    # autoload from fpath, call function directly
+    _ytcc_completion "$@"
+else
+    # eval/source/. command, register function for later
+    compdef _ytcc_completion ytcc
+fi
 

@@ -1,9 +1,5 @@
 function _ytcc_completion;
-    set -l response;
-
-    for value in (env _YTCC_COMPLETE=fish_complete COMP_WORDS=(commandline -cp) COMP_CWORD=(commandline -t) ytcc);
-        set response $response $value;
-    end;
+    set -l response (env _YTCC_COMPLETE=fish_complete COMP_WORDS=(commandline -cp) COMP_CWORD=(commandline -t) ytcc);
 
     for completion in $response;
         set -l metadata (string split "," $completion);

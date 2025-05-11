@@ -33,7 +33,7 @@ from ytcc.exceptions import (
     YtccError,
 )
 
-__version__ = "2.6.1"
+__version__ = "2.7.0"
 
 __all__ = [
     "BadConfigError",
