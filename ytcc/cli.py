@@ -314,7 +314,7 @@ def subscribe(ytcc: core.Ytcc, name: str, url: str, reverse: bool):
     try:
         ytcc.add_playlist(name, url, reverse)
     except BadURLError as bad_url:
-        logger.error("The given URL does not point to a playlist or is not supported")
+        logger.error("Cannot subscribe to the given URL. Reason: %s", bad_url)
         raise Exit(1) from bad_url
     except NameConflictError as name_conflict:
         logger.error(
