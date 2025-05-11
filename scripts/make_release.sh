@@ -25,7 +25,7 @@ if ! echo "$tagname" | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+'; then
     exit 1
 fi
 
-sed -i -e "s/^__version__ = .*$/__version__ = \"$tagname\"/" ytcc/__init__.py
+hatch version "$tagname"
 python3 scripts/make_doc.py doc/ytcc.1
 
 _YTCC_COMPLETE=zsh_source ytcc > scripts/completions/zsh/_ytcc
