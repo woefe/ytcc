@@ -18,6 +18,7 @@
 
 import contextlib
 import json
+import sys
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import Callable
@@ -205,7 +206,10 @@ def test_comma_list_error(cli_runner):
     with cli_runner() as runner:
         result = runner("list", "--ids", "a,b")
         assert result.exit_code != 0
-        assert "Unexpected value" in result.stderr
+        if sys.version_info < (3, 10, 0):
+            assert "Unexpected value" in result.stdout
+        else:
+            assert "Unexpected value" in result.stderr
 
 
 def test_bad_id(cli_runner, caplog):

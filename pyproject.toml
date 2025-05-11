@@ -68,6 +68,9 @@ lint-fix = "ruff check --fix"
 format-check = "ruff format --check"
 format-fix = "ruff format"
 
+[[tool.hatch.envs.hatch-test.matrix]]
+python = [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
+
 [tool.ruff]
 line-length = 99
 

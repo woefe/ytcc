@@ -68,6 +68,7 @@ class CommaList(click.ParamType, Generic[T]):
             return [self.validator(elem.strip()) for elem in value.split(",")]
         except ValueError:
             self.fail(f"Unexpected value {value} in comma separated list")
+        return []
 
 
 class TruncateVals(click.ParamType):
@@ -82,6 +83,7 @@ class TruncateVals(click.ParamType):
             return int(value)
         except ValueError:
             self.fail(f"Unexpected value {value}. Must be 'no', 'max', or an integer")
+        return None
 
     def shell_complete(
         self, _ctx: click.Context, _param: click.Parameter, incomplete: str
