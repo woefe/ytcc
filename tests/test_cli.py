@@ -18,6 +18,7 @@
 
 import contextlib
 import json
+import sys
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import Callable
@@ -25,7 +26,7 @@ from typing import Callable
 import pytest
 from click.testing import CliRunner, Result
 
-from test import WEBDRIVER_PLAYLIST, WEBDRIVER_VIDEOS
+from tests import WEBDRIVER_PLAYLIST, WEBDRIVER_VIDEOS
 from ytcc import InvalidSubscriptionFileError
 
 
@@ -151,7 +152,7 @@ def test_rename(cli_runner):
 @pytest.mark.flaky
 def test_import(cli_runner):
     with cli_runner() as runner:
-        result = runner("import", "--format=opml", "test/data/subscriptions.small")
+        result = runner("import", "--format=opml", "tests/data/subscriptions.small")
         assert result.exit_code == 0
 
         result = runner("subscriptions")
@@ -162,7 +163,7 @@ def test_import(cli_runner):
 @pytest.mark.flaky
 def test_import_duplicate(cli_runner, caplog):
     with cli_runner() as runner:
-        result = runner("import", "--format=opml", "test/data/subscriptions.duplicate")
+        result = runner("import", "--format=opml", "tests/data/subscriptions.duplicate")
         assert result.exit_code == 0
         assert caplog.records
         for record in caplog.records:
@@ -172,7 +173,7 @@ def test_import_duplicate(cli_runner, caplog):
 
 def test_import_broken(cli_runner):
     with cli_runner() as runner:
-        result = runner("import", "--format=opml", "test/data/subscriptions.broken")
+        result = runner("import", "--format=opml", "tests/data/subscriptions.broken")
         assert isinstance(result.exception, InvalidSubscriptionFileError)
         assert "not a valid YouTube export file" in str(result.exception)
 
@@ -205,7 +206,10 @@ def test_comma_list_error(cli_runner):
     with cli_runner() as runner:
         result = runner("list", "--ids", "a,b")
         assert result.exit_code != 0
-        assert "Unexpected value" in result.stdout
+        if sys.version_info < (3, 10, 0):
+            assert "Unexpected value" in result.stdout
+        else:
+            assert "Unexpected value" in result.stderr
 
 
 def test_bad_id(cli_runner, caplog):

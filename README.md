@@ -1,11 +1,11 @@
 # ytcc
-![Build and test](https://github.com/woefe/ytcc/workflows/Build%20and%20test/badge.svg)
+[![lint and test](https://github.com/woefe/ytcc/actions/workflows/lint_and_test.yml/badge.svg)](https://github.com/woefe/ytcc/actions/workflows/lint_and_test.yml)
 
 Command line tool to keep track of your favorite playlists on YouTube and many other places.
 
 ## Installation
 ```shell script
-pip install ytcc
+pipx install ytcc
 ```
 Alternative installation methods are described in the [documentation](https://github.com/woefe/ytcc/tree/master/doc/install.md).
 
@@ -214,16 +214,29 @@ Describe the issue as detailed as possible, and please use the issue templates, 
 It also might help a lot to run ytcc with the `--loglevel debug` option and include the output in your report.
 
 ## Development
-We recommend developing inside a virtualenv.
+We use [hatch](https://hatch.pypa.io/latest/) for development.
 
-1. Set up a [virtualenv](https://virtualenv.pypa.io/en/latest/)
-2. Install development dependencies: `pip install -r devrequirements.txt`
+```shell
+hatch env create
+hatch shell
+
+# Verify successful install
+ytcc --help
+```
 
 Run the following commands before every pull request and fix the warnings or errors they produce.
 ```shell script
-mypy ytcc
-pytest
-ruff format
-ruff check
-ec
+hatch fmt --check
+hatch test
 ```
+
+### External dependencies
+Optional requirements:
+- [ffmpeg](https://ffmpeg.org/) for `.mp4` or `.mkv` merging
+- [mpv](https://mpv.io/), if you want to play audio or video
+
+Requirements for the ytccf.sh bash script:
+- [fzf](https://github.com/junegunn/fzf) version 0.23.1 or newer
+- Optionally, for thumbnail support
+    - [curl](https://curl.se/)
+    - Either [ueberzug](https://github.com/seebye/ueberzug) or [kitty](https://sw.kovidgoyal.net/kitty/).

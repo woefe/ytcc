@@ -1,4 +1,4 @@
-name: Build and test
+name: lint and test
 
 on:
   push:
@@ -10,43 +10,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.13
-      - name: Setup ytcc and Python dependencies
-        run: |
-          pip install -r devrequirements.txt
-          python setup.py install
-      - name: Check editorconfig
-        run: ec
-      - name: Type check with MyPy
-        run: mypy ytcc
-      - name: Check code formatting with ruff
-        run: ruff format --check
-      - name: Linting with ruff
-        run: ruff check
+      - name: Set up Hatch
+        uses: pypa/hatch@257e27e51a6a5616ed08a39a408a21c35c9931bc
+      - name: Hatch static analysis
+        run: hatch fmt --check
       - name: Install shellcheck
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck
       - name: Check scripts with shellcheck
         run: shellcheck scripts/*.sh
-  test:
 
+  test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
         os: [ ubuntu-latest, macos-latest, windows-latest ]
       fail-fast: false
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
+      - name: Set up Hatch
+        uses: pypa/hatch@257e27e51a6a5616ed08a39a408a21c35c9931bc
       - name: Install dependencies on Ubuntu
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -62,16 +47,9 @@ jobs:
           Copy-Item mpv.exe C:\ProgramData\chocolatey\bin\mpv.exe
       - name: Install dependencies on MacOS
         if: matrix.os == 'macos-latest'
-        run: |
-          brew install ffmpeg gettext mpv
-      - name: Setup ytcc and Python dependencies
-        run: |
-          pip install -r devrequirements.txt
-          python setup.py install
-      - name: Run tests with pytest
-        run: |
-          python -m pytest -m "not flaky" -v
-      - name: Run flaky tests
-        run: |
-          python -m pytest -m flaky -v
+        run: brew install ffmpeg gettext mpv
+      - name: Run stable tests with hatch
+        run: hatch test --include python --parallel -m "not flaky" -v
+      - name: Run flaky tests with hatch
+        run: hatch test --include python --parallel -m "flaky" -v
         continue-on-error: true

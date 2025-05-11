@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
-
+import importlib.metadata
 import logging
 import sys
 from collections.abc import Iterable
@@ -28,7 +28,7 @@ import click
 from click.exceptions import Exit
 from click.shell_completion import CompletionItem
 
-from ytcc import __author__, __version__, config, core
+from ytcc import __version__, config, core
 from ytcc.config import Direction, PlaylistAttr, VideoAttr
 from ytcc.database import MappedVideo
 from ytcc.exceptions import (
@@ -68,6 +68,7 @@ class CommaList(click.ParamType, Generic[T]):
             return [self.validator(elem.strip()) for elem in value.split(",")]
         except ValueError:
             self.fail(f"Unexpected value {value} in comma separated list")
+        return []
 
 
 class TruncateVals(click.ParamType):
@@ -82,6 +83,7 @@ class TruncateVals(click.ParamType):
             return int(value)
         except ValueError:
             self.fail(f"Unexpected value {value}. Must be 'no', 'max', or an integer")
+        return None
 
     def shell_complete(
         self, _ctx: click.Context, _param: click.Parameter, incomplete: str
@@ -99,9 +101,9 @@ class TruncateVals(click.ParamType):
         ]
 
 
-version_text = f"""%(prog)s, version %(version)s
+version_text = """%(prog)s, version %(version)s
 
-Copyright (C) 2015-2025  {__author__}
+Copyright (C) 2015-2025  Wolfgang Popp
 This program comes with ABSOLUTELY NO WARRANTY; This is free software, and you
 are welcome to redistribute it under certain conditions.  See the GNU General
 Public Licence for details.
@@ -884,7 +886,7 @@ def bug_report():
         print("yt-dlp not found")
     print()
     print("---Click version---")
-    print(click.__version__)
+    print(importlib.metadata.version("click"))
     print()
     print("---SQLite version---")
     print("SQLite system library version:", sqlite3.sqlite_version)
