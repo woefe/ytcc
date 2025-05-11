@@ -33,10 +33,7 @@ from ytcc.exceptions import (
     YtccError,
 )
 
-__license__ = "GPLv3"
 __version__ = "2.6.1"
-__author__ = __maintainer__ = "Wolfgang Popp"
-__email__ = "mail@wolfgang-popp.de"
 
 __all__ = [
     "BadConfigError",

@@ -28,7 +28,7 @@ import click
 from click.exceptions import Exit
 from click.shell_completion import CompletionItem
 
-from ytcc import __author__, __version__, config, core
+from ytcc import __version__, config, core
 from ytcc.config import Direction, PlaylistAttr, VideoAttr
 from ytcc.database import MappedVideo
 from ytcc.exceptions import (
@@ -101,9 +101,9 @@ class TruncateVals(click.ParamType):
         ]
 
 
-version_text = f"""%(prog)s, version %(version)s
+version_text = """%(prog)s, version %(version)s
 
-Copyright (C) 2015-2025  {__author__}
+Copyright (C) 2015-2025  Wolfgang Popp
 This program comes with ABSOLUTELY NO WARRANTY; This is free software, and you
 are welcome to redistribute it under certain conditions.  See the GNU General
 Public Licence for details.

@@ -13,9 +13,7 @@ jobs:
       - name: Set up Hatch
         uses: pypa/hatch@257e27e51a6a5616ed08a39a408a21c35c9931bc
       - name: Hatch static analysis
-        run: |
-          hatch run python -V
-          hatch fmt --check
+        run: hatch fmt --check
       - name: Install shellcheck
         run: |
           sudo apt-get update
@@ -49,12 +47,9 @@ jobs:
           Copy-Item mpv.exe C:\ProgramData\chocolatey\bin\mpv.exe
       - name: Install dependencies on MacOS
         if: matrix.os == 'macos-latest'
-        run: |
-          brew install ffmpeg gettext mpv
+        run: brew install ffmpeg gettext mpv
       - name: Run stable tests with hatch
-        run: |
-          hatch test --include python --parallel -m "not flaky" -v
+        run: hatch test --include python --parallel -m "not flaky" -v
       - name: Run flaky tests with hatch
-        run: |
-          hatch test --include python --parallel -m "flaky" -v
+        run: hatch test --include python --parallel -m "flaky" -v
         continue-on-error: true
