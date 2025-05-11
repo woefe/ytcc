@@ -170,7 +170,11 @@ class Fetcher:
             if thumbnails:
                 thumbnail_url = self._get_highest_res_thumbnail(thumbnails).get("url")
 
-            logger.info("Processed video '%s' of playlist '%s'", title, playlist.name)
+            logger.debug(
+                "Finished information extration for video '%s' of playlist '%s'",
+                title,
+                playlist.name,
+            )
 
             return e_hash, Video(
                 url=url,
@@ -231,7 +235,13 @@ class Updater:
         result = await asyncio.gather(*itertools.starmap(self.fetcher.process_entry, new_entries))
         for e_hash, video in result:
             if video is not None:
-                self.database.add_videos([video], playlist)
+                ids = self.database.add_videos([video], playlist)
+                logger.info(
+                    "Added video '%s' of playlist '%s' as ID '%s'",
+                    video.title,
+                    playlist.name,
+                    ids[0],
+                )
             else:
                 self.database.increase_extractor_fail_count(e_hash, max_fail=self.max_fail)
 
