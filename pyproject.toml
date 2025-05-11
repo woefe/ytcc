@@ -1,3 +1,73 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ytcc"
+dynamic = ["version"]
+description = "Command line tool to keep track of your favorite playlists"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+requires-python = ">=3.7, <4"
+authors = [
+    { name = "Wolfgang Popp", email = "mail@wolfgang-popp.de" },
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Multimedia :: Video",
+]
+dependencies = [
+    "click>=8.0",
+    "defusedxml",
+    "wcwidth",
+    "yt_dlp",
+]
+
+[project.optional-dependencies]
+youtube_dl = [
+    "youtube_dl",
+]
+
+[project.scripts]
+ytcc = "ytcc.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/woefe/ytcc"
+Issues = "https://github.com/woefe/ytcc/issues"
+Repository = "https://github.com/woefe/ytcc.git"
+
+[tool.hatch.version]
+path = "ytcc/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/ytcc",
+]
+
+[tool.hatch.envs.hatch-static-analysis]
+dependencies = [
+    "mypy",
+    "editorconfig-checker",
+    "ruff"
+]
+
+[tool.hatch.envs.hatch-static-analysis.scripts]
+lint-check = ["ruff check", "ec", "mypy ytcc"]
+lint-fix = "ruff check --fix"
+format-check = "ruff format --check"
+format-fix = "ruff format"
+
 [tool.ruff]
 line-length = 99
 
@@ -63,7 +133,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"test/*" = ["S101", "PLR2004"]
+"tests/*" = ["S101", "PLR2004"]
 "ytcc/config.py" = ["N801"]
 
 [tool.ruff.lint.pylint]

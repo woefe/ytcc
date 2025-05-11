@@ -1,8 +1,9 @@
 # Installation
 
 ## From PyPi
+Get [pipx](https://pipx.pypa.io/latest/installation/), then run:
 ```shell script
-pip install ytcc
+pipx install ytcc
 ```
 
 ## Arch Linux
@@ -34,26 +35,3 @@ eselect repository add erowl-overlay git https://gitlab.com/EmRowlands/erowl-ove
 
 Install `net-misc/ytcc`. Currently (October 2020), ytcc v1 is stable and ytcc
 v2 betas are `~arch`. A 9999 ebuild is also available.
-
-## Without installation
-You can start ytcc directly from the cloned repo, if all requirements are installed.
-
-```shell script
-./ytcc.py --help
-```
-
-Hard requirements:
-- [Python 3.7](https://www.python.org/) or later
-- [Click](https://click.palletsprojects.com/en/7.x/)
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp) or [youtube-dl](https://github.com/ytdl-org/youtube-dl)
-- [wcwidth](https://github.com/jquast/wcwidth)
-
-Optional requirements:
-- [ffmpeg](https://ffmpeg.org/) for `.mp4` or `.mkv` merging
-- [mpv](https://mpv.io/), if you want to play audio or video
-
-Requirements for the ytccf.sh bash script:
-- [fzf](https://github.com/junegunn/fzf) version 0.23.1 or newer
-- Optionally, for thumbnail support
-    - [curl](https://curl.se/)
-    - Either [ueberzug](https://github.com/seebye/ueberzug) or [kitty](https://sw.kovidgoyal.net/kitty/).
