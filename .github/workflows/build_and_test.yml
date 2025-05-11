@@ -10,30 +10,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.13
-      - name: Setup ytcc and Python dependencies
-        run: |
-          pip install -r devrequirements.txt
-          python setup.py install
-      - name: Check editorconfig
-        run: ec
-      - name: Type check with MyPy
-        run: mypy ytcc
-      - name: Check code formatting with ruff
-        run: ruff format --check
-      - name: Linting with ruff
-        run: ruff check
+      - name: Set up Hatch
+        uses: pypa/hatch@257e27e51a6a5616ed08a39a408a21c35c9931bc
+      - name: Hatch static analysis
+        run: hatch fmt --check
       - name: Install shellcheck
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck
       - name: Check scripts with shellcheck
         run: shellcheck scripts/*.sh
-  test:
 
+  test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
