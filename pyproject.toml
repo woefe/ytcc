@@ -51,9 +51,10 @@ Repository = "https://github.com/woefe/ytcc.git"
 path = "ytcc/__init__.py"
 
 [tool.hatch.build.targets.sdist]
-include = [
-    "/ytcc",
-]
+include = ["/ytcc"]
+
+[tool.hatch.build.targets.wheel]
+shared-scripts = { "scripts/ytccf.sh" = "ytccf.sh" }
 
 [tool.hatch.envs.hatch-static-analysis]
 dependencies = [
@@ -69,7 +70,7 @@ format-check = "ruff format --check"
 format-fix = "ruff format"
 
 [[tool.hatch.envs.hatch-test.matrix]]
-python = [ '3.9', '3.10', '3.11', '3.12', '3.13' ]
+python = ['3.9', '3.10', '3.11', '3.12', '3.13']
 
 [tool.ruff]
 line-length = 99
