@@ -324,6 +324,18 @@ class Ytcc:
 
         return True
 
+    @staticmethod
+    def _peek_playlist(info, ydl):
+        peek = list(info.get("entries"))
+        for entry in peek:
+            if make_archive_id(ydl, entry) is None:
+                raise BadURLError("Cannot calculate the ID of playlist items")
+            if entry.get("_type") == "playlist":
+                raise BadURLError(
+                    "URL points to a nested playlist. "
+                    "For YouTube channels subscribe to the `/videos` page."
+                )
+
     def add_playlist(
         self,
         name: str,
@@ -347,7 +359,9 @@ class Ytcc:
                     url,
                     download_error,
                 )
-                raise BadURLError("URL is not supported or does not exist") from download_error
+                raise BadURLError(
+                    "URL is not supported by yt-dlp or does not exist"
+                ) from download_error
 
             if info.get("_type") != "playlist":
                 logger.debug(
@@ -357,17 +371,11 @@ class Ytcc:
                 )
                 raise BadURLError("Not a playlist or not supported")
 
-            peek = list(info.get("entries"))
-            for entry in peek:
-                if make_archive_id(ydl, entry) is None:
-                    raise BadURLError(
-                        "The given URL is not supported by ytcc, because it "
-                        "doesn't point to a playlist"
-                    )
-
             real_url = info.get("webpage_url")
             if not real_url:
                 raise BadURLError("The playlist URL cannot be found")
+
+            self._peek_playlist(info, ydl)
 
             if not skip_update_check:
                 logger.info("Performing update check on 10 playlist items")

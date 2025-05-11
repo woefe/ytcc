@@ -124,8 +124,8 @@ def test_subscribe_bad_url(cli_runner, caplog):
     with cli_runner() as runner:
         result = runner("subscribe", "Test", "test.kom")
         assert result.exit_code != 0
-        msg = "The given URL does not point to a playlist or is not supported"
-        assert any(r.msg == msg for r in caplog.records)
+        msg = "Cannot subscribe to the given URL. Reason: URL is not supported by yt-dlp"
+        assert any(r.message.startswith(msg) for r in caplog.records)
 
 
 def test_unsubscribe(cli_runner):
