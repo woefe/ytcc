@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
-
+import importlib.metadata
 import logging
 import sys
 from collections.abc import Iterable
@@ -884,7 +884,7 @@ def bug_report():
         print("yt-dlp not found")
     print()
     print("---Click version---")
-    print(click.__version__)
+    print(importlib.metadata.version("click"))
     print()
     print("---SQLite version---")
     print("SQLite system library version:", sqlite3.sqlite_version)
