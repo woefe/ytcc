@@ -156,8 +156,10 @@ class Fetcher:
                 return e_hash, None
 
             publish_date = 169201.0  # Minimum timestamp usable on Windows
-            date_str = processed.get("upload_date")
-            if date_str:
+            if "timestamp" in processed:
+                publish_date = float(processed["timestamp"])
+            elif "upload_date" in processed:
+                date_str = processed["upload_date"]
                 publish_date = datetime.datetime.strptime(date_str, "%Y%m%d").timestamp()
             else:
                 logger.warning(
@@ -180,7 +182,7 @@ class Fetcher:
                 thumbnail_url = self._get_highest_res_thumbnail(thumbnails).get("url")
 
             logger.debug(
-                "Finished information extration for video '%s' of playlist '%s'",
+                "Finished information extraction for video '%s' of playlist '%s'",
                 title,
                 playlist.name,
             )
