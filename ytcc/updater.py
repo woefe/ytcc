@@ -155,13 +155,14 @@ class Fetcher:
                 )
                 return e_hash, None
 
-            publish_date = 169201.0  # Minimum timestamp usable on Windows
-            if "timestamp" in processed:
-                publish_date = float(processed["timestamp"])
-            elif "upload_date" in processed:
-                date_str = processed["upload_date"]
+            timestamp = processed.get("timestamp")
+            date_str = processed.get("publish_date")
+            if timestamp:
+                publish_date = float(timestamp)
+            elif date_str:
                 publish_date = datetime.datetime.strptime(date_str, "%Y%m%d").timestamp()
             else:
+                publish_date = 169201.0  # Minimum timestamp usable on Windows
                 logger.warning(
                     "Publication date of video '%s' of playlist '%s' is unknown",
                     title,
