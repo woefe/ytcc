@@ -54,6 +54,26 @@ def make_archive_id(ydl: "YoutubeDL", entry: dict[str, Any]) -> str | None:
     return archive_id
 
 
+def validate_processing_result(processed, title, url) -> str:
+    if not title:
+        return "the video title is missing"
+
+    if not url:
+        return "the video url is missing"
+
+    if processed.get("age_limit", 0) > config.ytcc.age_limit:
+        return "the video is age restricted"
+
+    if processed.get("is_live", False) and config.ytcc.skip_live_stream:
+        return "the video is a live stream"
+
+    is_public = processed.get("availability", "public") == "public"
+    if not is_public and config.ytcc.skip_non_public:
+        return "the video is not public"
+
+    return ""
+
+
 class Fetcher:
     def __init__(self, max_backlog):
         self.max_items = max_backlog
@@ -131,27 +151,11 @@ class Fetcher:
             return e_hash, None
         else:
             title = processed.get("title")
-            if not title:
-                logger.error(
-                    "Cannot process a video of playlist '%s', because the title is missing",
-                    playlist.name,
-                )
-                return e_hash, None
-
             url, _ = youtube_dl.utils.unsmuggle_url(processed.get("webpage_url"))
-            if not url:
+            reason = validate_processing_result(processed, title, url)
+            if reason:
                 logger.error(
-                    "Cannot process video '%s' of playlist '%s', because the URL is missing",
-                    title,
-                    playlist.name,
-                )
-                return e_hash, None
-
-            if processed.get("age_limit", 0) > config.ytcc.age_limit:
-                logger.warning(
-                    "Ignoring video '%s' of playlist '%s' due to age limit",
-                    title,
-                    playlist.name,
+                    "Skipping '%s' of playlist '%s', because %s.", title, playlist.name, reason
                 )
                 return e_hash, None
 

@@ -163,6 +163,8 @@ class ytcc(BaseConfig):
     max_update_fail: int = 5
     max_update_backlog: int = 20
     age_limit: int = 0
+    skip_live_stream: bool = True
+    skip_non_public: bool = True
 
 
 class tui(BaseConfig):
@@ -187,7 +189,6 @@ class youtube_dl(BaseConfig):
     retries: int = 0
     subtitles: list[str] = ["off"]
     thumbnail: bool = True
-    skip_live_stream: bool = True
     merge_output_format: str = "mkv"
     max_duration: int = 0
     restrict_filenames: bool = False
