@@ -18,11 +18,11 @@
 import importlib.metadata
 import logging
 import sys
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from datetime import datetime
 from pathlib import Path
 from sqlite3 import DatabaseError
-from typing import Callable, Generic, Optional, TypeVar, Union
+from typing import Generic, TypeVar
 
 import click
 from click.exceptions import Exit
@@ -74,7 +74,7 @@ class CommaList(click.ParamType, Generic[T]):
 class TruncateVals(click.ParamType):
     name = "truncate"
 
-    def convert(self, value, _param, _ctx) -> Union[None, str, int]:
+    def convert(self, value, _param, _ctx) -> None | str | int:
         if value == "max":
             return "max"
         if value == "no":
@@ -245,7 +245,7 @@ def cli(
     loglevel: str,
     output: str,
     separator: str,
-    truncate: Union[None, str, int],
+    truncate: None | str | int,
 ) -> None:
     """Ytcc - the (not only) YouTube channel checker.
 
@@ -427,7 +427,7 @@ def tag(ytcc: core.Ytcc, name: str, tags: tuple[str, ...]):
     help="Number of videos in a playlist that are checked for updates.",
 )
 @pass_ytcc
-def update(ytcc: core.Ytcc, max_fail: Optional[int], max_backlog: Optional[int]):
+def update(ytcc: core.Ytcc, max_fail: int | None, max_backlog: int | None):
     """Check if new videos are available.
 
     Downloads metadata of new videos (if any) without playing or downloading the videos.
@@ -492,11 +492,11 @@ common_list_options = [
 
 def apply_filters(
     ytcc: core.Ytcc,
-    tags: Optional[list[str]],
-    since: Optional[datetime],
-    till: Optional[datetime],
-    playlists: Optional[list[str]],
-    ids: Optional[list[int]],
+    tags: list[str] | None,
+    since: datetime | None,
+    till: datetime | None,
+    playlists: list[str] | None,
+    ids: list[int] | None,
     watched: bool,
     unwatched: bool,
 ):
@@ -535,12 +535,12 @@ def set_order(ytcc: core.Ytcc, order_by: ClickOrderBy):
 
 def list_videos_impl(
     ytcc: core.Ytcc,
-    tags: Optional[list[str]],
-    since: Optional[datetime],
-    till: Optional[datetime],
-    playlists: Optional[list[str]],
-    ids: Optional[list[int]],
-    attributes: Optional[list[str]],
+    tags: list[str] | None,
+    since: datetime | None,
+    till: datetime | None,
+    playlists: list[str] | None,
+    ids: list[int] | None,
+    attributes: list[str] | None,
     watched: bool,
     unwatched: bool,
     order_by: ClickOrderBy,
@@ -566,12 +566,12 @@ def list_videos_impl(
 @pass_ytcc
 def list_videos(
     ytcc: core.Ytcc,
-    tags: Optional[list[str]],
-    since: Optional[datetime],
-    till: Optional[datetime],
-    playlists: Optional[list[str]],
-    ids: Optional[list[int]],
-    attributes: Optional[list[str]],
+    tags: list[str] | None,
+    since: datetime | None,
+    till: datetime | None,
+    playlists: list[str] | None,
+    ids: list[int] | None,
+    attributes: list[str] | None,
     watched: bool,
     unwatched: bool,
     order_by: ClickOrderBy,
@@ -598,11 +598,11 @@ def list_videos(
 @pass_ytcc
 def list_ids(
     ytcc: core.Ytcc,
-    tags: Optional[list[str]],
-    since: Optional[datetime],
-    till: Optional[datetime],
-    playlists: Optional[list[str]],
-    ids: Optional[list[int]],
+    tags: list[str] | None,
+    since: datetime | None,
+    till: datetime | None,
+    playlists: list[str] | None,
+    ids: list[int] | None,
     watched: bool,
     unwatched: bool,
     order_by: ClickOrderBy,
@@ -621,11 +621,11 @@ def list_ids(
 @pass_ytcc
 def tui(
     ytcc: core.Ytcc,
-    tags: Optional[list[str]],
-    since: Optional[datetime],
-    till: Optional[datetime],
-    playlists: Optional[list[str]],
-    ids: Optional[list[int]],
+    tags: list[str] | None,
+    since: datetime | None,
+    till: datetime | None,
+    playlists: list[str] | None,
+    ids: list[int] | None,
     watched: bool,
     unwatched: bool,
     order_by: ClickOrderBy,
@@ -782,7 +782,7 @@ def download(
     path: Path,
     audio_only: bool,
     no_mark: bool,
-    subdirs: Optional[bool],
+    subdirs: bool | None,
 ):
     """Download videos.
 
@@ -811,7 +811,7 @@ def download(
 )
 @click.confirmation_option(prompt="Do you really want to remove watched videos from the database?")
 @pass_ytcc
-def cleanup(ytcc: core.Ytcc, keep: Optional[int]):
+def cleanup(ytcc: core.Ytcc, keep: int | None):
     """Remove all watched videos from the database.
 
     WARNING!!! This removes all metadata of watched, marked as watched, and downloaded videos from

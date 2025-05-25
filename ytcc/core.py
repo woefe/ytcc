@@ -25,7 +25,7 @@ import typing
 import xml.etree.ElementTree as ET
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from defusedxml.ElementTree import parse as defusedxml_parse
@@ -77,14 +77,14 @@ class Ytcc:
     """
 
     def __init__(self) -> None:
-        self._database: Optional[Database] = None
-        self.video_id_filter: Optional[list[int]] = None
-        self.playlist_filter: Optional[list[str]] = None
-        self.tags_filter: Optional[list[str]] = None
-        self.date_begin_filter: Optional[float] = None
-        self.date_end_filter: Optional[float] = None
-        self.include_watched_filter: Optional[bool] = False
-        self.order_by: Optional[list[tuple[VideoAttr, Direction]]] = None
+        self._database: Database | None = None
+        self.video_id_filter: list[int] | None = None
+        self.playlist_filter: list[str] | None = None
+        self.tags_filter: list[str] | None = None
+        self.date_begin_filter: float | None = None
+        self.date_end_filter: float | None = None
+        self.include_watched_filter: bool | None = False
+        self.order_by: list[tuple[VideoAttr, Direction]] | None = None
 
     def __enter__(self) -> "Ytcc":
         return self
@@ -104,7 +104,7 @@ class Ytcc:
         if self._database is not None:
             self._database.close()
 
-    def set_playlist_filter(self, playlists: Optional[list[str]]) -> None:
+    def set_playlist_filter(self, playlists: list[str] | None) -> None:
         """Set the channel filter.
 
         The results when listing videos will only include videos by channels specified in the
@@ -114,7 +114,7 @@ class Ytcc:
         """
         self.playlist_filter = playlists
 
-    def set_date_begin_filter(self, begin: Optional[datetime.datetime]) -> None:
+    def set_date_begin_filter(self, begin: datetime.datetime | None) -> None:
         """Set the time filter.
 
         The results when listing videos will only include videos newer than the given time.
@@ -124,7 +124,7 @@ class Ytcc:
         if begin is not None:
             self.date_begin_filter = begin.timestamp()
 
-    def set_date_end_filter(self, end: Optional[datetime.datetime]) -> None:
+    def set_date_end_filter(self, end: datetime.datetime | None) -> None:
         """Set the time filter.
 
         The results when listing videos will only include videos older than the given time.
@@ -134,7 +134,7 @@ class Ytcc:
         if end is not None:
             self.date_end_filter = end.timestamp()
 
-    def set_watched_filter(self, enabled: Optional[bool] = False) -> None:
+    def set_watched_filter(self, enabled: bool | None = False) -> None:
         """Set the "watched video" filter.
 
         The results when listing videos will include both watched and unwatched videos.
@@ -144,7 +144,7 @@ class Ytcc:
         """
         self.include_watched_filter = enabled
 
-    def set_video_id_filter(self, ids: Optional[list[int]] = None) -> None:
+    def set_video_id_filter(self, ids: list[int] | None = None) -> None:
         """Set the id filter.
 
         The results will have the given ids. This filter should in most cases be combined with the
@@ -153,7 +153,7 @@ class Ytcc:
         """
         self.video_id_filter = ids
 
-    def set_tags_filter(self, tags: Optional[list[str]] = None) -> None:
+    def set_tags_filter(self, tags: list[str] | None = None) -> None:
         """Set the tag filter.
 
         The results of ``list_videos()`` will include only playlists tagged with at least one of
@@ -167,7 +167,7 @@ class Ytcc:
         self.order_by = order_by
 
     @staticmethod
-    def update(max_fail: Optional[int] = None, max_backlog: Optional[int] = None) -> None:
+    def update(max_fail: int | None = None, max_backlog: int | None = None) -> None:
         with Updater(
             db_path=config.ytcc.db_path,
             max_fail=max_fail or config.ytcc.max_update_fail,
@@ -218,7 +218,7 @@ class Ytcc:
         video: MappedVideo,
         path: str = "",
         audio_only: bool = False,
-        subdirs: Optional[bool] = None,
+        subdirs: bool | None = None,
     ) -> bool:
         """Download the given video.
 
@@ -415,10 +415,10 @@ class Ytcc:
             order_by=self.order_by,
         )
 
-    def mark_watched(self, video: Union[list[int], int, MappedVideo]) -> None:
+    def mark_watched(self, video: list[int] | int | MappedVideo) -> None:
         self.database.mark_watched(video)
 
-    def mark_unwatched(self, video: Union[list[int], int, MappedVideo]) -> None:
+    def mark_unwatched(self, video: list[int] | int | MappedVideo) -> None:
         self.database.mark_unwatched(video)
 
     def unmark_recent(self):

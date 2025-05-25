@@ -19,7 +19,6 @@ import os
 import shutil
 import sys
 from enum import Enum
-from typing import Optional
 
 import click
 
@@ -116,8 +115,8 @@ def clear_screen() -> None:
 
 def printtln(
     *text,
-    foreground: Optional[int] = None,
-    background: Optional[int] = None,
+    foreground: int | None = None,
+    background: int | None = None,
     bold: bool = False,
     replace: bool = False,
 ) -> None:
@@ -135,8 +134,8 @@ def printtln(
 
 def printt(
     *text,
-    foreground: Optional[int] = None,
-    background: Optional[int] = None,
+    foreground: int | None = None,
+    background: int | None = None,
     bold: bool = False,
     replace: bool = False,
     force_color: bool = False,

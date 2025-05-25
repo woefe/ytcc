@@ -22,7 +22,7 @@ import itertools
 import logging
 from collections.abc import Iterable
 from functools import partial
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from ytcc import Database, Playlist, Video, config
 from ytcc.utils import lazy_import, take
@@ -43,7 +43,7 @@ _ytdl_logger.addHandler(logging.NullHandler())
 YTDL_COMMON_OPTS = {"logger": _ytdl_logger}
 
 
-def make_archive_id(ydl: "YoutubeDL", entry: dict[str, Any]) -> Optional[str]:
+def make_archive_id(ydl: "YoutubeDL", entry: dict[str, Any]) -> str | None:
     archive_id = ydl._make_archive_id(entry)
     entry_type = entry.get("_type", "").lower()
     if archive_id is None and entry.get("url") and entry_type in ("url", "url_transparent"):
@@ -118,7 +118,7 @@ class Fetcher:
 
     async def process_entry(
         self, playlist: Playlist, e_hash: str, entry: Any
-    ) -> tuple[str, Optional[Video]]:
+    ) -> tuple[str, Video | None]:
         try:
             loop = asyncio.get_event_loop()
             processed = await loop.run_in_executor(None, self._process_ie, entry)

@@ -19,8 +19,9 @@
 import shutil
 import sys
 import textwrap as wrap
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable, NamedTuple, Optional, TextIO
+from typing import NamedTuple, TextIO
 
 from ytcc import config, terminal
 from ytcc.core import Ytcc
@@ -72,7 +73,7 @@ class VideoSelection(TableData, dict):
     def __init__(self, alphabet: str, videos: list[MappedVideo]):
         super().__init__()
         codes = self._prefix_codes(frozenset(alphabet), len(videos))
-        for code, video in zip(codes, videos):
+        for code, video in zip(codes, videos, strict=False):
             self[code] = video
 
     @staticmethod
@@ -102,7 +103,7 @@ class VideoSelection(TableData, dict):
 
     def table(self) -> Table:
         table = VideoPrintable(self.values()).table()
-        data = [[code, *row] for code, row in zip(self.keys(), table.data)]
+        data = [[code, *row] for code, row in zip(self.keys(), table.data, strict=False)]
         return Table(["TAG", *table.header], data)
 
 
@@ -126,7 +127,7 @@ class Interactive:
     def get_prompt_text(self) -> str:
         return self.action.text
 
-    def get_prompt_color(self) -> Optional[int]:
+    def get_prompt_color(self) -> int | None:
         return self.action.color()
 
     def command_line(self, tags: list[str]) -> tuple[str, bool]:
@@ -142,7 +143,7 @@ class Interactive:
         tag = ""
         hook_triggered = False
         while tag not in tags:
-            char: Optional[str] = terminal.getkey()
+            char: str | None = terminal.getkey()
 
             if char in self.hooks:
                 hook_triggered = True
@@ -188,7 +189,7 @@ class Interactive:
             if video is None and not hook_triggered:
                 break
 
-            actions: dict[Action, Callable[[MappedVideo], Optional[bool]]] = {
+            actions: dict[Action, Callable[[MappedVideo], bool | None]] = {
                 Action.MARK_WATCHED: self.core.mark_watched,
                 Action.DOWNLOAD_AUDIO: lambda v: self.download_video(v, True),
                 Action.DOWNLOAD_VIDEO: lambda v: self.download_video(v, False),
@@ -272,7 +273,7 @@ class StdOutOverride:
 def print_meta(video: MappedVideo, stream: TextIO = sys.stdout) -> None:
     with StdOutOverride(stream):
 
-        def print_separator(text: Optional[str] = None, fat: bool = False) -> None:
+        def print_separator(text: str | None = None, fat: bool = False) -> None:
             columns = shutil.get_terminal_size().columns
             sep = "━" if fat else "─"
             if not text:

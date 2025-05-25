@@ -26,7 +26,7 @@ from collections.abc import Iterable
 from dataclasses import asdict
 from datetime import datetime, timezone
 from email.utils import format_datetime as rss2_date
-from typing import Any, NamedTuple, Optional, Union
+from typing import Any, NamedTuple
 
 from wcwidth import wcswidth
 
@@ -141,10 +141,10 @@ class PlaylistPrintable(Printable):
 
 class Printer(ABC):
     def __init__(self) -> None:
-        self._filter: Optional[list[Any]] = None
+        self._filter: list[Any] | None = None
 
     @property
-    def filter(self) -> Optional[list[Any]]:
+    def filter(self) -> list[Any] | None:
         return self._filter
 
     @filter.setter
@@ -157,7 +157,7 @@ class Printer(ABC):
 
 
 class TablePrinter(Printer):
-    def __init__(self, truncate: Union[None, str, int] = "max"):
+    def __init__(self, truncate: None | str | int = "max"):
         """Initialize a new TablePrinter.
 
         :param truncate:
@@ -175,7 +175,7 @@ class TablePrinter(Printer):
         self.table_print(table)
 
     @staticmethod
-    def print_col(text: str, width: int, background: Optional[int], bold: bool):
+    def print_col(text: str, width: int, background: int | None, bold: bool):
         text = TablePrinter.wc_truncate(text, width)
         padding = " " * max(0, (width - wcswidth(text)))
         padded = text + padding
@@ -197,14 +197,14 @@ class TablePrinter(Printer):
         columns: list[str],
         widths: list[int],
         bold: bool = False,
-        background: Optional[int] = None,
+        background: int | None = None,
     ) -> None:
         if len(widths) != len(columns) and not columns:
             raise ValueError(
                 "For every column, a width must be specified, and columns must not be empty"
             )
 
-        for column, width in zip(columns[:-1], widths[:-1]):
+        for column, width in zip(columns[:-1], widths[:-1], strict=False):
             TablePrinter.print_col(column, width, background, bold)
             printt("│", background=background, bold=False)
 
@@ -212,10 +212,10 @@ class TablePrinter(Printer):
         print()
 
     def table_print(self, table: Table) -> None:
-        transposed = zip(table.header, *table.data)
+        transposed = zip(table.header, *table.data, strict=False)
         col_widths = [max(map(wcswidth, column)) for column in transposed]
         if self.truncate is not None:
-            columns = dict(zip(table.header, enumerate(col_widths)))
+            columns = dict(zip(table.header, enumerate(col_widths), strict=False))
             terminal_width = get_terminal_width() if self.truncate == "max" else int(self.truncate)
             min_col_widths = (
                 ("duration", 7),
@@ -277,7 +277,7 @@ class PlainPrinter(Printer):
 
         term_width = get_terminal_width()
         for row in table.data:
-            for label, content in zip(table.header, map(str.strip, row)):
+            for label, content in zip(table.header, map(str.strip, row), strict=False):
                 formatted_label = f"{unsnake(label)}: "
                 content_lines = content.splitlines()
 

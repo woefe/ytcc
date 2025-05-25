@@ -18,7 +18,7 @@
 
 import importlib
 from collections.abc import Iterable
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -34,11 +34,11 @@ def take(amount: int, iterable: Iterable[T]) -> Iterable[T]:
     :param iterable: The iterable to take elements from
     :return: The first elements of the given iterable
     """
-    for _, elem in zip(range(amount), iterable):
+    for _, elem in zip(range(amount), iterable, strict=False):
         yield elem
 
 
-def lazy_import(fullname: str, fallback: Optional[str] = None) -> Any:
+def lazy_import(fullname: str, fallback: str | None = None) -> Any:
     """Import a module lazily.
 
     This is useful for large modules or modules that run slow code on import.
