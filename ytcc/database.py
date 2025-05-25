@@ -22,7 +22,7 @@ from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, overload
+from typing import Any, overload
 
 from ytcc.config import Direction, VideoAttr
 from ytcc.exceptions import IncompatibleDatabaseVersionError, PlaylistDoesNotExistError
@@ -52,9 +52,9 @@ class Video:
     title: str
     description: str
     publish_date: float
-    watch_date: Optional[float]
+    watch_date: float | None
     duration: float
-    thumbnail_url: Optional[str]
+    thumbnail_url: str | None
     extractor_hash: str
 
     @property
@@ -409,7 +409,7 @@ class Database:
     def mark_unwatched(self, video: Any) -> None:
         self._mark(video, None)
 
-    def _mark(self, video: Any, val: Optional[float]):
+    def _mark(self, video: Any, val: float | None):
         if isinstance(video, int):
             videos = [video]
         elif isinstance(video, list):
@@ -425,7 +425,7 @@ class Database:
 
     @staticmethod
     def _make_order_by_clause(
-        order_by: Optional[list[tuple[VideoAttr, Direction]]] = None,
+        order_by: list[tuple[VideoAttr, Direction]] | None = None,
     ) -> str:
         def directions() -> Iterable[tuple[str, str]]:
             column_names = {
@@ -453,13 +453,13 @@ class Database:
 
     def list_videos(
         self,
-        since: Optional[float] = None,
-        till: Optional[float] = None,
-        watched: Optional[bool] = None,
-        tags: Optional[list[str]] = None,
-        playlists: Optional[list[str]] = None,
-        ids: Optional[list[int]] = None,
-        order_by: Optional[list[tuple[VideoAttr, Direction]]] = None,
+        since: float | None = None,
+        till: float | None = None,
+        watched: bool | None = None,
+        tags: list[str] | None = None,
+        playlists: list[str] | None = None,
+        ids: list[int] | None = None,
+        order_by: list[tuple[VideoAttr, Direction]] | None = None,
     ) -> Iterable[MappedVideo]:
         tag_condition = f"AND t.name IN ({_placeholder(tags)})" if tags is not None else ""
         id_condition = f"AND v.id IN ({_placeholder(ids)})" if ids is not None else ""

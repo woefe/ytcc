@@ -17,10 +17,9 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from sqlite3 import IntegrityError
 from tempfile import NamedTemporaryFile
-from typing import Callable, Optional
 
 import pytest
 
@@ -166,7 +165,7 @@ VIDEOS = {
 }
 
 
-def _check_playlist(db, name: str, expected: Optional[MappedPlaylist]):
+def _check_playlist(db, name: str, expected: MappedPlaylist | None):
     for pl in db.list_playlists():
         if pl.name == name:
             assert pl == expected

@@ -23,10 +23,10 @@ import locale
 import logging
 import os
 import typing
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Optional, TextIO
+from typing import Any, TextIO
 
 from ytcc.exceptions import BadConfigError
 from ytcc.terminal import COLOR_MAX, COLOR_MIN
@@ -193,7 +193,7 @@ class youtube_dl(BaseConfig):
     restrict_filenames: bool = False
 
 
-def _get_config(override_cfg_file: Optional[str] = None) -> configparser.ConfigParser:
+def _get_config(override_cfg_file: str | None = None) -> configparser.ConfigParser:
     """Read config file from several locations.
 
     Searches at following locations:
@@ -265,7 +265,7 @@ def _tuple_from_str(types: Sequence[type], tuple_str) -> tuple:
     if len(elems) != len(types):
         raise ValueError(f"{tuple_str} cannot be converted to tuple of type {types}")
 
-    return tuple(_convert(typ, elem) for elem, typ in zip(elems, types))
+    return tuple(_convert(typ, elem) for elem, typ in zip(elems, types, strict=False))
 
 
 def _convert(typ: type[Any], string: str) -> Any:
@@ -286,7 +286,7 @@ def _convert(typ: type[Any], string: str) -> Any:
     return from_str(string)
 
 
-def load(override_cfg_file: Optional[str] = None):
+def load(override_cfg_file: str | None = None):
     conf_parser = _get_config(override_cfg_file)
 
     for clazz in BaseConfig.__subclasses__():
