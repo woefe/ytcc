@@ -790,6 +790,7 @@ def download(
     IDs from stdin. If no IDs are given and no IDs were read from stdin, all unwatched videos are
     downloaded.
     """
+    exit_code = 0
     videos = _get_videos(ytcc, list(ids))
 
     for video in videos:
@@ -798,8 +799,13 @@ def download(
             video.title,
             ", ".join(f"'{pl.name}'" for pl in video.playlists),
         )
-        if ytcc.download_video(video, str(path), audio_only, subdirs) and not no_mark:
+        if not ytcc.download_video(video, str(path), audio_only, subdirs):
+            exit_code += 1
+        elif not no_mark:
             ytcc.mark_watched(video)
+
+    if exit_code != 0:
+        raise Exit(exit_code)
 
 
 @cli.command()
