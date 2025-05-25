@@ -135,6 +135,11 @@ max_update_backlog = 20
 # Ignore videos that have an age limit higher than the one specified here.
 age_limit = 0
 
+# Skips livestreams.
+skip_live_stream = true
+
+# Skips private and member-only videos.
+skip_non_public = true
 
 # Prompt and table colors. Supports 256 colors. Hence, values between 0-255 are allowed.
 # See https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit for the color codes.
@@ -189,9 +194,6 @@ subtitles = off
 # Embed the youtube thumbnail in audio downloads.
 # Transforms the resulting file to m4a, if enabled.
 thumbnail = on
-
-# Skips livestreams in download command.
-skip_live_stream = true
 
 # Don't download videos longer than 'max_duration' seconds.
 # 0 disables the limit.

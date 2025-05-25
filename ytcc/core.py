@@ -233,7 +233,7 @@ class Ytcc:
         filename_processor = GetFilenameProcessor()
 
         if 0 < config.youtube_dl.max_duration < video.duration:
-            logger.info(
+            logger.error(
                 "Skipping video %s, because it is longer than the configured maximum",
                 video.url,
             )
@@ -253,13 +253,10 @@ class Ytcc:
                 elif isinstance(ydl._pps, dict):
                     ydl.add_post_processor(filename_processor, when="post_process")
                 info = ydl.extract_info(video.url, download=False, process=False)
-                if info.get("is_live", False) and config.youtube_dl.skip_live_stream:
-                    logger.info("Skipping livestream %s", video.url)
-                    return False
 
                 ydl.process_ie_result(info, download=True)
             except youtube_dl.utils.YoutubeDLError as ydl_err:
-                logger.debug("Download failed with '%s'", ydl_err)
+                logger.error("Download failed with '%s'", ydl_err)
                 return False
 
             actual_file = Path(filename_processor.actual_file).expanduser()
