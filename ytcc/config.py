@@ -290,16 +290,17 @@ def _convert(typ: type[Any], string: str) -> Any:
 def load(override_cfg_file: str | None = None):
     conf_parser = _get_config(override_cfg_file)
 
-    known_sections = {clazz.__name__ for clazz in BaseConfig.__subclasses__()}
-    for section in set(conf_parser.sections()) - known_sections:
+    configured_sections = {
+        clazz.__name__: typing.get_type_hints(clazz).keys()
+        for clazz in BaseConfig.__subclasses__()
+        if clazz.__name__ in conf_parser
+    }
+    for section in set(conf_parser.sections()) - configured_sections.keys():
         logger.warning("Unknown section '%s' in config file", section)
 
-    for clazz in BaseConfig.__subclasses__():
-        known_settings = typing.get_type_hints(clazz).keys()
-        for setting in conf_parser[clazz.__name__].keys() - known_settings:
-            logger.warning(
-                "Unknown setting '%s' in config file section '%s'", setting, clazz.__name__
-            )
+    for section, known_settings in configured_sections.items():
+        for setting in conf_parser[section].keys() - known_settings:
+            logger.warning("Unknown setting '%s' in config file section '%s'", setting, section)
 
     for clazz in BaseConfig.__subclasses__():
         for prop, conv in typing.get_type_hints(clazz).items():
