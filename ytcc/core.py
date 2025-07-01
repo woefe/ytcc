@@ -488,7 +488,7 @@ class Ytcc:
 
     def import_yt_csv(self, file: Path):
         csv_column_count = 3
-        with file.open(newline="", encoding="utf-8") as csvfile:
+        with open(file, newline="", encoding="utf-8") as csvfile:
             sample = csvfile.read(4096)
             sniffer = csv.Sniffer()
             dialect = sniffer.sniff(sample)
