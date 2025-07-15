@@ -26,7 +26,9 @@ import pytest
 from click.testing import CliRunner, Result
 
 from tests import WEBDRIVER_PLAYLIST, WEBDRIVER_VIDEOS
-from ytcc import InvalidSubscriptionFileError
+from ytcc import InvalidSubscriptionFileError, __version__
+from ytcc.cli import cli
+from ytcc.database import Database
 
 
 class YtccRunner(CliRunner):
@@ -37,18 +39,12 @@ class YtccRunner(CliRunner):
         self.download_dir = download_dir
 
     def __call__(self, *args, **kwargs):
-        from ytcc.cli import cli
-
         if kwargs.get("subscribe", False):
-            from ytcc.database import Database
-
             with Database(self.db_file) as db:
                 db.add_playlist(WEBDRIVER_PLAYLIST.name, WEBDRIVER_PLAYLIST.url)
             del kwargs["subscribe"]
 
         if kwargs.get("update", False):
-            from ytcc.database import Database
-
             with Database(self.db_file) as db:
                 db.add_videos(WEBDRIVER_VIDEOS, WEBDRIVER_PLAYLIST)
             del kwargs["update"]
@@ -83,8 +79,6 @@ def cli_runner() -> Callable[..., Result]:
 
 
 def test_bug_report_command(cli_runner):
-    from ytcc import __version__
-
     with cli_runner() as runner:
         result = runner("bug-report")
         assert result.exit_code == 0
@@ -152,6 +146,17 @@ def test_rename(cli_runner):
 def test_import(cli_runner):
     with cli_runner() as runner:
         result = runner("import", "--format=opml", "tests/data/subscriptions.small")
+        assert result.exit_code == 0
+
+        result = runner("subscriptions")
+        assert "NoCopyrightSounds" in result.stdout
+        assert "gotbletu" in result.stdout
+
+
+@pytest.mark.flaky
+def test_import_csv(cli_runner):
+    with cli_runner() as runner:
+        result = runner("import", "tests/data/subscriptions.csv")
         assert result.exit_code == 0
 
         result = runner("subscriptions")
