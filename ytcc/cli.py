@@ -17,6 +17,8 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 import importlib.metadata
 import logging
+import sqlite3
+import subprocess
 import sys
 from collections.abc import Callable, Iterable
 from datetime import datetime
@@ -869,15 +871,13 @@ def bug_report():
     Shows versions of dependencies and configuration relevant for any bug report. Please include
     the output of this command when filing a new bug report!
     """
-    import sqlite3
-    import subprocess
 
     print("---ytcc version---")
     print(__version__)
     print()
     print("---youtube-dl version---")
     try:
-        import youtube_dl.version
+        import youtube_dl.version  # noqa: PLC0415
 
         print(youtube_dl.version.__version__)
     except ImportError:
@@ -885,7 +885,7 @@ def bug_report():
     print()
     print("---yt-dlp version---")
     try:
-        import yt_dlp.version
+        import yt_dlp.version  # noqa: PLC0415
 
         print(yt_dlp.version.__version__)
     except ImportError:
