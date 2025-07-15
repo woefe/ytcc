@@ -160,6 +160,17 @@ def test_import(cli_runner):
 
 
 @pytest.mark.flaky
+def test_import_csv(cli_runner):
+    with cli_runner() as runner:
+        result = runner("import", "tests/data/subscriptions.csv")
+        assert result.exit_code == 0
+
+        result = runner("subscriptions")
+        assert "NoCopyrightSounds" in result.stdout
+        assert "gotbletu" in result.stdout
+
+
+@pytest.mark.flaky
 def test_import_duplicate(cli_runner, caplog):
     with cli_runner() as runner:
         result = runner("import", "--format=opml", "tests/data/subscriptions.duplicate")

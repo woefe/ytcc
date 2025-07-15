@@ -841,7 +841,7 @@ def cleanup(ytcc: core.Ytcc, keep: int | None):
 )
 @click.argument("file", nargs=1, type=click.Path(exists=True, file_okay=True, dir_okay=False))
 @pass_ytcc
-def import_(ytcc: core.Ytcc, file_format: str, file: Path):
+def import_(ytcc: core.Ytcc, file_format: str, file: str):
     """Import YouTube subscriptions from an OPML or CSV file.
 
     The CSV file must have three columns in the following order: Channel ID, Channel URL, Channel
@@ -857,9 +857,9 @@ def import_(ytcc: core.Ytcc, file_format: str, file: Path):
     Note that after importing subscriptions, you need to run `ytcc update` to fetch new videos.
     """
     if file_format == "opml":
-        ytcc.import_yt_opml(file)
+        ytcc.import_yt_opml(Path(file))
     elif file_format == "csv":
-        ytcc.import_yt_csv(file)
+        ytcc.import_yt_csv(Path(file))
 
 
 @cli.command()
