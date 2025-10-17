@@ -706,7 +706,7 @@ def play(
         loop_executed = True
         if not no_meta:
             print_meta(video, sys.stderr)
-        if ytcc.play_video(video, audio_only) and mark:
+        if ytcc.play_video(video, audio_only) and not no_mark:
             ytcc.mark_watched(video)
         elif not no_mark:
             logger.warning(

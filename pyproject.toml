@@ -27,7 +27,7 @@ classifiers = [
     "Topic :: Multimedia :: Video",
 ]
 dependencies = [
-    "click==8.2.0",
+    "click",
     "defusedxml",
     "wcwidth",
     "yt_dlp",
