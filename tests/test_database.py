@@ -17,7 +17,7 @@
 # along with ytcc.  If not, see <http://www.gnu.org/licenses/>.
 
 import contextlib
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Generator, Iterable
 from sqlite3 import IntegrityError
 from tempfile import NamedTemporaryFile
 
@@ -74,9 +74,9 @@ SETUP_SQL_SCRIPT = """
 
 
 @pytest.fixture
-def empty_database() -> Callable[..., Database]:
+def empty_database():
     @contextlib.contextmanager
-    def context() -> Iterator[Database]:
+    def context() -> Generator[Database]:
         with NamedTemporaryFile() as db_file:
             db_file.close()
             with Database(db_file.name) as db:
@@ -86,9 +86,9 @@ def empty_database() -> Callable[..., Database]:
 
 
 @pytest.fixture
-def filled_database() -> Callable[..., Database]:
+def filled_database():
     @contextlib.contextmanager
-    def context() -> Iterator[Database]:
+    def context() -> Generator[Database]:
         with NamedTemporaryFile() as db_file:
             db_file.close()
             with Database(db_file.name) as db:

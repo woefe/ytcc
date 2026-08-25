@@ -76,7 +76,7 @@ class CommaList(click.ParamType, Generic[T]):
 class TruncateVals(click.ParamType):
     name = "truncate"
 
-    def convert(self, value, _param, _ctx) -> None | str | int:
+    def convert(self, value, _param, _ctx) -> str | int | None:
         if value == "max":
             return "max"
         if value == "no":
@@ -247,7 +247,7 @@ def cli(
     loglevel: str,
     output: str,
     separator: str,
-    truncate: None | str | int,
+    truncate: str | int | None,
 ) -> None:
     """Ytcc - the (not only) YouTube channel checker.
 
@@ -396,9 +396,9 @@ def reverse_playlist(ytcc: core.Ytcc, playlists: tuple[str, ...]):
 def subscriptions(ytcc: core.Ytcc, attributes: list[PlaylistAttr]):
     """List all subscriptions."""
     if not attributes:
-        printer.filter = config.ytcc.playlist_attrs
+        printer.filters = config.ytcc.playlist_attrs
     else:
-        printer.filter = attributes
+        printer.filters = attributes
     printer.print(PlaylistPrintable(ytcc.list_playlists()))
 
 
@@ -549,9 +549,9 @@ def list_videos_impl(
 ):
     apply_filters(ytcc, tags, since, till, playlists, ids, watched, unwatched)
     if attributes:
-        printer.filter = attributes
+        printer.filters = attributes
     else:
-        printer.filter = config.ytcc.video_attrs
+        printer.filters = config.ytcc.video_attrs
 
     set_order(ytcc, order_by)
 

@@ -18,12 +18,12 @@
 
 import contextlib
 import json
-from collections.abc import Callable
+from collections.abc import Generator
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import pytest
-from click.testing import CliRunner, Result
+from click.testing import CliRunner
 
 from tests import WEBDRIVER_PLAYLIST, WEBDRIVER_VIDEOS
 from ytcc import InvalidSubscriptionFileError, __version__
@@ -53,9 +53,9 @@ class YtccRunner(CliRunner):
 
 
 @pytest.fixture
-def cli_runner() -> Callable[..., Result]:
+def cli_runner():
     @contextlib.contextmanager
-    def context() -> YtccRunner:
+    def context() -> Generator[YtccRunner]:
         with (
             NamedTemporaryFile(delete=False) as db_file,
             NamedTemporaryFile("w", delete=False) as conf_file,

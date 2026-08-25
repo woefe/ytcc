@@ -226,9 +226,9 @@ hatch shell
 ytcc --help
 ```
 
-Run the following commands before every pull request and fix the warnings or errors they produce.
+Run the following commands before creating a pull request and fix the warnings or errors they produce.
 ```shell script
-hatch fmt --check
+hatch check
 hatch test
 ```
 
