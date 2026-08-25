@@ -13,7 +13,7 @@ jobs:
       - name: Set up Hatch
         uses: pypa/hatch@257e27e51a6a5616ed08a39a408a21c35c9931bc
       - name: Hatch static analysis
-        run: hatch fmt --check
+        run: hatch check
       - name: Install shellcheck
         run: |
           sudo apt-get update

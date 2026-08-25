@@ -174,7 +174,7 @@ class Interactive:
     def run(self) -> None:
         selectable = VideoSelection(config.tui.alphabet, self.videos)
         printer = TablePrinter()
-        printer.filter = ["TAG", *config.ytcc.video_attrs]
+        printer.filters = ["TAG", *config.ytcc.video_attrs]
 
         while True:
             remaining_tags = list(selectable.keys())

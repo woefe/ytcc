@@ -144,11 +144,11 @@ class Printer(ABC):
         self._filter: list[Any] | None = None
 
     @property
-    def filter(self) -> list[Any] | None:
+    def filters(self) -> list[Any] | None:
         return self._filter
 
-    @filter.setter
-    def filter(self, fields: list[Any]):
+    @filters.setter
+    def filters(self, fields: list[Any]):
         self._filter = fields
 
     @abstractmethod
@@ -169,8 +169,8 @@ class TablePrinter(Printer):
 
     def print(self, obj: TableData) -> None:
         table = obj.table()
-        if self.filter is not None:
-            table = table.apply_filter(self.filter)
+        if self.filters is not None:
+            table = table.apply_filter(self.filters)
 
         self.table_print(table)
 
@@ -252,8 +252,8 @@ class XSVPrinter(Printer):
 
     def print(self, obj: TableData) -> None:
         table = obj.table()
-        if self.filter is not None:
-            table = table.apply_filter(self.filter)
+        if self.filters is not None:
+            table = table.apply_filter(self.filters)
 
         for row in table.data:
             line = self.separator.join(self.escape(cell) for cell in row)
@@ -272,8 +272,8 @@ class PlainPrinter(Printer):
             )
 
         table = obj.table()
-        if self.filter is not None:
-            table = table.apply_filter(self.filter)
+        if self.filters is not None:
+            table = table.apply_filter(self.filters)
 
         term_width = get_terminal_width()
         for row in table.data:

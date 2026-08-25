@@ -396,9 +396,9 @@ def reverse_playlist(ytcc: core.Ytcc, playlists: tuple[str, ...]):
 def subscriptions(ytcc: core.Ytcc, attributes: list[PlaylistAttr]):
     """List all subscriptions."""
     if not attributes:
-        printer.filter = config.ytcc.playlist_attrs
+        printer.filters = config.ytcc.playlist_attrs
     else:
-        printer.filter = attributes
+        printer.filters = attributes
     printer.print(PlaylistPrintable(ytcc.list_playlists()))
 
 
@@ -549,9 +549,9 @@ def list_videos_impl(
 ):
     apply_filters(ytcc, tags, since, till, playlists, ids, watched, unwatched)
     if attributes:
-        printer.filter = attributes
+        printer.filters = attributes
     else:
-        printer.filter = config.ytcc.video_attrs
+        printer.filters = config.ytcc.video_attrs
 
     set_order(ytcc, order_by)
 
