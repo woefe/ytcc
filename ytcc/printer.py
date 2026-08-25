@@ -157,7 +157,7 @@ class Printer(ABC):
 
 
 class TablePrinter(Printer):
-    def __init__(self, truncate: None | str | int = "max"):
+    def __init__(self, truncate: str | int | None = "max"):
         """Initialize a new TablePrinter.
 
         :param truncate:

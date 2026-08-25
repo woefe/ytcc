@@ -76,7 +76,7 @@ class CommaList(click.ParamType, Generic[T]):
 class TruncateVals(click.ParamType):
     name = "truncate"
 
-    def convert(self, value, _param, _ctx) -> None | str | int:
+    def convert(self, value, _param, _ctx) -> str | int | None:
         if value == "max":
             return "max"
         if value == "no":
@@ -247,7 +247,7 @@ def cli(
     loglevel: str,
     output: str,
     separator: str,
-    truncate: None | str | int,
+    truncate: str | int | None,
 ) -> None:
     """Ytcc - the (not only) YouTube channel checker.
 
