@@ -55,21 +55,24 @@ include = ["/ytcc"]
 [tool.hatch.build.targets.wheel]
 shared-scripts = { "scripts/ytccf.sh" = "ytccf.sh" }
 
-[tool.hatch.envs.hatch-static-analysis]
+[tool.hatch.envs.default]
+installer = "uv"
+
+[tool.hatch.envs.default.env-vars]
+UV_EXCLUDE_NEWER = "4 days"
+
+[tool.hatch.envs.hatch-check-code]
 dependencies = [
-    "mypy",
     "editorconfig-checker",
     "ruff"
 ]
 
-[tool.hatch.envs.hatch-static-analysis.scripts]
-lint-check = ["ruff check", "ec", "mypy ytcc"]
+[tool.hatch.envs.hatch-check-code.scripts]
+lint-check = ["ruff check", "ec"]
 lint-fix = "ruff check --fix"
-format-check = "ruff format --check"
-format-fix = "ruff format"
 
 [[tool.hatch.envs.hatch-test.matrix]]
-python = ['3.10', '3.11', '3.12', '3.13']
+python = ['3.11', '3.12', '3.13', '3.14']
 
 [tool.ruff]
 line-length = 99
@@ -143,6 +146,3 @@ ignore = [
 max-args = 10
 max-locals = 10
 max-public-methods = 20
-
-[tool.mypy]
-ignore_missing_imports = true
