@@ -61,7 +61,7 @@ def validate_processing_result(processed, title, url) -> str:
     if not url:
         return "the video url is missing"
 
-    if processed.get("age_limit", 0) > config.ytcc.age_limit:
+    if (processed.get("age_limit") or 0) > config.ytcc.age_limit:
         return "the video is age restricted"
 
     if processed.get("is_live", False) and config.ytcc.skip_live_stream:
