@@ -109,7 +109,7 @@ class Fetcher:
                     None,
                     partial(ydl.extract_info, playlist.url, download=False, process=False),
                 )
-            except youtube_dl.DownloadError as download_error:
+            except Exception as download_error:  # noqa: BLE001 - extractors may crash
                 logger.error(
                     "Failed to get playlist '%s'. Error was: '%s'",
                     playlist.name,
