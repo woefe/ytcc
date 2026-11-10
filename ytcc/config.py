@@ -65,7 +65,7 @@ _BOOLEAN_STATES = {
 class Color(int):
     def __new__(cls, val):
         i = super().__new__(cls, val)
-        if COLOR_MIN >= i >= COLOR_MAX:
+        if not (COLOR_MIN <= i <= COLOR_MAX):
             raise ValueError(
                 f"{val} is not a valid color. Must be in greater than 0 and less than 255"
             )
